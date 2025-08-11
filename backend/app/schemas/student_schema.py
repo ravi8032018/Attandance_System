@@ -24,8 +24,10 @@ class StudentCreateRequest(StudentBase):
     pass
 
 class StudentBulkCreateRequest(BaseModel):
-    course: str = Field(..., example="FYUG")
+    course: str = Field(..., example="BSc")
     sem: str = Field(..., example="1")
+    registration_year: str= Field(...,example="2025")
+    department: str= Field(...,example='CS')
     student_emails: List[EmailStr]
 
 class StudentUpdateRequest(BaseModel):

@@ -1,4 +1,4 @@
-# product_router.py
+# student_router.py
 
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from backend.app.db import db
@@ -9,11 +9,13 @@ from datetime import datetime, timedelta
 from backend.app.utils.hash import hash_password
 from backend.app.utils.smtp import send_email_with_link
 from backend.app.utils.dependencies import admin_required
+from backend.app.utils.unique_student_id import generate_unique_student_id
 from backend.app.schemas.student_schema import StudentBulkCreateRequest
 from backend.my_logger import log_event
 from pymongo import ASCENDING, DESCENDING
 from bson import ObjectId
 import json, os
+from pymongo.errors import DuplicateKeyError
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
@@ -52,21 +54,36 @@ async def bulk_create_students(payload: StudentBulkCreateRequest, current_admin:
     created_mails=[]
 
     for stu_mail in student_mails:
-        # 1. Create the student doc with inactive status
+        # 1. Create the student doc with inactive status)
+        unique_student_id = await generate_unique_student_id(payload.course,payload.registration_year,payload.department)
+        print("Your Unique_Student_ID is ",unique_student_id, "\t",stu_mail)
+
         default_password = token_urlsafe(10)
         hashed_default = hash_password(default_password)
         stu_doc = {
             "email": stu_mail,
-            "registration_no": "set this to the format decided",
+            "registration_no": unique_student_id,
             "semester": payload.sem,
-            "created_by": current_admin["name"],
+            "registration_year": payload.registration_year,
+            "department": payload.department,
+            "course": payload.course,
             "role": ["student"],
             "status": "inactive",
+            "created_by": current_admin["name"],
             "created_at": now,
             "password": hashed_default
         }
-        result = await db["Students"].insert_one(stu_doc)
+        try:
+            result = await db["Students"].insert_one(stu_doc)
+        except DuplicateKeyError:
+            print("Duplicate key error: Student already exists!")
+            # handle accordingly (skip, notify, etc.)
+        except Exception as e:
+            print("Other error:", e)
 
+        if not result:
+            log_event("Student already exists", user_email=current_admin["email"], user_id=current_admin["id"], user_role=current_admin['role'],details=stu_doc['email'])
+            break
         # 2. Generate a one-time-use password-set token (valid 48h)
         token = token_urlsafe(32)
 
@@ -80,10 +97,11 @@ async def bulk_create_students(payload: StudentBulkCreateRequest, current_admin:
         })
 
         # 3. Email the student with a link to set/reset password
-        link = f"https://www.google.com/imgres?q=fuck%20you%20image&imgurl=https%3A%2F%2Fi.etsystatic.com%2F11012956%2Fr%2Fil%2F9b5fb7%2F3870999220%2Fil_fullxfull.3870999220_6vfu.jpg&imgrefurl=https%3A%2F%2Fwww.etsy.com%2Fin-en%2Flisting%2F1218197804%2Fhey-fuck-you-humor-aluminum-street-sign&docid=6NUF7_L1YvN8PM&tbnid=r3XXb4yfPUHIxM&vet=12ahUKEwjjmKPO1ICPAxVlTWwGHXHpKcwQM3oECBcQAA..i&w=2000&h=2000&hcb=2&ved=2ahUKEwjjmKPO1ICPAxVlTWwGHXHpKcwQM3oECBcQAA"
+        link = f"http://localhost:8000/reset-password?token={token}"
 
         email_data = {
             "email_to": stu_mail,
+            "registration_no": unique_student_id,
             "link": link,
             "created_at": now.isoformat(),
             "is_sent": False

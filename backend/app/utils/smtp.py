@@ -14,8 +14,8 @@ USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
 SUBJECT = os.getenv("SUBJECT")
 BODY = os.getenv("BODY")
-print(BODY)
-
+UNIQUE_STUDENT_ID = os.getenv("UNIQUE_STUDENT_ID")
+# print(BODY)
 
 # TO_EMAIL = os.getenv("TO_EMAIL")
 
@@ -49,7 +49,11 @@ def send_email_with_link(emails_file: str):
             print("Login time: ", time.time() - now4)
 
             for email in emails:
-                body = str(BODY)+"\n"+email["link"]
+                if email["is_sent"] is True:
+                    print(f"Skipping email: {email['email_to']}")
+                    continue
+                # print("Email : ",email)
+                body = UNIQUE_STUDENT_ID + email["registration_no"] + "\n" + str(BODY) + "\n" + email["link"]
 
                 msg = EmailMessage()
                 msg['Subject'] = SUBJECT
@@ -59,15 +63,15 @@ def send_email_with_link(emails_file: str):
 
                 now5 = time.time()
                 smtp.sendmail(USER, email["email_to"], msg.as_string())
-                print("Sendmail time: ", time.time() - now5)
+                print("Sendmail time: ", time.time() - now5, "\t", email["email_to"])
 
                 # print(email['email_to'])
                 email['is_sent'] = True  # Update the value you want
 
-            # Go back to the beginning of the file before writing
-            f.seek(0)
-            json.dump(emails, f, indent=2)
-            f.truncate()  # Remove any leftover data
+        # Go back to the beginning of the file before writing
+        f.seek(0)
+        json.dump(emails, f, indent=2)
+        f.truncate()  # Remove any leftover data
 
         print("Final time: ", time.time() - now1)
 
