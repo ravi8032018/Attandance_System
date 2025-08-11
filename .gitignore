@@ -1,0 +1,38 @@
+# -------------------------
+# FRONTEND: Next.js (React)
+# -------------------------
+
+
+# -------------------------
+# BACKEND: FastAPI (Python)
+# -------------------------
+/__pycache__/
+/.env
+/__pycache__/
+/backend/.pytest_cache/
+/backend/.mypy_cache/
+/backend/.ruff_cache
+
+# Python junk
+*.py[cod]
+*.pyo
+*.so
+
+# VSCode settings
+.vscode/
+
+# MacOS junk
+.DS_Store
+
+# Others
+.env
+*.log
+/.venv/
+/.idea/
+/.vscode/
+
+demo.py
+demo2.py
+api_endpoints_info.txt
+
+/cache_local

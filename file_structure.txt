@@ -1,0 +1,58 @@
+
+student-attendance-system/
+    ├── backend/
+    │ ├── app/
+    │ │ ├── main.py # FastAPI app entry point
+    │ │ ├── config.py # Env/config handling
+    │ │ ├── db.py # Mongo connection/init
+    │ │ ├── models/ # Pydantic+Beanie ODM models
+    │ │ │ ├── student.py
+    │ │ │ ├── teacher.py
+    │ │ │ ├── attendance.py
+    │ │ │ ├── batch.py
+    │ │ │ ├── subject.py
+    │ │ │ └── user.py
+    │ │ ├── schemas/ # Request/response schemas
+    │ │ ├── routers/ # FastAPI API routers
+    │ │ │ ├── auth.py
+    │ │ │ ├── student.py
+    │ │ │ ├── teacher.py
+    │ │ │ ├── attendance.py
+    │ │ │ ├── batch.py
+    │ │ │ └── subject.py
+    │ │ ├── controllers/ # Business logic/services
+    │ │ ├── utils/ # Hashing, JWT, email, utilities
+    │ ├── requirements.txt
+    │ └── .env # Env variables
+    ├── frontend/
+    │ ├── app/ # Next.js pages/app router
+    │ │ ├── layout.jsx
+    │ │ ├── page.jsx # Landing/login
+    │ │ ├── admin/
+    │ │ │ ├── dashboard.jsx
+    │ │ │ ├── students.jsx
+    │ │ │ ├── attendance.jsx
+    │ │ │ ├── teachers.jsx
+    │ │ │ ├── batches.jsx
+    │ │ │ └── reports.jsx
+    │ │ ├── teacher/
+    │ │ │ ├── dashboard.jsx
+    │ │ │ ├── attendance.jsx
+    │ │ │ └── students.jsx
+    │ ├── components/
+    │ │ ├── Sidebar.jsx
+    │ │ ├── Navbar.jsx
+    │ │ ├── StudentTable.jsx
+    │ │ ├── AttendanceTable.jsx
+    │ │ ├── AttendanceMark.jsx
+    │ │ ├── StatsCard.jsx
+    │ │ ├── PieChartBlock.jsx
+    │ │ └── ...
+    │ ├── utils/
+    │ │ └── api.js # REST requests
+    │ ├── styles/
+    │ │ ├── globals.css
+    │ │ └── tailwind.config.js
+    │ └── public/
+    ├── README.md
+    └── .env
