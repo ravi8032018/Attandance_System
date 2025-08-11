@@ -21,7 +21,7 @@ router = APIRouter(prefix="/student", tags=["Student"])
 
 # 🔽 CREATE PRODUCT
 @router.post("/create", response_model=StudentOutResponse)
-async def create_student(student: StudentCreateRequest, current_admin: dict = Depends(admin_required)):
+async def student_create(student: StudentCreateRequest, current_admin: dict = Depends(admin_required)):
     student_dict = student.dict()
     student_dict["created_by"] = current_admin["name"]
     student_dict["status"] = "inactive"
@@ -46,7 +46,7 @@ async def create_student(student: StudentCreateRequest, current_admin: dict = De
 
 
 @router.post("/bulk-create", response_model=StudentBulkCreateResponse)
-async def bulk_create_students(payload: StudentBulkCreateRequest, current_admin: dict = Depends(admin_required)):
+async def bulk_students_create(payload: StudentBulkCreateRequest,   current_admin: dict = Depends(admin_required)):
     # print("\nStarting bulk creation of students\n")
     student_mails = payload.student_emails
     now = datetime.utcnow()
@@ -132,57 +132,12 @@ async def bulk_create_students(payload: StudentBulkCreateRequest, current_admin:
     log_event("create bulk students",details=created_mails)
     return {"message": f"Accounts created and emails sent; Total: {len(created)}" }
 
-
-
-# @router.post("/bulk-create", response_model=StudentBulkCreateResponse)
-# async def bulk_create_students(payload: StudentBulkCreateRequest, current_admin: dict = Depends(admin_required)):
-#     print("Starting bulk creation of students\n")
-#
-#     students = payload.students
-#     print("students: ",students)
-#
-#     now = datetime.utcnow()
-#     created = []
-#     for stu in students:
-#         # 1. Create the student doc with inactive status
-#         default_password = token_urlsafe(10)
-#         hashed_default = hash_password(default_password)
-#         stu_doc = {
-#             "email": stu["email"],
-#             "registration_no": stu.get("reg_no"),
-#             "semester": stu.get("semester"),
-#             "created_by": current_admin["name"],
-#             "role": ["student"],
-#             "status": "inactive",
-#             "created_at": now,
-#             "password": hashed_default
-#         }
-#         print("stu_doc: ", stu_doc)
-#         result = await db["Students"].insert_one(stu_doc)
-#
-#         # 2. Generate a one-time-use password-set token (valid 48h)
-#         token = token_urlsafe(32)
-#         expiry = now + timedelta(hours=48)
-#         await db["PasswordResetDB"].insert_one({
-#             "student_id": str(result.inserted_id),
-#             "token": token,
-#             "type": "set_password",
-#             "expires_at": expiry,
-#             "is_used": False
-#         })
-#
-#         # 3. Email the student with a link to set/reset password
-#         link = f"https://YOUR_FRONTEND/set-password/{token}"
-#         email_body = (
-#             f"Welcome to Department of Computer Science, Assam University Silchar\n\n"
-#             f"Please click the link below to set your password and activate your account. "
-#             f"This link is valid for 48 hours and can be used only once:\n{link}"
-#         )
-#         send_email_with_link(to_email=stu["email"], subject="Activate your student account", body=email_body)
-#         created.append(stu["email"])
-#
-#     log_event("create bulk students",details=created)
-#     return {"message": "Accounts created and emails sent", "count": len(created)}
+@router.get("/registration_no/{registration_no}")
+async def get_product_by_id(registration_no: str = Path(..., title="registration no")):
+    student = await db['Students'].find_one({"registration_no": registration_no})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return student
 
 
 '''
@@ -218,19 +173,6 @@ async def get_all_products(
         "limit": limit,
         "products": products
     }
-
-@router.get("/{product_id}", response_model=ProductPublicResponse)
-async def get_product_by_id(product_id: str = Path(..., title="Product ID")):
-    if not ObjectId.is_valid(product_id):
-        raise HTTPException(status_code=400, detail="Invalid product ID")
-
-    product = await db["Products"].find_one({"_id": ObjectId(product_id)})
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return product_public_model(product)
-
 
 @router.put("/{product_id}", response_model=UpdateResponse)
 async def update_product(product_id: str, update_data: ProductUpdateRequest,current_admin: dict = Depends(admin_required)):

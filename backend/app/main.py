@@ -4,8 +4,8 @@ from backend.app.routers.auth.admin_auth_routers import router as admin_auth_rou
 from backend.app.routers.auth.faculty_auth_routers import router as faculty_auth_router
 from backend.app.routers.auth.student_auth_routers import router as student_auth_router
 from backend.app.routers.student_routers import router as student_router
-from backend.app.routers.auth.password_setter import router as password_setter
-# from backend.app.routers.admin_dashboard_routers import router as admin_dashboard_router
+# from backend.app.routers.auth.password_setter import router as password_setter
+from backend.app.routers.auth.reset_password import router as reset_password
 from fastapi.middleware.cors import CORSMiddleware
 
 fastapi_app = FastAPI()
@@ -28,6 +28,7 @@ async def connect():
     await db.Admins.create_index("email", unique=True)
     await db.Faculty.create_index("email", unique=True)
     await db["Students"].create_index("email", unique=True)
+    await db["Students"].create_index("registration_no", unique=True)
     await db["PasswordResetDB"].create_index("token", unique=True)
     await db["PasswordResetDB"].create_index("expires_at")
 
@@ -43,6 +44,6 @@ fastapi_app.include_router(admin_auth_router)
 fastapi_app.include_router(faculty_auth_router)
 fastapi_app.include_router(student_auth_router)
 fastapi_app.include_router(student_router)
-fastapi_app.include_router(password_setter)
-# fastapi_app.include_router(bulk_student_create_router)
+fastapi_app.include_router(reset_password)
+# fastapi_app.include_router(password_setter)
 # fastapi_app.include_router(admin_dashboard_router)

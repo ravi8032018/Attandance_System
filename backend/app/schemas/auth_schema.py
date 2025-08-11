@@ -32,6 +32,7 @@ class StudentSignInRequest(BaseModel):
 class SetPasswordRequest(BaseModel):
     token: str
     new_password: str
+    confirm_password: str
 
 
 # ---------------------------- RESPONSES ---------------------------
