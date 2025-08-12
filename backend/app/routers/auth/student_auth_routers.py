@@ -105,7 +105,7 @@ async def students_login(student: StudentSignInRequest):
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 
-    log_event("Student login", user_email=existing_student["email"], user_name=existing_student["name"], user_id=str(existing_student["_id"]), user_role="student")
+    log_event("Student login", user_email=existing_student["email"] , user_id=str(existing_student["_id"]), user_role="student")
 
     return resp
 

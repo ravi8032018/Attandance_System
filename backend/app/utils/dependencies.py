@@ -122,3 +122,4 @@ async def student_required(current_user: dict = Depends(get_current_user)):
             detail="Token role does not match roles assigned to user.",
         )
     return current_user
+

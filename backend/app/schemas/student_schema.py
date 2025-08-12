@@ -30,24 +30,21 @@ class StudentBulkCreateRequest(BaseModel):
     department: str= Field(...,example='CS')
     student_emails: List[EmailStr]
 
-class StudentUpdateRequest(BaseModel):
+class StudentProfileUpdateRequest(BaseModel):
     # All fields optional for PATCH/PUT
-    first_name: Optional[str]
-    last_name: Optional[str]
-    date_of_birth: Optional[date]
-    gender: Optional[str]
-    contact_number: Optional[str]
-    email: Optional[EmailStr]
-    address: Optional[str]
-    parent_name: Optional[str]
-    parent_contact: Optional[str]
+    first_name: str
+    last_name:str
+    dob: date
+    gender: str
+    contact_number: str
+    photo_url: Optional[str]
+    roll_number: Optional[str]
     batch_id: Optional[str]
     batch_name: Optional[str]
-    admission_date: Optional[date]
-    status: Optional[str]
-    photo_url: Optional[str]
-    guardian_email: Optional[EmailStr]
-    roll_number: Optional[str]
+    admission_date: Optional[date] = None
+    guardian_email: Optional[EmailStr] = None
+    parent_name: Optional[str]
+    parent_contact: Optional[str]
     extra_fields: Optional[dict] = None
 
 # --------------- Public Responses (Outgoing Data for all, including student portal) --------
@@ -55,9 +52,10 @@ class StudentUpdateRequest(BaseModel):
 class StudentPublicResponse(BaseModel):
     id: str
     enrollment_no: str
-    first_name: str
-    last_name: str
-    date_of_birth: Optional[date]
+    semester:Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    dob: Optional[date]
     gender: Optional[str]
     contact_number: Optional[str]
     email: Optional[EmailStr]
