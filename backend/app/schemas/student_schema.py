@@ -1,13 +1,17 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Optional, List
 from datetime import date, datetime
+
+ALLOWED_GENDERS = {"male", "female", "other"}
 
 # --------------- Requests (Incoming Data) ----------------
 
 class StudentBase(BaseModel):
     email: EmailStr = Field(..., example="student@email.com")
-    registration_no: Optional[str] = Field(..., example="20230001")
-    semester: str = Field(..., example="3")
+    course: str = Field(..., example="BSc")
+    sem: str = Field(..., example="1")
+    registration_year: str= Field(...,example="2025")
+    department: str= Field(...,example='CS')
 
 
 
@@ -46,6 +50,23 @@ class StudentProfileUpdateRequest(BaseModel):
     parent_name: Optional[str]
     parent_contact: Optional[str]
     extra_fields: Optional[dict] = None
+
+    @validator("gender", pre=True)
+    def normalize_gender(cls, v):
+        if v is None:
+            return None
+        s = str(v).strip().lower()
+        aliases = {
+            "m": "male", "male": "male",
+            "f": "female", "female": "female",
+            "o": "other", "other": "other",
+            "non-binary": "other", "nonbinary": "other", "nb": "other",
+        }
+        s = aliases.get(s, s)
+        if s not in ALLOWED_GENDERS:
+            raise ValueError(f"gender must be one of: {', '.join(sorted(ALLOWED_GENDERS))}")
+        return s
+
 
 # --------------- Public Responses (Outgoing Data for all, including student portal) --------
 

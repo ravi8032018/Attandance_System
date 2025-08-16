@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from datetime import datetime
 from backend.app.db import db
 from backend.app.schemas.auth_schema import SetPasswordRequest
@@ -7,14 +7,14 @@ from bson import ObjectId
 
 router = APIRouter(tags=["reset-password"])
 
-@router.post("/reset-password")
-async def reset_password(req: SetPasswordRequest):
+@router.post("/reset-password/{token}")
+async def reset_password(req:  SetPasswordRequest, token: str = Path(...)):
     if req.new_password != req.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     now = datetime.utcnow()
-
+    # print(token)
     token_doc = await db["PasswordResetDB"].find_one({
-        "token": req.token,
+        "token": token,
         "type": "set_password",
         "expires_at": {"$gt": now},
         "is_used": False

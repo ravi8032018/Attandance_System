@@ -6,7 +6,6 @@ from backend.app.schemas.student_schema import StudentCreateRequest, StudentBulk
 from backend.app.schemas.student_schema import  StudentOutResponse, StudentPublicResponse
 from secrets import token_urlsafe
 from datetime import datetime, timedelta
-
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.hash import hash_password
 from backend.app.utils.placeholder_cleaner import clean_placeholders
@@ -15,10 +14,10 @@ from backend.app.utils.dependencies import admin_required, get_current_user
 from backend.app.utils.unique_student_id import generate_unique_student_id
 from backend.app.schemas.student_schema import StudentBulkCreateRequest
 from backend.my_logger import log_event
-from pymongo import ASCENDING, DESCENDING
 from bson import ObjectId
 import json, os
 from pymongo.errors import DuplicateKeyError
+from pymongo import ASCENDING, DESCENDING
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
@@ -26,6 +25,13 @@ router = APIRouter(prefix="/student", tags=["Student"])
 @router.post("/create", response_model=StudentOutResponse)
 async def student_create(student: StudentCreateRequest, current_admin: dict = Depends(admin_required)):
     student_dict = student.dict()
+    # print(student_dict)
+
+    now = datetime.utcnow()
+    unique_student_id = await generate_unique_student_id(student.course, student.registration_year, student.department)
+    print("Your Unique_Student_ID is ", unique_student_id, " --> ", student.email)
+
+    student_dict["registration_no"] = unique_student_id
     student_dict["created_by"] = current_admin["name"]
     student_dict["status"] = "inactive"
     student_dict["role"] = ["student"]
@@ -34,13 +40,61 @@ async def student_create(student: StudentCreateRequest, current_admin: dict = De
     student_dict['updated_at']= datetime.utcnow()
     student_dict['updated_by']= None
 
-    result = await db['Students'].insert_one(student_dict)
-    created = await db['Students'].find_one({"_id": result.inserted_id})
+    created=[]
+    try:
+        res = await db['Students'].insert_one(student_dict)
+    except DuplicateKeyError:
+        print("Duplicate key error: Student already exists!")
 
-    if not created:
+    result = await db['Students'].find_one({"_id": res.inserted_id})
+
+    if not result:
         raise HTTPException(status_code=500, detail=f"Student account creation failed for {student_dict['email']}[{student_dict['registration_no']}]")
 
-    log_event("create student", user_email=student_dict["email"], user_name=student_dict["name"], user_id=student_dict["id"], user_role="admin")
+    # 2. Generate a one-time-use password-set token (valid 48h)
+    token = token_urlsafe(32)
+
+    expiry = now + timedelta(hours=48)
+    await db["PasswordResetDB"].insert_one({
+        "student_id": str(res.inserted_id),
+        "token": token,
+        "type": "set_password",
+        "expires_at": expiry,
+        "is_used": False
+    })
+
+    # 3. Email the student with a link to set/reset password
+    link = f"http://localhost:8000/reset-password?token={token}"
+
+    email_data = {
+        "email_to": student.email,
+        "registration_no": unique_student_id,
+        "link": link,
+        "created_at": now.isoformat(),
+        "is_sent": False
+        # "token": token
+    }
+    created.append(email_data)
+    # Write entire batch to file at end of creation
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", "..", ".."))
+    email_cache_dirr_path = os.path.join(PROJECT_ROOT, "cache_local")
+
+    with open(f"{email_cache_dirr_path}/students_to_email.json", "r+") as f:
+        try:
+            data = json.load(f)   # Read existing content
+        except json.decoder.JSONDecodeError:
+            data = []  # If file is empty or corrupt, start with an empty list
+
+        for dicts in created:
+            data.append(dicts)
+        f.seek(0)  # Go back to the beginning
+        json.dump(data, f, indent=2)  # Write ALL data back, including new item
+        f.truncate()
+
+    send_email_with_link(f"{email_cache_dirr_path}/students_to_email.json")
+
+    log_event("create student", user_email=student_dict["email"], user_name=student_dict["name"] if 'name' in student_dict else None, user_id=student_dict["registration_no"], user_role="admin", details=f"created by {current_admin['name']}")
 
     try:
         return StudentOutResponse(
@@ -143,7 +197,7 @@ async def bulk_students_create(payload: StudentBulkCreateRequest,   current_admi
 @router.get("/registration-no/{registration_no}")
 async def get_student_by_id(registration_no: str = Path(..., title="registration-no")):
     student = await db['Students'].find_one({"registration_no": registration_no})
-    print("student", student)
+    # print("student", student)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 

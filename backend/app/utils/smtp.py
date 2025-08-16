@@ -1,6 +1,5 @@
 # backend/app/utils/auth_helpers.py
 import os, json
-from datetime import datetime
 import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
@@ -76,6 +75,3 @@ def send_email_with_link(emails_file: str):
         print("Final time: ", time.time() - now1)
 
     # print("Email sent successfully to {}".format(to_email))
-
-
-# send_email_with_link(TO_EMAIL,"hello bhaiya", "bye bye!!!")
