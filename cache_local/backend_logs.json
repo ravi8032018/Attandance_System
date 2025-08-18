@@ -1,0 +1,436 @@
+{
+  "action": "create bulk students",
+  "timestamp": "2025-08-11T15:10:31.575395Z",
+  "details": "[\"ravisharma8032k23@gmail.com\"]"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-11T15:24:33.084674Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-11T16:11:50.896715Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-11T18:36:46.262736Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-12T05:04:57.173704Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-12T06:35:24.159697Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T06:49:32.064286Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T06:54:35.833251Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T14:27:25.749490Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T15:21:52.021198Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T16:39:23.573518Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T19:21:31.546802Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T19:52:34.153774Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-12T20:24:55.611392Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Student Profile Update",
+  "timestamp": "2025-08-12T20:47:37.158643Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_name": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": [
+    "student"
+  ],
+  "details": "\"Student 689a07dfdb5087690f8b1fca Profile complete, name Ravi Sharma, email ravisharma8032k23@gmail.com\""
+}
+{
+  "action": "Student Profile Update",
+  "timestamp": "2025-08-12T20:49:10.488610Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": [
+    "student"
+  ],
+  "details": "\"Student 689a07dfdb5087690f8b1fca Profile complete, name Ravi Sharma, email ravisharma8032k23@gmail.com\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-15T16:36:54.385223Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-15T16:41:58.101930Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "create student",
+  "timestamp": "2025-08-15T17:09:51.579061Z",
+  "user_email": "anshuman.singh@aus.ac.in",
+  "user_id": "CSBSC2025004",
+  "user_role": "admin",
+  "details": "\"created by string4\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-15T17:48:36.895127Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "create student",
+  "timestamp": "2025-08-15T17:52:05.268219Z",
+  "user_email": "asnhuman.singh@aus.ac.in",
+  "user_id": "CSBSC2025004",
+  "user_role": "admin",
+  "details": "\"created by string4\""
+}
+{
+  "action": "create student",
+  "timestamp": "2025-08-15T17:53:18.976873Z",
+  "user_email": "anshuman.singh@aus.ac.in",
+  "user_id": "CSBSC2025005",
+  "user_role": "admin",
+  "details": "\"created by string4\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-15T18:05:01.848991Z",
+  "user_email": "anshuman.singh@aus.ac.in",
+  "user_id": "689f740a345291398b9e626a",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-16T06:38:17.027656Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:39:09.679272Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:42:58.523854Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:52:56.693464Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:55:04.266543Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:56:33.502168Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T06:58:08.867767Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-16T07:35:53.472653Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "update own profile",
+  "timestamp": "2025-08-16T07:43:04.146599Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"updated own profile fields: ['first_name', 'last_name', 'dob', 'gender', 'guardian_email', 'updated_at', 'updated_by']\""
+}
+{
+  "action": "update own profile",
+  "timestamp": "2025-08-16T07:49:24.408788Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"updated own profile fields: ['first_name', 'last_name', 'dob', 'gender', 'guardian_email', 'updated_at', 'updated_by']\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-16T08:08:06.124235Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "change password",
+  "timestamp": "2025-08-16T08:09:04.594602Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"successfully changed password\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-16T08:10:03.118667Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "read own profile",
+  "timestamp": "2025-08-16T08:10:38.923452Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-16T08:28:45.242196Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:31:01.504521Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:36:03.245558Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:37:52.174687Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:39:26.936624Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:39:58.144606Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:57:46.653892Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-16T08:59:03.316898Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:59:13.305022Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T08:59:58.253302Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:00:30.983113Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:01:13.007836Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:01:39.949262Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:02:05.692826Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:03:44.987098Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:04:14.363040Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:04:37.979663Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:05:40.411986Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-16T09:06:00.194854Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
+}
