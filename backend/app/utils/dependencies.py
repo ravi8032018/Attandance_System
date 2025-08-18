@@ -48,7 +48,7 @@ async def get_current_user(request: Request):
 
         if token_role == 'admin':
             user = await db.Admins.find_one({"_id": ObjectId(user_id)})
-        if token_role == 'faculty' or token_role is 'hod':
+        if token_role == 'faculty' or token_role == 'hod':
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
         if token_role == 'student':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
