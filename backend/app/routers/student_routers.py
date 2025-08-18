@@ -2,12 +2,13 @@
 
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from backend.app.db import db
-from backend.app.schemas.student_schema import StudentCreateRequest, StudentBulkCreateResponse, StudentProfileUpdateRequest
-from backend.app.schemas.student_schema import  StudentOutResponse, StudentPublicResponse
+from backend.app.schemas.student_schema import StudentCreateRequest, StudentBulkCreateResponse, \
+    StudentProfileUpdateRequest, StudentFullProfileResponse, StudentSelfUpdateRequest, ChangePasswordRequest, SortOrder
+from backend.app.schemas.student_schema import  StudentOutResponse, StudentPublicResponse, StudentListResponse, StudentPaginatedResponse
 from secrets import token_urlsafe
 from datetime import datetime, timedelta
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
-from backend.app.utils.hash import hash_password
+from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
 from backend.app.utils.dependencies import admin_required, get_current_user
@@ -18,6 +19,7 @@ from bson import ObjectId
 import json, os
 from pymongo.errors import DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
+from typing import List, Optional
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
@@ -266,6 +268,171 @@ async def complete_profile(
     log_event("Student Profile Update", user_email=current_user["email"], user_name=current_user["name"] if (current_user['name'] is not None) else None, user_id=current_user["id"], user_role=current_user["role"], details=f"Student {current_user['id']} Profile complete, name {clean_update['first_name']} {clean_update['last_name']}, email {current_user['email']}")
 
     return {"message": "Profile updated successfully"}
+
+@router.get("/me", response_model=StudentFullProfileResponse)
+async def get_current_student_profile(current_user: dict = Depends(get_current_user)):
+    # print("current_user--> ", current_user)
+    if "student" not in current_user.get("role", []):
+        raise HTTPException(status_code=403, detail="Access denied. Only students can view their own profile.")
+
+    student_id = current_user.get("id")
+
+    if not student_id:
+        raise HTTPException(status_code=400, detail="Invalid user session.")
+
+    try:
+        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Cannot find student.") from e
+    # print("Student--> ", student)
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found.")
+
+    log_event("read own profile", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details="accessed own profile")
+
+    return StudentFullProfileResponse(**student)
+
+@router.patch("/me")
+async def update_current_student_profile(update_data: StudentSelfUpdateRequest, current_user: dict = Depends(get_current_user)):
+    if "student" not in current_user.get("role", []):
+        raise HTTPException(status_code=403, detail="Access denied. Only students can update their own profile.")
+    # print("current user--> ", current_user)
+
+    student_id = current_user.get("id")
+    if not student_id:
+        raise HTTPException(status_code=400, detail="Invalid user session.")
+
+    try:
+        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+        # print("current student--> ", student)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Cannot find student.") from e
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found.")
+
+    update_dict = update_data.dict(exclude_unset=True)
+    clean_update = clean_placeholders(update_dict)
+    clean_update = normalize_dates_for_mongo(clean_update)
+    clean_update["updated_at"] = datetime.utcnow()
+    clean_update["updated_by"] = current_user.get("name") or current_user["email"]
+
+    result = await db["Students"].update_one(
+        {"_id": ObjectId(student_id)},
+        {"$set": clean_update}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Student profile not found (or no changes made).")
+    if result.modified_count == 0 and clean_update:
+        # This can happen if the update data is identical to current data
+        pass
+
+    updated_student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+    if not updated_student:
+        raise HTTPException(status_code=500, detail="Failed to retrieve updated student profile.")
+
+    log_event("update own profile", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details=f"updated own profile fields: {list(clean_update.keys())}")
+
+    return "Profile updated successfully"
+
+@router.post("/change-password")
+async def change_student_password(password_data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+    if "student" not in current_user.get("role", []):
+        raise HTTPException(status_code=403, detail="Access denied. Only students can change their own password.")
+
+    student_id = current_user.get("id")
+    if not student_id:
+        raise HTTPException(status_code=400, detail="Invalid user session.")
+
+    try:
+        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Cannot find student.") from e
+    if not student:
+        raise HTTPException(status_code=404, detail="Student account not found.")
+
+    stored_hashed_password = student.get("password")
+
+    # Verify old password
+    if not stored_hashed_password or not varify_hash(password_data.old_password, stored_hashed_password):
+        raise HTTPException(status_code=400, detail="Invalid password.")
+
+    # Hash the new password
+    new_hashed_password = hash_password(password_data.new_password)
+
+    # Update the password in the database
+    result = await db["Students"].update_one(
+        {"_id": ObjectId(student_id)},
+        {
+            "$set": {
+                "password": new_hashed_password,
+                "updated_at": datetime.utcnow(),
+                "updated_by": current_user.get("name") or current_user["email"],
+            }
+        }
+    )
+
+    if result.matched_count == 0 or result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Password change failed. Please try again.")
+
+    log_event("change password", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details="successfully changed password")
+
+    return {"message": "Password changed successfully."}
+
+@router.get("/", response_model=StudentPaginatedResponse)
+async def list_students(
+    skip: int = Query(0, description="Number of students to skip (for pagination)"),
+    limit: int = Query(10, description="Maximum number of students to return (for pagination)", le=100),
+    search_query: Optional[str] = Query(None, description="Search by first name, last name, email, or registration number"),
+    status: Optional[str] = Query(None, description="Filter by student status (e.g., 'active', 'inactive')"),
+    sort_by: str = Query("created_at", description="Field to sort students by (e.g., 'created_at', 'first_name', 'email')"),
+    sort_order: SortOrder = Query(SortOrder.DESC, description="Sort order: 'asc' for ascending, 'desc' for descending"), # Use the Enum
+    current_admin: dict = Depends(admin_required)
+):
+    query_filter = {}
+    if search_query:
+        query_filter["$or"] = [
+            {"first_name": {"$regex": search_query, "$options": "i"}},
+            {"last_name": {"$regex": search_query, "$options": "i"}},
+            {"email": {"$regex": search_query, "$options": "i"}},
+            {"registration_no": {"$regex": search_query, "$options": "i"}},
+        ]
+    if status:
+        query_filter["status"] = status.lower()
+    total_count = await db["Students"].count_documents(query_filter)
+
+    mongo_sort_order = ASCENDING if sort_order == SortOrder.ASC else DESCENDING
+    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no"}
+    if sort_by not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sort_by field. Allowed fields are: {', '.join(sorted(ALLOWED_SORT_FIELDS))}"
+        )
+
+    students_cursor = db["Students"].find(query_filter).skip(skip).limit(limit).sort(sort_by, mongo_sort_order)
+    students_data = []
+    async for student in students_cursor:
+        students_data.append(StudentListResponse(**student))
+
+    log_event(
+        "list students",
+        user_email=current_admin["email"],
+        user_id=current_admin["id"],
+        user_role="admin",
+        details=f"fetched {len(students_data)} students (skip={skip}, limit={limit}, query='{search_query}', status='{status}')"
+    )
+
+    return StudentPaginatedResponse(
+        data=students_data,
+        total_count=total_count,
+        page=skip // limit + 1, # Calculate current page number
+        limit=limit
+    )
+
+
+
 
 
 '''

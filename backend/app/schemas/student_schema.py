@@ -1,9 +1,14 @@
 from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Optional, List
 from datetime import date, datetime
+from bson import ObjectId
+from enum import Enum
 
 ALLOWED_GENDERS = {"male", "female", "other"}
 
+class SortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
 # --------------- Requests (Incoming Data) ----------------
 
 class StudentBase(BaseModel):
@@ -53,19 +58,26 @@ class StudentProfileUpdateRequest(BaseModel):
 
     @validator("gender", pre=True)
     def normalize_gender(cls, v):
-        if v is None:
-            return None
-        s = str(v).strip().lower()
-        aliases = {
-            "m": "male", "male": "male",
-            "f": "female", "female": "female",
-            "o": "other", "other": "other",
-            "non-binary": "other", "nonbinary": "other", "nb": "other",
-        }
-        s = aliases.get(s, s)
-        if s not in ALLOWED_GENDERS:
-            raise ValueError(f"gender must be one of: {', '.join(sorted(ALLOWED_GENDERS))}")
-        return s
+        from ..utils.gender_normalizer import normalize_gender
+        return normalize_gender(v)
+
+class StudentSelfUpdateRequest(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dob: Optional[date] = None
+    gender: Optional[str] = None # Or Gender (Enum)
+    contact_number: Optional[str] = None
+    photo_url: Optional[str] = None
+    guardian_email: Optional[EmailStr] = None
+
+    @validator("gender", pre=True)
+    def normalize_gender(cls, v):
+        from ..utils.gender_normalizer import normalize_gender
+        return normalize_gender(v)
+
+    class Config:
+        extra = "ignore"
+
 
 
 # --------------- Public Responses (Outgoing Data for all, including student portal) --------
@@ -108,4 +120,81 @@ class StudentOutResponse(BaseModel):
 class UpdateResponse(BaseModel):
     student: StudentResponse
 
-# If you ever add attendance summaries, subjects, etc., you can add fields here.
+class StudentFullProfileResponse(BaseModel):
+    _id: str
+    registration_no: str = Field(..., description="Unique registration number for the student")
+    email: EmailStr = Field(..., description="Student's email address")
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dob: Optional[date] = None  # Use date for DOB
+    gender: Optional[str] = None # Or Gender (Enum) if you use it
+    contact_number: Optional[str] = None
+    photo_url: Optional[str] = None
+    profile_complete: bool = False # Indicates if mandatory profile fields are filled
+    semester: Optional[str] = None
+    registration_year: Optional[int] = None
+    department: Optional[str] = None
+    course: Optional[str] = None
+    batch_id: Optional[str] = None # ID of the batch
+    batch_name: Optional[str] = None # Name of the batch for display
+    admission_date: Optional[date] = None # Use date for admission_date
+    role: List[str] = []
+    status: str = "inactive" # e.g., active, inactive, suspended
+    created_at: datetime
+    created_by: Optional[str] = None
+    updated_at: datetime
+    updated_by: Optional[str] = None
+
+class StudentListResponse(BaseModel):
+    _id: str
+    registration_no: str
+    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    status: str
+    sem: Optional[str] = None
+    course: Optional[str] = None
+    contact_number: Optional[str] = None
+    guardian_email: Optional[EmailStr] = None
+    roll_number: Optional[str] = None
+
+    class Config:
+        allow_population_by_field_name = True
+        json_encoders = {
+            ObjectId: str,
+            datetime: lambda dt: dt.isoformat()
+        }
+        arbitrary_types_allowed = True
+
+class StudentPaginatedResponse(BaseModel):
+    data: List[StudentListResponse]
+    total_count: int
+    page: int
+    limit: int
+
+    class Config:
+        json_encoders = {
+            ObjectId: str,
+            datetime: lambda dt: dt.isoformat()
+        }
+        arbitrary_types_allowed = True
+
+
+
+
+
+
+
+# --------------- Change Password --------------------
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=6, max_length=64, description="Current password of the user.")
+    new_password: str = Field(..., min_length=8, max_length=64, description="New password for the user.")
+    confirm_password: str = Field(..., description="Confirmation of the new password.")
+
+    @validator("confirm_password")
+    def passwords_match(cls, v, values, **kwargs):
+        if "new_password" in values and v != values["new_password"]:
+            raise ValueError("new_password and confirm_password do not match")
+        return v
+
+

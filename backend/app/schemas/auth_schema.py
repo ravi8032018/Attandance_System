@@ -30,7 +30,7 @@ class StudentSignInRequest(BaseModel):
     password: str = Field(..., example="sstring")
 
 class SetPasswordRequest(BaseModel):
-    new_password: str
+    new_password: str = Field(..., min_length=8, max_length=64, description="New password for the user.")
     confirm_password: str
 
 
