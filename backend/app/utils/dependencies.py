@@ -50,7 +50,7 @@ async def get_current_user(request: Request):
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
         if token_role == 'student':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
-
+        # print("--> user: ", user)
         if not user:
             raise credentials_exception
 

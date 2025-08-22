@@ -1557,3 +1557,39 @@
   ],
   "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'ravi', '$options': 'i'}, 'status': 'active'}\""
 }
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-22T10:43:13.820272Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T10:46:14.723582Z",
+  "user_email": "faculty@email.com",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T11:18:38.381005Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T13:29:44.975488Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T14:02:28.191398Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}

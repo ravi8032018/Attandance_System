@@ -6,6 +6,7 @@ from backend.app.routers.auth.student_auth_routers import router as student_auth
 from backend.app.routers.student_routers import router as student_router
 from backend.app.routers.faculty_routers import router as faculty_router
 from backend.app.routers.auth.reset_password import router as reset_password
+from backend.app.routers.attendance_routers import router as attendance_router
 from fastapi.middleware.cors import CORSMiddleware
 
 fastapi_app = FastAPI()
@@ -50,4 +51,4 @@ fastapi_app.include_router(student_auth_router)
 fastapi_app.include_router(student_router)
 fastapi_app.include_router(reset_password)
 fastapi_app.include_router(faculty_router)
-# fastapi_app.include_router(admin_dashboard_router)
+fastapi_app.include_router(attendance_router)
