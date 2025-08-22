@@ -1,0 +1,30 @@
+[
+  {
+    "email_to": "anshuman.singh@aus.ac.in",
+    "faculty_id": "COMPUTERSCIENCEFAC01",
+    "link": "http://localhost:8000/reset-password?token=clATWH2sBaqBAM0Vuv1cIJQkvgDFfgrfuVd4L_vfTNY",
+    "created_at": "2025-08-21T15:10:04.986479",
+    "is_sent": true
+  },
+  {
+    "email_to": "anshuman.singh@aus.ac.in",
+    "faculty_id": "COMPUTERSCIENCEFAC01",
+    "link": "http://localhost:8000/reset-password?token=QJkyABq4EO7ia_g4k0eMHsSb5JQcvUo05C-aLAxeI0Q",
+    "created_at": "2025-08-21T15:17:04.858747",
+    "is_sent": true
+  },
+  {
+    "email_to": "anshuman.singh@aus.ac.in",
+    "faculty_id": "CSFAC01",
+    "link": "http://localhost:8000/reset-password?token=zmjS_HvbbLSgoN02UEREVyVafDUqh3eCTIByighPkyo",
+    "created_at": "2025-08-21T15:17:42.323263",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "faculty_id": "CSFAC01",
+    "link": "http://localhost:8000/reset-fac-password?token=-tlANGD8R3hhOUzelBBnMlBAN0sn--6PkeS2tj8Ra5Y",
+    "created_at": "2025-08-21T16:40:17.065119",
+    "is_sent": true
+  }
+]

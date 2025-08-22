@@ -1,10 +1,10 @@
 # student_router.py
-
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
+from fastapi import APIRouter, HTTPException, Path, Query, Depends, status
 from backend.app.db import db
 from backend.app.schemas.student_schema import StudentCreateRequest, StudentBulkCreateResponse, \
-    StudentProfileUpdateRequest, StudentFullProfileResponse, StudentSelfUpdateRequest, ChangePasswordRequest, SortOrder
-from backend.app.schemas.student_schema import  StudentOutResponse, StudentPublicResponse, StudentListResponse, StudentPaginatedResponse
+    StudentProfileUpdateRequest, StudentFullProfileResponse, StudentSelfUpdateRequest, ChangePasswordRequest, SortOrder, \
+    StudentFilterParamsRequest, StudentProfileUpdateByAdmin
+from backend.app.schemas.student_schema import  StudentOutResponse, StudentAdminResponse, StudentListResponse, StudentPaginatedResponse
 from secrets import token_urlsafe
 from datetime import datetime, timedelta
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
@@ -19,13 +19,15 @@ from bson import ObjectId
 import json, os
 from pymongo.errors import DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
-from typing import List, Optional
+from pymongo.collation import Collation
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
-# 🔽 CREATE PRODUCT
 @router.post("/create", response_model=StudentOutResponse)
-async def student_create(student: StudentCreateRequest, current_admin: dict = Depends(admin_required)):
+async def student_create(
+        student: StudentCreateRequest,
+        current_admin: dict = Depends(admin_required)
+):
     student_dict = student.dict()
     # print(student_dict)
 
@@ -46,7 +48,7 @@ async def student_create(student: StudentCreateRequest, current_admin: dict = De
     try:
         res = await db['Students'].insert_one(student_dict)
     except DuplicateKeyError:
-        print("Duplicate key error: Student already exists!")
+        print("Student already exists!")
 
     result = await db['Students'].find_one({"_id": res.inserted_id})
 
@@ -60,6 +62,7 @@ async def student_create(student: StudentCreateRequest, current_admin: dict = De
     await db["PasswordResetDB"].insert_one({
         "student_id": str(res.inserted_id),
         "token": token,
+        "user_type": "student",
         "type": "set_password",
         "expires_at": expiry,
         "is_used": False
@@ -74,7 +77,6 @@ async def student_create(student: StudentCreateRequest, current_admin: dict = De
         "link": link,
         "created_at": now.isoformat(),
         "is_sent": False
-        # "token": token
     }
     created.append(email_data)
     # Write entire batch to file at end of creation
@@ -107,7 +109,10 @@ async def student_create(student: StudentCreateRequest, current_admin: dict = De
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bulk-create", response_model=StudentBulkCreateResponse)
-async def bulk_students_create(payload: StudentBulkCreateRequest,   current_admin: dict = Depends(admin_required)):
+async def bulk_students_create(
+        payload: StudentBulkCreateRequest,
+        current_admin: dict = Depends(admin_required)
+):
     # print("\nStarting bulk creation of students\n")
     student_mails = payload.student_emails
     now = datetime.utcnow()
@@ -197,16 +202,21 @@ async def bulk_students_create(payload: StudentBulkCreateRequest,   current_admi
     return {"message": f"Accounts created and emails sent; Total: {len(created)}" }
 
 @router.get("/registration-no/{registration_no}")
-async def get_student_by_id(registration_no: str = Path(..., title="registration-no")):
+async def get_student_by_id(
+        registration_no: str = Path(..., title="registration-no"),
+        current_user: dict = Depends(admin_required)
+):
     student = await db['Students'].find_one({"registration_no": registration_no})
     # print("student", student)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    return StudentPublicResponse(
+    log_event("Admin fetched student profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details=f"admin fetched student profile")
+
+    return StudentAdminResponse(
         id=str(student["_id"]),
         enrollment_no=student["registration_no"],
-        semester=student["semester"],
+        semester=student["sem"],
         first_name=student["first_name"] if "first_name" in student else None,
         last_name=student["last_name"] if "last_name" in student else None,
         dob=student.get("date_of_birth") if "dob" in student else None,
@@ -214,19 +224,17 @@ async def get_student_by_id(registration_no: str = Path(..., title="registration
         contact_number=student.get("contact_number") if "contact_number" in student else None,
         email=student.get("email"),
         batch_name=student.get("batch_name") if "batch_name" in student else None,
+        status=student.get("status") if "status" in student else "inactive",
         photo_url=student.get("photo_url") if "photo_url" in student else None,
     )
 
 @router.post("/complete-profile/{registration_no}")
 async def complete_profile(
-    registration_no: str,
-    update_data: StudentProfileUpdateRequest,
-    current_user: dict = Depends(get_current_user)
+        registration_no: str,
+        update_data: StudentProfileUpdateRequest,
+        current_user: dict = Depends(get_current_user)
 ):
-    # Step 1: Fetch the student document to check ownership
-    # print("current user", current_user)
-    # print("\nupdate_data", update_data.dict())
-    student = await db["Students"].find_one({"registration_no": registration_no})
+    student = await db["Students"].find_one({"registration_no": registration_no, "status": "active"})
     # print("\nstudent", student)
 
     if not student:
@@ -235,15 +243,12 @@ async def complete_profile(
     # Step 2: Authorization check
     if "admin" not in current_user["role"]:
         if ObjectId(current_user["id"]) != student.get("_id"):
-            print(ObjectId(current_user["id"]))
-            print(student.get("_id"))
+            # print(ObjectId(current_user["id"]))
+            # print(student.get("_id"))
             raise HTTPException(status_code=403, detail="Not authorized to update this profile")
 
-    # Step 3: Prepare clean update data (skip placeholders like "string", "", 0)
     clean_update= clean_placeholders(update_data.dict())
-    # print("\nclean_update", clean_update)
 
-    # Step 4: Enforce required fields only if profile is incomplete
     required_fields = ["first_name", "last_name", "dob", "gender", "contact_number"]
     if not student.get("profile_complete", False):
         for field in required_fields:
@@ -251,7 +256,7 @@ async def complete_profile(
                 raise HTTPException(status_code=400, detail=f"{field} is required for profile completion")
 
     clean_update= normalize_dates_for_mongo(clean_update)
-    # Step 5: Add audit fields
+
     clean_update.update({
         "profile_complete": True,
         "updated_at": datetime.utcnow(),
@@ -261,7 +266,7 @@ async def complete_profile(
 
     # Step 6: Update in DB
     result = await db["Students"].update_one(
-        {"registration_no": registration_no},
+        {"registration_no": registration_no, "status": "active"},
         {"$set": clean_update}
     )
 
@@ -270,7 +275,9 @@ async def complete_profile(
     return {"message": "Profile updated successfully"}
 
 @router.get("/me", response_model=StudentFullProfileResponse)
-async def get_current_student_profile(current_user: dict = Depends(get_current_user)):
+async def get_current_faculty_profile(
+        current_user: dict = Depends(get_current_user)
+):
     # print("current_user--> ", current_user)
     if "student" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only students can view their own profile.")
@@ -281,7 +288,7 @@ async def get_current_student_profile(current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+        student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find student.") from e
     # print("Student--> ", student)
@@ -289,12 +296,15 @@ async def get_current_student_profile(current_user: dict = Depends(get_current_u
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found.")
 
-    log_event("read own profile", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details="accessed own profile")
+    log_event("read own student profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details="accessed own student profile")
 
     return StudentFullProfileResponse(**student)
 
 @router.patch("/me")
-async def update_current_student_profile(update_data: StudentSelfUpdateRequest, current_user: dict = Depends(get_current_user)):
+async def update_current_faculty_profile(
+        update_data: StudentSelfUpdateRequest,
+        current_user: dict = Depends(get_current_user)
+):
     if "student" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only students can update their own profile.")
     # print("current user--> ", current_user)
@@ -304,7 +314,7 @@ async def update_current_student_profile(update_data: StudentSelfUpdateRequest, 
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+        student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
         # print("current student--> ", student)
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find student.") from e
@@ -319,7 +329,7 @@ async def update_current_student_profile(update_data: StudentSelfUpdateRequest, 
     clean_update["updated_by"] = current_user.get("name") or current_user["email"]
 
     result = await db["Students"].update_one(
-        {"_id": ObjectId(student_id)},
+        {"_id": ObjectId(student_id), "status": "active"},
         {"$set": clean_update}
     )
 
@@ -329,16 +339,19 @@ async def update_current_student_profile(update_data: StudentSelfUpdateRequest, 
         # This can happen if the update data is identical to current data
         pass
 
-    updated_student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+    updated_student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
     if not updated_student:
         raise HTTPException(status_code=500, detail="Failed to retrieve updated student profile.")
 
-    log_event("update own profile", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details=f"updated own profile fields: {list(clean_update.keys())}")
+    log_event("update own student profile", user_email=current_user["email"], user_id=current_user["id"], user_role="student", details=f"updated own profile fields: {list(clean_update.keys())}")
 
     return "Profile updated successfully"
 
 @router.post("/change-password")
-async def change_student_password(password_data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+async def change_student_password(
+        password_data: ChangePasswordRequest,
+        current_user: dict = Depends(get_current_user)
+):
     if "student" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only students can change their own password.")
 
@@ -347,7 +360,7 @@ async def change_student_password(password_data: ChangePasswordRequest, current_
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
+        student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find student.") from e
     if not student:
@@ -364,7 +377,7 @@ async def change_student_password(password_data: ChangePasswordRequest, current_
 
     # Update the password in the database
     result = await db["Students"].update_one(
-        {"_id": ObjectId(student_id)},
+        {"_id": ObjectId(student_id), "status": "active"},
         {
             "$set": {
                 "password": new_hashed_password,
@@ -383,125 +396,115 @@ async def change_student_password(password_data: ChangePasswordRequest, current_
 
 @router.get("/", response_model=StudentPaginatedResponse)
 async def list_students(
-    skip: int = Query(0, description="Number of students to skip (for pagination)"),
-    limit: int = Query(10, description="Maximum number of students to return (for pagination)", le=100),
-    search_query: Optional[str] = Query(None, description="Search by first name, last name, email, or registration number"),
-    status: Optional[str] = Query(None, description="Filter by student status (e.g., 'active', 'inactive')"),
-    sort_by: str = Query("created_at", description="Field to sort students by (e.g., 'created_at', 'first_name', 'email')"),
-    sort_order: SortOrder = Query(SortOrder.DESC, description="Sort order: 'asc' for ascending, 'desc' for descending"), # Use the Enum
+    params: StudentFilterParamsRequest= Depends(),
     current_admin: dict = Depends(admin_required)
 ):
-    query_filter = {}
-    if search_query:
-        query_filter["$or"] = [
-            {"first_name": {"$regex": search_query, "$options": "i"}},
-            {"last_name": {"$regex": search_query, "$options": "i"}},
-            {"email": {"$regex": search_query, "$options": "i"}},
-            {"registration_no": {"$regex": search_query, "$options": "i"}},
-        ]
-    if status:
-        query_filter["status"] = status.lower()
-    total_count = await db["Students"].count_documents(query_filter)
+    # This check is redundant if `ge=1` is working, but serves as a manual safeguard
+    if params.limit < 1:
+        raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")
+    print(f"DEBUG: Received sort_by = '{params.sort_by}' (type: {type(params.sort_by)})")
+    print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
 
-    mongo_sort_order = ASCENDING if sort_order == SortOrder.ASC else DESCENDING
+    query_filter = {}
+    if params.registration_no:
+        query_filter["registration_no"] = params.registration_no
+    if params.email:
+        query_filter["email"] = {"$regex": params.email, "$options": "i"}
+    if params.first_name:
+        query_filter["first_name"] = {"$regex": params.first_name, "$options": "i"}
+    if params.last_name:
+        query_filter["last_name"] = {"$regex": params.last_name, "$options": "i"}
+    if params.status:
+        query_filter["status"] = params.status.lower() # Assumes status is stored in lowercase
+    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+    mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
     ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no"}
-    if sort_by not in ALLOWED_SORT_FIELDS:
+    if params.sort_by not in ALLOWED_SORT_FIELDS:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid sort_by field. Allowed fields are: {', '.join(sorted(ALLOWED_SORT_FIELDS))}"
         )
+    # Define collation for case-insensitive sorting on string fields
+    collation = Collation(locale='en', strength=2)
+    total_count = await db["Students"].count_documents(query_filter)
 
-    students_cursor = db["Students"].find(query_filter).skip(skip).limit(limit).sort(sort_by, mongo_sort_order)
-    students_data = []
-    async for student in students_cursor:
-        students_data.append(StudentListResponse(**student))
+    students_cursor = db["Students"].find(query_filter).collation(collation).sort(params.sort_by, mongo_sort_order).skip(params.skip).limit(params.limit)
+
+    students_data = [StudentListResponse(**student) async for student in students_cursor]
 
     log_event(
         "list students",
         user_email=current_admin["email"],
         user_id=current_admin["id"],
         user_role="admin",
-        details=f"fetched {len(students_data)} students (skip={skip}, limit={limit}, query='{search_query}', status='{status}')"
+        details=f"Fetched {len(students_data)} students. Filters: {query_filter}"
     )
 
     return StudentPaginatedResponse(
         data=students_data,
-        total_count=total_count,
-        page=skip // limit + 1, # Calculate current page number
-        limit=limit
+        total_count=  total_count,
+        page=params.skip // params.limit + 1,
+        limit=params.limit
     )
 
-
-
-
-
-'''
-@router.get("/", response_model=PublicProductListResponse)
-async def get_all_products(
-    search: str = Query(None),
-    category: str = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    sort_by: str = Query("name"),
-    sort_order: str = Query("asc")
+@router.delete("/delete/{registration_no}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_student(
+        registration_no: str= Path(..., description="Registration number"),
+        current_user: dict = Depends(get_current_user)
 ):
-    query = {}
+    try:
+        updated_student = await db.Students.find_one_and_update(
+            {"registration_no": registration_no, "status": "active"},
+            {"$set": {"status": "inactive"}}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    # print("student ", updated_student)
 
-    if search:
-        query["$text"] = {"$search": search}
+    if updated_student is None:
+        student_exists = await db.students.find_one({"registration_no": registration_no})
+        # print(student_exists)
+        if not student_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Student with registration number {registration_no} not found."
+            )
+    return
 
-    if category:
-        query["category"] = {"$regex": f"^{category}$", "$options": "i"}
+@router.patch("/update/{registration_no}")
+async def update_student_by_admin(
+        student_data: StudentProfileUpdateByAdmin,
+        registration_no: str = Path(..., description="The registration number of the student to update"),
+        current_user: dict = Depends(admin_required)
+):
+    update_data = student_data.model_dump(exclude_unset=True)
 
-    sort_field = sort_by if sort_by in ["name", "price", "created_at"] else "name"
-    order = ASCENDING if sort_order == "asc" else DESCENDING
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided.")
 
-    total = await db["Products"].count_documents(query)
+    try:
+        updated_student = await db.Students.find_one_and_update(
+            {"registration_no": registration_no, "status": "active"},
+            {"$set": update_data},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-    cursor = db["Products"].find(query).sort(sort_field, order).skip(skip).limit(limit)
-    products = [product_public_model(prod) async for prod in cursor]
+    # This handles the case where no student was found OR the student was inactive
+    if updated_student is None:
+        # Check if a student with that registration number even exists
+        student_exists = await db.Students.find_one({"registration_no": registration_no})
 
-    return {
-        "message": "Products fetched successfully",
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-        "products": products
-    }
+        if not student_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Student with registration number {registration_no} not found."
+            )
+        else:
+            # If the student exists but was not updated, it must be because they are inactive
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Student with registration number {registration_no} is inactive and cannot be updated."
+            )
 
-@router.delete("/{product_id}")
-async def delete_product(product_id: str, current_admin: dict = Depends(admin_required)):
-    if not ObjectId.is_valid(product_id):
-        raise HTTPException(status_code=400, detail="Invalid product ID")
-    result = await db["Products"].delete_one({"_id": ObjectId(product_id)})
-
-    deleted_by= current_admin["name"]
-    print(f"Product {product_id} deleted by {deleted_by}")
-
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return {"message": "Product deleted successfully"}
-
-
-@router.patch("/{product_id}/add-quantity",response_model=QtyUpdateResponse)
-async def add_product_quantity(product_id: str, update: QtyUpdateRequest, current_admin: dict = Depends(admin_required)):
-    product = await db["Products"].find_one({"_id": ObjectId(product_id)})
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    new_quantity = product.get("quantity", 0) + update.quantity
-    await db["Products"].update_one(
-        {"_id": ObjectId(product_id)},
-        {"$set": {"quantity": new_quantity, "qty_added_by": current_admin.get("name")}}
-    )
-
-    updated = await db["Products"].find_one({"_id": ObjectId(product_id)})
-    return {
-        "message": "Quantity updated successfully",
-        "quantity": new_quantity,
-        "qty_added_by": current_admin.get("name"),
-        "product": product_model(updated)
-    }
-
-'''
+    return updated_student

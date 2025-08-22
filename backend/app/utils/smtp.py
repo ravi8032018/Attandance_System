@@ -13,7 +13,7 @@ USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
 SUBJECT = os.getenv("SUBJECT")
 BODY = os.getenv("BODY")
-UNIQUE_STUDENT_ID = os.getenv("UNIQUE_STUDENT_ID")
+UNIQUE_ID = os.getenv("UNIQUE_ID")
 # print(BODY)
 
 # TO_EMAIL = os.getenv("TO_EMAIL")
@@ -52,7 +52,8 @@ def send_email_with_link(emails_file: str):
                     print(f"Skipping email: {email['email_to']}")
                     continue
                 # print("Email : ",email)
-                body = UNIQUE_STUDENT_ID + email["registration_no"] + "\n" + str(BODY) + "\n" + email["link"]
+                unique_part= "registration_no" if "registration_no" in email else 'faculty_id'
+                body = UNIQUE_ID + email[unique_part] + "\n" + str(BODY) + "\n" + email["link"]
 
                 msg = EmailMessage()
                 msg['Subject'] = SUBJECT

@@ -434,3 +434,1126 @@
   "user_role": "admin",
   "details": "\"fetched 4 students (skip=0, limit=10, query='None', status='None')\""
 }
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T13:51:20.528430Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T13:54:48.162103Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T13:56:35.849538Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:00:15.730294Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:03:29.778759Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:06:49.033153Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:07:39.453526Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:11:36.741365Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:11:50.650231Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:13:31.742942Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T14:23:08.964581Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:23:27.556065Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:23:56.261343Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:24:29.484377Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:28:56.270911Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:29:16.633997Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:29:48.304398Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:29:55.189339Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:30:36.378475Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:30:47.968206Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:31:38.288308Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'email': {'$regex': 'anshuman.singh@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:31:49.256338Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:32:09.023114Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': {'$regex': 'CSBSC2025009', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:32:49.530265Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'email': {'$regex': 'anshuman.singh@aus.ac.in\\u00aeistration_no=CSBSC2025009', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:33:11.282793Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'email': {'$regex': 'anshuman.singh@aus.ac.in\\u00aeistration_no=CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:33:33.216283Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': {'$regex': 'CSBSC2025009', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:33:43.155354Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:33:54.987869Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': {'$regex': 'CSBSC2025009', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:35:01.447139Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:35:15.700339Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'first_name': {'$regex': 'ravi', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:35:59.445142Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:36:18.450169Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 2 students. Filters: {'status': 'active'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:36:47.612864Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:38:05.894749Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:38:33.735499Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:39:01.827618Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:39:05.929487Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:40:10.805750Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:40:46.016616Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:48:42.176324Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:51:53.321734Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:52:30.148486Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T14:54:11.825863Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:54:22.416517Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:55:05.448730Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:55:29.015714Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:56:30.656026Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:56:42.813735Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 2 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T14:56:58.076106Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:00:19.533551Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:02:00.132478Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:02:18.357157Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': {'$regex': 'CSBSC2025003', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:04:42.550018Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:06:06.979936Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:06:18.480216Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:06:44.919892Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:07:25.114668Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 2 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:07:34.225579Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:07:46.860031Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:08:10.860870Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:08:46.656315Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:09:18.271154Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:09:53.842835Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:12:18.347996Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:18:15.072635Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:20:40.578958Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T15:28:23.677973Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:28:39.617844Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:45:01.084189Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T15:49:11.824370Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T16:03:26.509996Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:03:37.828374Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:04:41.713002Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:14:14.444370Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 3 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:18:12.865193Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:18:43.380880Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:18:59.343486Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T16:21:12.759795Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': 'CSBSC2025003', 'email': {'$regex': 'anshuman.singh@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T17:22:00.482252Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:26:08.201503Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025003'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:26:26.690770Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025002'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:26:34.052965Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'registration_no': 'CSBSC2025001'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:28:15.158408Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'email': {'$regex': 'ravi.sharma@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:29:43.369585Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'email': {'$regex': 'ravi.sharma@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:29:52.081298Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 0 students. Filters: {'email': {'$regex': 'ravi.sharma@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:31:09.091682Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:31:42.794646Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:32:00.752883Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'email': {'$regex': 'anshuman.singh@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:33:13.221333Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'email': {'$regex': 'anshuman.singh@aus.ac.in', '$options': 'i'}}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:33:35.048743Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 4 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:34:24.767645Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 2 students. Filters: {'status': 'active'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:35:20.314662Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'status': 'active'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T17:35:39.834683Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'status': 'active'}\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-19T18:21:41.356726Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-19T18:26:13.948827Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T18:26:29.079312Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025002'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T18:29:29.159809Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025002'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T18:31:09.009329Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025002'}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-08-19T18:31:13.816270Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 students. Filters: {'registration_no': 'CSBSC2025002'}\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-21T14:59:37.192691Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "create faculty",
+  "timestamp": "2025-08-21T15:17:12.157705Z",
+  "user_email": "anshuman.singh@aus.ac.in",
+  "user_id": "COMPUTERSCIENCEFAC01",
+  "user_role": "faculty",
+  "details": "\"created by string4\""
+}
+{
+  "action": "create faculty",
+  "timestamp": "2025-08-21T15:17:46.644195Z",
+  "user_email": "anshuman.singh@aus.ac.in",
+  "user_id": "CSFAC01",
+  "user_role": "faculty",
+  "details": "\"created by string4\""
+}
+{
+  "action": "fetch faculty profile",
+  "timestamp": "2025-08-21T15:26:28.819709Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Admin fetched faculty profile\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-21T16:39:54.352589Z",
+  "user_email": "user4@example.com",
+  "user_name": "string4",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": "admin"
+}
+{
+  "action": "create faculty",
+  "timestamp": "2025-08-21T16:40:21.900070Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "CSFAC01",
+  "user_role": "faculty",
+  "details": "\"created by string4\""
+}
+{
+  "action": "fetch faculty profile",
+  "timestamp": "2025-08-21T16:56:47.010099Z",
+  "user_email": "user4@example.com",
+  "user_id": "689590ccca4bbd9ec15d9470",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Admin fetched faculty profile\""
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-21T17:05:21.043329Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty Profile Update",
+  "timestamp": "2025-08-21T17:20:41.360382Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ]
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-21T17:22:41.532409Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "fetch faculty profile",
+  "timestamp": "2025-08-21T17:23:22.337217Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Admin fetched faculty profile\""
+}
+{
+  "action": "fetch faculty profile",
+  "timestamp": "2025-08-21T17:26:08.748852Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Admin fetched faculty profile\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-21T17:36:04.269278Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-21T17:36:53.420952Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "update own faculty profile",
+  "timestamp": "2025-08-21T17:47:51.074450Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"updated own profile fields: ['first_name', 'dob', 'gender', 'updated_at', 'updated_by']\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-21T17:59:24.512403Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student"
+}
+{
+  "action": "read own student profile",
+  "timestamp": "2025-08-21T17:59:41.815257Z",
+  "user_email": "ravisharma8032k23@gmail.com",
+  "user_id": "689a07dfdb5087690f8b1fca",
+  "user_role": "student",
+  "details": "\"accessed own profile\""
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-21T18:16:23.931577Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T05:01:06.574113Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T05:36:54.649477Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "update own faculty profile",
+  "timestamp": "2025-08-22T05:38:40.389930Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"updated own profile fields: ['first_name', 'dob', 'gender', 'office_location', 'updated_at', 'updated_by']\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-22T05:44:26.790349Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T05:44:46.905249Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 faculty. Filters: {}\""
+}
+{
+  "action": "read own faculty profile",
+  "timestamp": "2025-08-22T05:50:10.628691Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"accessed own faculty profile\""
+}
+{
+  "action": "read own faculty profile",
+  "timestamp": "2025-08-22T05:57:17.811935Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"accessed own faculty profile\""
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-22T06:14:07.422734Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "read own faculty profile",
+  "timestamp": "2025-08-22T06:14:26.105110Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"accessed own faculty profile\""
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-22T06:14:51.314738Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "update own faculty profile",
+  "timestamp": "2025-08-22T06:17:18.791188Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"updated own profile fields: ['dob', 'gender', 'office_location', 'updated_at', 'updated_by']\""
+}
+{
+  "action": "change faculty password",
+  "timestamp": "2025-08-22T06:21:59.697048Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "student",
+  "details": "\"successfully changed faculty password\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:25:26.757141Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin",
+  "details": "\"Fetched 1 faculty. Filters: {}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:19.296003Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'anshu', '$options': 'i'}, 'status': 'inactive'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:29.908079Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'ravi', '$options': 'i'}, 'status': 'inactive'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:37.604557Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'Ravi', '$options': 'i'}, 'status': 'inactive'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:41.624792Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 1 faculty. Filters: {'first_name': {'$regex': 'Ravi', '$options': 'i'}, 'status': 'active'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:48.832834Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 1 faculty. Filters: {'first_name': {'$regex': 'ravi', '$options': 'i'}, 'status': 'active'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:27:52.788804Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'raavi', '$options': 'i'}, 'status': 'active'}\""
+}
+{
+  "action": "list faculty",
+  "timestamp": "2025-08-22T06:28:04.882831Z",
+  "user_email": "user@example.com",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": [
+    "admin"
+  ],
+  "details": "\"Fetched 0 faculty. Filters: {'first_name': {'$regex': 'ravi', '$options': 'i'}, 'status': 'active'}\""
+}

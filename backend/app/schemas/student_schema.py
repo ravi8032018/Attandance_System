@@ -18,17 +18,6 @@ class StudentBase(BaseModel):
     registration_year: str= Field(...,example="2025")
     department: str= Field(...,example='CS')
 
-
-
-    # first_name: str = Field(..., example="Aryan")
-    # last_name: str = Field(..., example="Singh")
-    # contact_number: str = Field(None, example="9999988888")
-    # current_address: Optional[str] = Field(None)
-    # parent_name: Optional[str] = Field(None, example="Puneet Singh")
-    # parent_contact: Optional[str] = Field(None, example="+91-9876543210")
-    # photo_url: Optional[str] = Field(None, example="https://...")
-    # roll_number: Optional[str] = Field(None, example="21")
-
 class StudentCreateRequest(StudentBase):
     pass
 
@@ -78,11 +67,27 @@ class StudentSelfUpdateRequest(BaseModel):
     class Config:
         extra = "ignore"
 
+class StudentFilterParamsRequest(BaseModel):
+    skip: int = Field(0, ge=0, description="Number of students to skip")
+    limit: int = Field(10, ge=1, le=100, description="Max number of students per page")
+    registration_no: Optional[str] = Field(None, description="Filter by registration number")
+    email: Optional[str] = Field(None, description="Filter by email (partial match)")
+    first_name: Optional[str] = Field(None, description="Filter by first name (partial match)")
+    last_name: Optional[str] = Field(None, description="Filter by last name (partial match)")
+    status: Optional[str] = Field(None, description="Filter by status ('active', 'inactive')")
+    sort_by: str = Field("created_at", description="Field to sort by")
+    sort_order: SortOrder = Field(SortOrder.DESC, description="Sort order: 'asc' or 'desc'")
+
+class StudentProfileUpdateByAdmin(StudentBase, StudentProfileUpdateRequest):
+    pass
+
+
+
 
 
 # --------------- Public Responses (Outgoing Data for all, including student portal) --------
 
-class StudentPublicResponse(BaseModel):
+class StudentAdminResponse(BaseModel):
     id: str
     enrollment_no: str
     semester:Optional[str]
@@ -93,17 +98,14 @@ class StudentPublicResponse(BaseModel):
     contact_number: Optional[str]
     email: Optional[EmailStr]
     batch_name: Optional[str]
+    status: Optional[str]
     photo_url: Optional[str]
-
-class PublicStudentListResponse(BaseModel):
-    message: str
-    total: int
-    skip: int
-    limit: int
-    students: List[StudentPublicResponse]
 
 class StudentBulkCreateResponse(BaseModel):
     message: Optional[str]
+
+
+
 
 
 
@@ -121,7 +123,6 @@ class UpdateResponse(BaseModel):
     student: StudentResponse
 
 class StudentFullProfileResponse(BaseModel):
-    _id: str
     registration_no: str = Field(..., description="Unique registration number for the student")
     email: EmailStr = Field(..., description="Student's email address")
     first_name: Optional[str] = None
@@ -159,7 +160,7 @@ class StudentListResponse(BaseModel):
     roll_number: Optional[str] = None
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
         json_encoders = {
             ObjectId: str,
             datetime: lambda dt: dt.isoformat()

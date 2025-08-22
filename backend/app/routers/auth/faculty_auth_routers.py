@@ -110,7 +110,7 @@ async def faculty_login(faculty: FacultySignInRequest):
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 
-    log_event("Faculty login", user_email=existing_faculty["email"], user_name=existing_faculty["name"], user_id=str(existing_faculty["_id"]), user_role="faculty")
+    log_event("Faculty login", user_email=existing_faculty["email"], user_name=existing_faculty["name"] if 'name' in existing_faculty else None, user_id=str(existing_faculty["_id"]), user_role="faculty")
 
     return resp
 

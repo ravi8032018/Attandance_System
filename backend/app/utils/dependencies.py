@@ -25,10 +25,7 @@ async def get_current_user(request: Request):
         detail="Invalid or expired token.",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
-    # 1. Try reading the token from the HTTP-only cookie
     token = request.cookies.get("access_token")
-
     # 2. If not in cookie, look for Authorization header (for tools like Postman)
     if not token and "authorization" in request.headers:
         auth_header = request.headers["authorization"]
@@ -42,6 +39,7 @@ async def get_current_user(request: Request):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         token_role: str = payload.get("token_role")  # ← This must match what you encode
+
 
         if not user_id or not token_role:
             raise credentials_exception
@@ -58,7 +56,7 @@ async def get_current_user(request: Request):
 
         return {
             "id": str(user["_id"]),
-            "name": user.get("name"),
+            "name": user.get("first_name"),
             "email": user.get("email"),
             "role": user.get("role", []),     # actual roles in DB
             "token_role": token_role          # role from token
