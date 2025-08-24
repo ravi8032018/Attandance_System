@@ -1,6 +1,7 @@
 # In app/schemas/attendance_schema.py
 
 from pydantic import BaseModel, Field, validator
+from fastapi import Query
 from typing import List, Optional
 from datetime import datetime, date
 from enum import Enum
@@ -45,14 +46,18 @@ class MarkAttendanceByFacultyRequest(BaseModel):
     subject_code: str = Field(..., description="The unique code for the subject/paper.")
     subject_name: str = Field(..., description="The name for the subject/paper.")
     department: str
-    semester: str
+    sem: str
     class_date: datetime = Field(..., description="The date and time the class was held.")
     attendance_data: List[StudentAttendanceRecord] = Field(..., description="List of students and their attendance status.")
 
     @validator('subject_code', pre=True)
     def subject_code_validator(cls, value):
-        scode= value.replace(' ','').replace('-','').strip()
+        scode= value.replace(' ','').replace('-','').upper().strip()
         return scode
+    @validator('department', pre=True)
+    def dept_validator(cls, value):
+        dept= value.replace(' ','').replace('-','').upper().strip()
+        return dept
 
 class AttendanceReportFiltersRequest(BaseModel):
     # --- Primary Filters ---
@@ -67,7 +72,9 @@ class AttendanceReportFiltersRequest(BaseModel):
     end_date: Optional[date] = None
     group_by: Optional[str] = None  # e.g., "student", "subject"
 
-
+class SubjectAttendanceReportFilter(BaseModel):
+    registration_no: str
+    subject_code: str
 
 
 
@@ -77,7 +84,7 @@ class AttendanceReportFiltersRequest(BaseModel):
 class AttendanceSessionResponse(BaseModel):
     id: str = Field(..., alias="_id")
     session_id: str
-    f_id: str
+    faculty_id: str
     subject_code: str
     subject_name: str
     date: datetime

@@ -8,6 +8,8 @@ from backend.app.routers.faculty_routers import router as faculty_router
 from backend.app.routers.auth.reset_password import router as reset_password
 from backend.app.routers.attendance_routers import router as attendance_router
 from fastapi.middleware.cors import CORSMiddleware
+import json
+from backend.app.routers.curriculum.curriculum_routers import insert_curriculum_in_DB
 
 fastapi_app = FastAPI()
 
@@ -32,11 +34,11 @@ async def connect():
     await db["Students"].create_index("registration_no", unique=True)
 
     await db["Faculty"].create_index("email", unique=True)
-    # await db["Faculty"].create_index("faculty_id", unique=True)
+    await db["Faculty"].create_index("faculty_id", unique=True)
 
     await db["PasswordResetDB"].create_index("token", unique=True)
     await db["PasswordResetDB"].create_index("expires_at")
-
+    # await insert_curriculum_in_DB()     # only to insert into Curriculum DB
     print("✅ Connected to MongoDB successfully!")
 
 @fastapi_app.on_event("shutdown")

@@ -30,6 +30,13 @@ async def student_create(
 ):
     student_dict = student.dict()
     # print(student_dict)
+    # this gets the subjects from Curriculam DB
+    payload = {
+        'department': student_dict['department'],
+        'sem': student_dict['sem'],
+        'course': student_dict['course'],
+    }
+    subjects_doc = await db.Curriculum.find_one(payload)
 
     now = datetime.utcnow()
     unique_student_id = await generate_unique_student_id(student.course, student.registration_year, student.department)
@@ -43,12 +50,14 @@ async def student_create(
     student_dict['profile_complete']= False
     student_dict['updated_at']= datetime.utcnow()
     student_dict['updated_by']= None
+    student_dict['subjects']= subjects_doc['subjects']
 
+    print(subjects_doc)
     created=[]
     try:
         res = await db['Students'].insert_one(student_dict)
     except DuplicateKeyError:
-        print("Student already exists!")
+        raise HTTPException(status_code=400, detail="Student already exists")
 
     result = await db['Students'].find_one({"_id": res.inserted_id})
 
@@ -119,6 +128,14 @@ async def bulk_students_create(
     created = []
     created_mails=[]
 
+    # this gets the subjects from Curriculam DB
+    pay = {
+        'department': payload.department,
+        'sem': payload.sem,
+        'course': payload.course,
+    }
+    subjects_doc = await db.Curriculum.find_one(pay)
+
     for stu_mail in student_mails:
         # 1. Create the student doc with inactive status)
         unique_student_id = await generate_unique_student_id(payload.course,payload.registration_year,payload.department)
@@ -140,12 +157,14 @@ async def bulk_students_create(
             'profile_complete': False,
             'updated_at' : now,
             'updated_by' : None,
-            "password": hashed_default
+            "password": hashed_default,
+            "subjects": subjects_doc['subjects']
         }
+        # print(payload.department, payload.course, payload.registration_year, payload.sem, subjects_doc['subjects'])
         try:
             result = await db["Students"].insert_one(stu_doc)
         except DuplicateKeyError:
-            print("Duplicate key error: Student already exists!")
+            raise HTTPException(status_code=400, detail="Student already exists")
             # handle accordingly (skip, notify, etc.)
         except Exception as e:
             print("Other error:", e)

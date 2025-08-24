@@ -49,7 +49,7 @@ def send_email_with_link(emails_file: str):
 
             for email in emails:
                 if email["is_sent"] is True:
-                    print(f"Skipping email: {email['email_to']}")
+                    # print(f"Skipping email: {email['email_to']}")
                     continue
                 # print("Email : ",email)
                 unique_part= "registration_no" if "registration_no" in email else 'faculty_id'

@@ -17,6 +17,15 @@ class StudentBase(BaseModel):
     sem: str = Field(..., example="1")
     registration_year: str= Field(...,example="2025")
     department: str= Field(...,example='CS')
+    @validator('course', pre=True)
+    def course_validator(cls, value):
+        course= value.upper()
+        return course
+
+    @validator('department', pre=True)
+    def dept_validator(cls, value):
+        dept= value.upper()
+        return dept
 
 class StudentCreateRequest(StudentBase):
     pass
@@ -27,6 +36,16 @@ class StudentBulkCreateRequest(BaseModel):
     registration_year: str= Field(...,example="2025")
     department: str= Field(...,example='CS')
     student_emails: List[EmailStr]
+
+    @validator('course', pre=True)
+    def course_validator(cls, value):
+        course= value.upper()
+        return course
+
+    @validator('department', pre=True)
+    def dept_validator(cls, value):
+        dept= value.upper()
+        return dept
 
 class StudentProfileUpdateRequest(BaseModel):
     # All fields optional for PATCH/PUT

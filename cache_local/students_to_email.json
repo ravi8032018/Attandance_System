@@ -19,5 +19,110 @@
     "link": "http://localhost:8000/reset-password?token=DqAD6Z7dmm5B90_9d2vFdz9puBENXlCXMxYJ1M2rwG0",
     "created_at": "2025-08-15T17:53:14.389342",
     "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025006",
+    "link": "http://localhost:8000/reset-password?token=oAfvv-5sbQRN0CeNXPrQCZ4UsAWH7M1jjyKMsZeEOfs",
+    "created_at": "2025-08-22T17:12:21.301731",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025006",
+    "link": "http://localhost:8000/reset-password?token=6w658LuhtNbQa2MRSJtkWaBbwljWCc5UlLhjJXEDrPc",
+    "created_at": "2025-08-22T17:15:02.395798",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025006",
+    "link": "http://localhost:8000/reset-password?token=5nenvLL_8DB7hi3o34FIM1QtMayklZDeOVzBH_qT-aw",
+    "created_at": "2025-08-22T17:17:15.319818",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025006",
+    "link": "http://localhost:8000/reset-password?token=t4TDUt8tLKtzlR69BiaJNlO5DEJdO43EdmBD3vZ7UyU",
+    "created_at": "2025-08-22T17:18:59.966397",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025001",
+    "link": "http://localhost:8000/reset-password?token=bNLUIcBDgzd8-sb5gRm8ifhOVnL8PffdgDWQDpBNIoQ",
+    "created_at": "2025-08-22T17:21:58.281298",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025001",
+    "link": "http://localhost:8000/reset-password?token=O5yWjgLPBatq6nbHVZSdxTW3KY6cA8xc_A4KAa7J9xg",
+    "created_at": "2025-08-22T17:25:57.939859",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravi.sharma@aus.ac.in",
+    "registration_no": "CSBSC2025001",
+    "link": "http://localhost:8000/reset-password?token=dNB2QY7KaXzRBjNPqJPogbTKSpj1b3Iq-qDPYfL21w4",
+    "created_at": "2025-08-22T17:30:17.969627",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravisharma8032k23@gmail.com",
+    "registration_no": "CSBSC2025003",
+    "link": "http://localhost:8000/reset-password?token=LoFcnTWcMfp5iw2U_yH_LXn-R_QyRbsdmavEAaqt8VA",
+    "created_at": "2025-08-23T07:25:51.673299",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravisharma8032k23@gmail.com",
+    "registration_no": "CSBSC2025002",
+    "link": "http://localhost:8000/reset-password?token=lzqS0AxgOl-ZRe7af_m96-Zde1bpHsGu4I628MS2sfM",
+    "created_at": "2025-08-23T07:30:06.820591",
+    "is_sent": true
+  },
+  {
+    "email_to": "ravisharma8032021@gmail.com",
+    "registration_no": "CSBSC2025003",
+    "link": "http://localhost:8000/reset-password?token=nZ7ZkUyd_52wIojh0C0rgKE-w48iOWuOGl-sx65u-n4",
+    "created_at": "2025-08-23T07:31:22.700110",
+    "is_sent": true
+  },
+  {
+    "email_to": "asingh1905@gmail.com",
+    "registration_no": "CSBSC2025004",
+    "link": "http://localhost:8000/reset-password?token=P2GcdcyTVn40B8xbp1Bd8ts2BnmjDvwUsy-vSErfGyw",
+    "created_at": "2025-08-23T07:32:02.309972",
+    "is_sent": true
+  },
+  {
+    "email_to": "prince.kumar.kushwaha@aus.ac.in",
+    "registration_no": "CSBSC2025004",
+    "link": "http://localhost:8000/reset-password?token=Y9UolsdiHzi-gMCC_TxZTx2qvOktuTS3VWt38WOvh74",
+    "created_at": "2025-08-23T15:22:54.396423",
+    "is_sent": true
+  },
+  {
+    "email_to": "prince.kumar.kushwaha@aus.ac.in",
+    "registration_no": "CSBSC2025003",
+    "link": "http://localhost:8000/reset-password?token=nHDEXuQz0koRmcS6bz9IX_GxrcGTCVJbRReIybWmc1w",
+    "created_at": "2025-08-23T15:30:53.822366",
+    "is_sent": true
+  },
+  {
+    "email_to": "asingh1905@gmail.com",
+    "registration_no": "CSBSC2025004",
+    "link": "http://localhost:8000/reset-password?token=E4xKB6z_r_g48RMoI3BY3Gdstys-Im2Eh2MueO5bUJM",
+    "created_at": "2025-08-23T15:32:50.750950",
+    "is_sent": true
+  },
+  {
+    "email_to": "105singhanshuman@gmail.com",
+    "registration_no": "CSBSC2025006",
+    "link": "http://localhost:8000/reset-password?token=PN0jCsZzFxMyB9GztWO8xdCWuxtu6vIx687RufC6FSU",
+    "created_at": "2025-08-23T15:33:25.415909",
+    "is_sent": true
   }
 ]

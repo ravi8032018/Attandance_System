@@ -5,7 +5,7 @@ from secrets import token_urlsafe
 from datetime import timedelta, datetime, time
 
 from backend.app.schemas.attendence_schema import AttendanceSessionResponse, MarkAttendanceByFacultyRequest, \
-    StudentSubjectReportResponse, AttendanceReportFilters, GroupByOption, SortOrder
+    StudentSubjectReportResponse, AttendanceReportFilters, GroupByOption, SortOrder, SubjectAttendanceReportFilter
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
@@ -29,22 +29,52 @@ async def mark_attendance_by_faculty(
     # print("\ncurrent user : ",current_user)
     f_id = current_user.get("id")
     # print(faculty_id)
+    request_data= request_data.dict()
 
+    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data['attendance_data']]
+    # print("\n--> present_student_ids: ", present_student_ids)
 
-    session_id = f"{request_data.subject_code}-{request_data.class_date.strftime('%Y%m%d%H%M')}"
+    absent_students_cursor = db.Students.find(
+        {
+            "status": "active",
+            "sem": request_data["sem"],
+            "subjects": {
+                "$elemMatch": {
+                    "subject_code": request_data["subject_code"]
+                }
+            },
+            # --- The crucial part: find students NOT IN the present list ---
+            "registration_no": {"$nin": present_student_ids}
+        },
+        # --- Projection: We only need their registration numbers ---
+        {"registration_no": 1, "_id": 0}
+    )
+    # absent_students =
+    # print("--> absent student records: ", absent_students_cursor)
+
+    final_attendance_records= [record for record in request_data["attendance_data"]]
+    # print("\n--> final_attendance_records: ", final_attendance_records)
+
+    async for student in absent_students_cursor:
+        final_attendance_records.append({
+            "registration_no": student["registration_no"],
+            "status": "absent"
+        })
+    # print("\n--> Final attendance list: ",final_attendance_records)
+    session_id = f"{request_data['subject_code']}-{request_data['class_date'].strftime('%Y%m%d%H%M')}"
     # print("--> Session id:", session_id)
 
     new_session_doc = {
         "session_id": session_id,
         "faculty_id": f_id,
-        "subject_code": request_data.subject_code,
-        "subject_name": request_data.subject_name,
-        "department": request_data.department,
-        "semester": request_data.semester,
-        "date": request_data.class_date,
+        "subject_code": request_data["subject_code"],
+        "subject_name": request_data["subject_name"],
+        "department": request_data["department"],
+        "semester": request_data["sem"],
+        "date": request_data["class_date"],
         "status": "marked_by_faculty",  # Direct marking by faculty
         "submission_details": None,  # No CR submission in this case
-        "attendance_records": [record.dict() for record in request_data.attendance_data],
+        "attendance_records": final_attendance_records,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -71,24 +101,24 @@ async def mark_attendance_by_faculty(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve the attendance session."
         )
-
+    # print("\n created_seesion: ",created_session)
     created_session["_id"] = str(created_session["_id"])
     # print("--> \nCreated session", created_session)
     return AttendanceSessionResponse(**created_session)
 
 @router.get("/report/student-subject", response_model=StudentSubjectReportResponse)
 async def get_student_subject_attendance_report(
-        registration_no: str = Query(..., description="The registration number of the student."),
-        subject_code: str = Query(..., description="The unique code for the subject."),
+        payload: SubjectAttendanceReportFilter = Depends(),
         current_user: dict = Depends(get_current_user)
 ):
+    # print("\n--> payload: ",payload)
     pipeline = [
         # 1. Match only the relevant class sessions
         {
             "$match": {
-                "subject_code": subject_code,
+                "subject_code": payload.subject_code,
                 "status": {"$in": ["approved", "marked_by_faculty"]},
-                "attendance_records.registration_no": registration_no
+                "attendance_records.registration_no": payload.registration_no
             }
         },
         # 2. Unwind the attendance_records array to process each student record individually
@@ -98,7 +128,7 @@ async def get_student_subject_attendance_report(
         # 3. Match again to isolate the records for the specific student we want
         {
             "$match": {
-                "attendance_records.registration_no": registration_no
+                "attendance_records.registration_no": payload.registration_no
             }
         },
         # 4. Group the records to count statuses and collect daily records
@@ -140,16 +170,16 @@ async def get_student_subject_attendance_report(
         )
 
     report_data = result[0]
-    print("--> Report data", report_data)
+    # print("--> Report data", report_data)
 
-    total_classes = report_data["present_count"] + report_data["absent_count"]
-    print("--> Total classes", total_classes)
+    total_classes = report_data["present_count"] + report_data["absent_count"] + report_data["excused_count"]
+    # print("--> Total classes", total_classes)
 
     attendance_percentage = 0.0
     if total_classes > 0:
         # Standard attendance percentage calculation (present / total)
         attendance_percentage = round((report_data["present_count"] / total_classes) * 100, 2)
-        print("--> Attendance percentage", attendance_percentage)
+        # print("--> Attendance percentage", attendance_percentage)
 
     return StudentSubjectReportResponse(
         total_classes=total_classes,
