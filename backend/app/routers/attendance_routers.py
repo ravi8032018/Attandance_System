@@ -208,8 +208,8 @@ async def initiate_attendance_for_cr(
             "role": "cr"
         })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
-    print("--> cr_user: {}".format(cr_user))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"CR for sem {initiate_request.sem} not found.") from e
+    # print("--> cr_user: {}".format(cr_user))
     cr_user_id = str(cr_user["_id"])
 
     # 1. Generate a secure token and set expiration
@@ -256,20 +256,21 @@ async def submit_attendance_by_cr(
         request_data: MarkAttendanceByCRRequest,
         current_user: dict = Depends(cr_required)
 ):
+    # print(current_user)
     now = datetime.utcnow()
-    # print("--> request_data: {}".format(request_data))
+    # print("\n--> request_data: {}".format(request_data))
     # 1. Find and validate the token from the database
     try:
         token_doc = await db.AttendanceTokens.find_one({
-            "token": request_data.attendance_token,
-            "status": "pending"
+            "status": "pending",
+            "attendance_token": str(request_data.attendance_token),
         })
     except Exception as e:
-        raise HTTPException(status_code=400,detail="Invalid or expired session, or attendance already marked") from e
+        raise HTTPException(status_code=400,detail="111111Invalid or expired session, or attendance already marked") from e
+    # print("--> token_doc: {}".format(token_doc))
     if not token_doc:
-        raise HTTPException(status_code=404, detail="Invalid or expired session, or attendance already marked.")
+        raise HTTPException(status_code=404, detail="22222Invalid or expired session, or attendance already marked.")
 
-    print("--> token_doc: {}".format(token_doc))
     if token_doc['cr_id'] != current_user['id']:
         raise HTTPException(status_code=403, detail="an unexpected error occurred")
 
@@ -283,8 +284,10 @@ async def submit_attendance_by_cr(
     # --- 2. If token is valid, proceed with your existing "auto-absent" logic ---
     # ... (Your logic to find absentees and create final_attendance_records) ...
     # ... (Your logic to create the new_session_doc with status 'pending_approval') ...
+    request_data= request_data.dict()
+
     present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data['attendance_data']]
-    print("\n--> present_student_ids: ", present_student_ids)
+    # print("\n--> present_student_ids: ", present_student_ids)
 
     absent_students_cursor = db.Students.find(
         {
@@ -305,7 +308,7 @@ async def submit_attendance_by_cr(
     # absent_students =
     # print("--> absent student records: ", absent_students_cursor)
 
-    final_attendance_records = [record for record in request_data["attendance_data"]]
+    final_attendance_records = [record for record in request_data['attendance_data']]
     # print("\n--> final_attendance_records: ", final_attendance_records)
 
     async for student in absent_students_cursor:
@@ -313,11 +316,18 @@ async def submit_attendance_by_cr(
             "registration_no": student["registration_no"],
             "status": "absent"
         })
-    print("\n--> Final attendance list: ",final_attendance_records)
-    session_id = f"{token_doc['subject_code']}-{request_data['class_date'].strftime('%Y%m%d%H%M')}"
+    # print("\n--> Final attendance list: ",final_attendance_records)
+    session_id = f"{token_doc['subject_code']}-{token_doc['date'].strftime('%Y%m%d%H%M')}"
     # print("--> Session id:", session_id)
 
     new_session_doc = {
+        "session_id": session_id,
+        "faculty_id": token_doc['faculty_id'],
+        "subject_code": token_doc["subject_code"],
+        "subject_name": token_doc["subject_name"],
+        "department": token_doc["department"],
+        "semester": token_doc["sem"],
+        "date": token_doc["date"],
         "status": "pending",  # waiting for approval by faculty
         "submission_details": "marked_by_cr",  # CR submission
         "attendance_records": final_attendance_records,
