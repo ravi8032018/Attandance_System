@@ -1827,3 +1827,54 @@
   "user_id": "68a74bf1526940942db8b431",
   "user_role": "faculty"
 }
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-24T17:33:18.365503Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-24T18:08:06.712751Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Faculty login",
+  "timestamp": "2025-08-24T18:55:41.458553Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "Admin login",
+  "timestamp": "2025-08-24T19:01:54.059149Z",
+  "user_email": "user@example.com",
+  "user_name": "string",
+  "user_id": "689592d3d275c02c35dbb99f",
+  "user_role": "admin"
+}
+{
+  "action": "create student",
+  "timestamp": "2025-08-24T19:03:38.748859Z",
+  "user_email": "student11@email.com",
+  "user_id": "CSBSC2025007",
+  "user_role": "admin",
+  "details": "\"created by None\""
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-24T19:09:02.130324Z",
+  "user_email": "student11@email.com",
+  "user_id": "68ab6205e4fa38078b9044d8",
+  "user_role": "student"
+}
+{
+  "action": "Student login",
+  "timestamp": "2025-08-24T19:16:47.561236Z",
+  "user_email": "student11@email.com",
+  "user_id": "68ab6205e4fa38078b9044d8",
+  "user_role": "student"
+}

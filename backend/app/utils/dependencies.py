@@ -48,7 +48,7 @@ async def get_current_user(request: Request):
             user = await db.Admins.find_one({"_id": ObjectId(user_id)})
         if token_role == 'faculty' or token_role == 'hod':
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
-        if token_role == 'student':
+        if token_role == 'student' or token_role == 'cr':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
         # print("--> user: ", user)
         if not user:
@@ -96,15 +96,10 @@ async def admin_required(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def hod_required(current_user: dict = Depends(get_current_user)):
-    if current_user["token_role"] != 'hod':
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="HOD privileges required.",
-        )
     if 'hod' not in current_user["role"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Token role does not match roles assigned to user.",
+            detail="HOD privileges required.",
         )
     return current_user
 
@@ -121,3 +116,10 @@ async def student_required(current_user: dict = Depends(get_current_user)):
         )
     return current_user
 
+async def cr_required(current_user: dict = Depends(get_current_user)):
+    if 'cr' not in current_user["role"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CR privileges required.",
+        )
+    return current_user

@@ -1,16 +1,21 @@
 # In app/routers/attendance_router.py
+import secrets
+from time import process_time_ns
+
 from fastapi import APIRouter, HTTPException, Path, Depends, status, Query
 from backend.app.db import db
 from secrets import token_urlsafe
 from datetime import timedelta, datetime, time
 
 from backend.app.schemas.attendence_schema import AttendanceSessionResponse, MarkAttendanceByFacultyRequest, \
-    StudentSubjectReportResponse, AttendanceReportFilters, GroupByOption, SortOrder, SubjectAttendanceReportFilter
+    StudentSubjectReportResponse, AttendanceReportFilters, GroupByOption, SortOrder, SubjectAttendanceReportFilter, \
+    MarkAttendanceByCRRequest, FacultyToCRRequest
+from backend.app.utils.connection_manager import manager
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
-from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required
+from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
 from backend.app.utils.unique_faculty_id import generate_unique_faculty_id
 from backend.my_logger import log_event
 from bson import ObjectId
@@ -38,6 +43,7 @@ async def mark_attendance_by_faculty(
         {
             "status": "active",
             "sem": request_data["sem"],
+            "department": request_data["department"],
             "subjects": {
                 "$elemMatch": {
                     "subject_code": request_data["subject_code"]
@@ -190,7 +196,157 @@ async def get_student_subject_attendance_report(
         daily_records=report_data["daily_records"]
     )
 
+@router.post("/initiate-for-cr", status_code=status.HTTP_201_CREATED)
+async def initiate_attendance_for_cr(
+        initiate_request: FacultyToCRRequest,
+        current_user: dict = Depends(faculty_required)
+):
+    try:
+        cr_user = await db.Students.find_one({
+            "department": initiate_request.department,
+            "sem": initiate_request.sem,
+            "role": "cr"
+        })
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
+    print("--> cr_user: {}".format(cr_user))
+    cr_user_id = str(cr_user["_id"])
 
+    # 1. Generate a secure token and set expiration
+    token = secrets.token_hex(20)
+    now = datetime.utcnow()
+    expires = now + timedelta(minutes=15)
+
+    # 2. Save the token to the database
+    token_doc = {
+        "attendance_token": token,
+        "subject_code": initiate_request.subject_code,
+        "subject_name": initiate_request.subject_name,
+        "department": initiate_request.department,
+        "sem": initiate_request.sem,
+        "faculty_id": current_user["id"],
+        "cr_id": cr_user_id,
+        "cr_registration_no": cr_user["registration_no"],
+        "date": initiate_request.class_date,
+        "created_at": now,
+        "expires_at": expires,
+        "status": "pending"
+    }
+    try:
+        await db.AttendanceTokens.insert_one(token_doc)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Cannot request CR at the moment, Please try again") from e
+    # 3. Construct the "Magic Link"
+    base_url = "http://localhost:8000/cr/take-attendance"
+    magic_link = f"{base_url}?token={token}"
+
+    # 4. Send the real-time notification to the CR via WebSocket
+    notification_message = {
+        "type": "attendance_request",
+        "title": f"Attendance Request for {initiate_request.subject_code}",
+        "body": "Please take attendance. You have 15 minutes.",
+        "link": magic_link
+    }
+    await manager.send_personal_message(notification_message, cr_user_id)
+
+    return {"message": "Attendance initiated. CR has been notified."}
+
+@router.post("/submit-by-cr", status_code=status.HTTP_202_ACCEPTED)
+async def submit_attendance_by_cr(
+        request_data: MarkAttendanceByCRRequest,
+        current_user: dict = Depends(cr_required)
+):
+    now = datetime.utcnow()
+    # print("--> request_data: {}".format(request_data))
+    # 1. Find and validate the token from the database
+    try:
+        token_doc = await db.AttendanceTokens.find_one({
+            "token": request_data.attendance_token,
+            "status": "pending"
+        })
+    except Exception as e:
+        raise HTTPException(status_code=400,detail="Invalid or expired session, or attendance already marked") from e
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Invalid or expired session, or attendance already marked.")
+
+    print("--> token_doc: {}".format(token_doc))
+    if token_doc['cr_id'] != current_user['id']:
+        raise HTTPException(status_code=403, detail="an unexpected error occurred")
+
+    if now > token_doc["expires_at"]:
+        await db.AttendanceTokens.update_one(
+            {"_id": token_doc["_id"]},
+            {"$set": {"status": "expired"}}
+        )
+        raise HTTPException(status_code=410, detail="This attendance link has expired.")
+
+    # --- 2. If token is valid, proceed with your existing "auto-absent" logic ---
+    # ... (Your logic to find absentees and create final_attendance_records) ...
+    # ... (Your logic to create the new_session_doc with status 'pending_approval') ...
+    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data['attendance_data']]
+    print("\n--> present_student_ids: ", present_student_ids)
+
+    absent_students_cursor = db.Students.find(
+        {
+            "status": "active",
+            "sem": token_doc["sem"],
+            "department": token_doc["department"],
+            "subjects": {
+                "$elemMatch": {
+                    "subject_code": token_doc["subject_code"]
+                }
+            },
+            # --- The crucial part: find students NOT IN the present list ---
+            "registration_no": {"$nin": present_student_ids}
+        },
+        # --- Projection: We only need their registration numbers ---
+        {"registration_no": 1, "_id": 0}
+    )
+    # absent_students =
+    # print("--> absent student records: ", absent_students_cursor)
+
+    final_attendance_records = [record for record in request_data["attendance_data"]]
+    # print("\n--> final_attendance_records: ", final_attendance_records)
+
+    async for student in absent_students_cursor:
+        final_attendance_records.append({
+            "registration_no": student["registration_no"],
+            "status": "absent"
+        })
+    print("\n--> Final attendance list: ",final_attendance_records)
+    session_id = f"{token_doc['subject_code']}-{request_data['class_date'].strftime('%Y%m%d%H%M')}"
+    # print("--> Session id:", session_id)
+
+    new_session_doc = {
+        "status": "pending",  # waiting for approval by faculty
+        "submission_details": "marked_by_cr",  # CR submission
+        "attendance_records": final_attendance_records,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    # 3. Check for duplicates to prevent marking the same session twice
+    existing_session = await db.Attendance.find_one({"session_id": session_id})
+    if existing_session:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Attendance for this session ({session_id}) has already been marked."
+        )
+    # 4. Insert the new session document into the database
+    try:
+        result = await db.Attendance.insert_one(new_session_doc)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to mark attendance, Please try again") from e
+    # --- 3. CRUCIAL: Deactivate the token so it cannot be used again ---
+    try:
+        await db.AttendanceTokens.update_one(
+            {"_id": token_doc["_id"]},
+            {"$set": {"status": "used"}}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400,detail="Attendance marked succesfully.") from e
+
+    return {'message': 'Attendance marked succesfully.'}  # Placeholder
 
 
 

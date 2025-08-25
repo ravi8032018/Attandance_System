@@ -527,3 +527,5 @@ async def update_student_by_admin(
             )
 
     return updated_student
+
+

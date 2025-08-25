@@ -7,6 +7,7 @@ from backend.app.routers.student_routers import router as student_router
 from backend.app.routers.faculty_routers import router as faculty_router
 from backend.app.routers.auth.reset_password import router as reset_password
 from backend.app.routers.attendance_routers import router as attendance_router
+from backend.app.routers.notification_router import router as notification_router
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from backend.app.routers.curriculum.curriculum_routers import insert_curriculum_in_DB
@@ -54,3 +55,5 @@ fastapi_app.include_router(student_router)
 fastapi_app.include_router(reset_password)
 fastapi_app.include_router(faculty_router)
 fastapi_app.include_router(attendance_router)
+fastapi_app.include_router(notification_router)
+
