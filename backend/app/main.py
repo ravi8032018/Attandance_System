@@ -30,15 +30,44 @@ async def root():
 async def connect():
     # Create unique index for emails (only runs at startup!)
     await db['Admins'].create_index("email", unique=True)
+    await db['Admins'].create_index("role")
 
     await db["Students"].create_index("email", unique=True)
     await db["Students"].create_index("registration_no", unique=True)
+    await db["Students"].create_index("course")
+    await db["Students"].create_index("sem")
+    await db["Students"].create_index("department")
+    await db["Students"].create_index("status")
+    await db["Students"].create_index("role")
+    await db["Students"].create_index("subjects")
 
     await db["Faculty"].create_index("email", unique=True)
     await db["Faculty"].create_index("faculty_id", unique=True)
+    await db["Faculty"].create_index("department")
+    await db["Faculty"].create_index("status")
+    await db["Faculty"].create_index("role")
 
     await db["PasswordResetDB"].create_index("token", unique=True)
     await db["PasswordResetDB"].create_index("expires_at")
+    await db["PasswordResetDB"].create_index("email")
+    await db["PasswordResetDB"].create_index("is_used")
+    await db["PasswordResetDB"].create_index("expires_at")
+    await db["PasswordResetDB"].create_index("created_at")
+
+    await db["Attendance"].create_index("session_id", unique=True)
+    await db["Attendance"].create_index("faculty_id")
+    await db["Attendance"].create_index("status")
+
+    await db["AttendanceTokens"].create_index("attendance_token", unique=True)
+    await db["AttendanceTokens"].create_index("subject_code")
+    await db["AttendanceTokens"].create_index("sem")
+    await db["AttendanceTokens"].create_index("department")
+
+    await db["Curriculum"].create_index("_id")
+    await db["Curriculum"].create_index("department")
+    await db["Curriculum"].create_index("sem")
+    await db["Curriculum"].create_index("course")
+
     # await insert_curriculum_in_DB()     # only to insert into Curriculum DB
     print("✅ Connected to MongoDB successfully!")
 

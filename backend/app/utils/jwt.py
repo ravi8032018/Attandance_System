@@ -34,5 +34,5 @@ def verify_token(token: str):
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-print(create_access_token({"sub": '68ab6205e4fa38078b9044d8', "token_role": "student"}))
+# print(create_access_token({"sub": '68ab6205e4fa38078b9044d8', "token_role": "student"}))
 

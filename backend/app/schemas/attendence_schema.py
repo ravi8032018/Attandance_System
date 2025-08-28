@@ -2,9 +2,12 @@
 
 from pydantic import BaseModel, Field, validator
 from fastapi import Query
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime, date
 from enum import Enum
+import pendulum
+
+Period = Literal["today", "yesterday", "week", "month", "sem"]
 
 class AttendanceStatus(str, Enum):
     PRESENT = "present"
@@ -97,6 +100,20 @@ class FacultyToCRRequest(BaseModel):
         dept= value.replace(' ','').replace('-','').upper().strip()
         return dept
 
+class ApprovalUpdateRequest(BaseModel):
+    status: str = Field(..., description="approved | rejected")
+    reason: str | None = Field(None, description="Optional reason for rejection/notes")
+
+class StudentStatusUpdateRequest(BaseModel):
+    status: str = Field(..., description="present | absent | leave")
+
+class ApprovalsFilterParamsRequest(BaseModel):
+    page: int = Field(1, ge=1, description="Page number"),
+    size: int = Field(10, ge=1, le=100, description="Page size"),
+    subject_code: Optional[str] = Field(None),
+    period: Optional[str] = Field("month"),
+    sort: str = Field("-created_at", description="Sort field, prefix with '-' for desc"),
+
 
 
 
@@ -151,5 +168,39 @@ class AttendanceReportFilters(BaseModel):
     page: int = Field(1, ge=1, description="Page number for pagination.")
     limit: int = Field(10, ge=1, le=100, description="Number of items per page.")
 
+
+
+# ---------------------------- functions ----------------------------
+def compute_period_range(
+    period: Optional[Period],
+    tz: str = "Asia/Kolkata",
+    now: Optional[pendulum.DateTime] = None,
+):
+    if not period:
+        return None, None
+    now = now or pendulum.now(tz)
+
+    if period == "today":
+        start = now.start_of("day")
+        end = now.end_of("day").add(microseconds=1)
+    elif period == "yesterday":
+        y = now.subtract(days=1)
+        start = y.start_of("day")
+        end = y.end_of("day").add(microseconds=1)
+    elif period == "week":
+        # ISO week: Monday start, Sunday end in Pendulum
+        start = now.start_of("week")
+        end = now.end_of("week").add(microseconds=1)
+    elif period == "month":
+        start = now.start_of("month")
+        end = now.end_of("month").add(microseconds=1)
+    elif period == "sem":
+        # example: last 6 months window
+        start = now.start_of("day").subtract(months=6)
+        end = now.end_of("day").add(microseconds=1)
+    else:
+        return None, None
+    # Convert to UTC-aware datetimes for MongoDB
+    return start.in_timezone("UTC"), end.in_timezone("UTC")
 
 

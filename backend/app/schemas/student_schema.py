@@ -1,14 +1,19 @@
 from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from bson import ObjectId
 from enum import Enum
+import hashlib, secrets, os, json
+
+from backend.app.utils.smtp import send_email_with_link
 
 ALLOWED_GENDERS = {"male", "female", "other"}
 
 class SortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"
+
+
 # --------------- Requests (Incoming Data) ----------------
 
 class StudentBase(BaseModel):
@@ -99,8 +104,6 @@ class StudentFilterParamsRequest(BaseModel):
 
 class StudentProfileUpdateByAdmin(StudentBase, StudentProfileUpdateRequest):
     pass
-
-
 
 
 

@@ -11,8 +11,8 @@ SMTP_SERVER = os.getenv("SMTP_SERVER")  # Replace with your SMTP server
 SMTP_PORT = os.getenv("SMTP_PORT", 587)
 USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
-SUBJECT = os.getenv("SUBJECT")
-BODY = os.getenv("BODY")
+SUBJECT1 = os.getenv("SUBJECT1")
+BODY1 = os.getenv("BODY1")
 UNIQUE_ID = os.getenv("UNIQUE_ID")
 # print(BODY)
 
@@ -24,11 +24,10 @@ UNIQUE_ID = os.getenv("UNIQUE_ID")
 # print(PASSWORD)
 # print(TO_EMAIL)
 
-def send_email_with_link(emails_file: str):
+def send_email_with_link(emails_file: str, subject: str= SUBJECT1, Body: str= BODY1, OTP: str= None):
     with open(emails_file, "r+") as f:
         emails = json.load(f)
         # print(emails)
-
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
             print("\n \t Batch Processing---> ")
             now1 = time.time()
@@ -52,11 +51,13 @@ def send_email_with_link(emails_file: str):
                     # print(f"Skipping email: {email['email_to']}")
                     continue
                 # print("Email : ",email)
-                unique_part= "registration_no" if "registration_no" in email else 'faculty_id'
-                body = UNIQUE_ID + email[unique_part] + "\n" + str(BODY) + "\n" + email["link"]
-
+                if OTP is None:
+                    unique_part= "registration_no" if "registration_no" in email else 'faculty_id'
+                    body = UNIQUE_ID + email[unique_part] + "\n" + str(Body) + "\n" + email["link"]
+                else:
+                    body= Body + "\n\n\n\t\t\t" + OTP
                 msg = EmailMessage()
-                msg['Subject'] = SUBJECT
+                msg['Subject'] = subject
                 msg['From'] = USER
                 msg['To'] = email["email_to"]
                 msg.set_content(body)

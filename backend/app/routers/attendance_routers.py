@@ -1,28 +1,18 @@
 # In app/routers/attendance_router.py
 import secrets
 from time import process_time_ns
-
+from typing import Optional, Annotated
 from fastapi import APIRouter, HTTPException, Path, Depends, status, Query
 from backend.app.db import db
-from secrets import token_urlsafe
 from datetime import timedelta, datetime, time
-
 from backend.app.schemas.attendence_schema import AttendanceSessionResponse, MarkAttendanceByFacultyRequest, \
-    StudentSubjectReportResponse, AttendanceReportFilters, GroupByOption, SortOrder, SubjectAttendanceReportFilter, \
-    MarkAttendanceByCRRequest, FacultyToCRRequest
+    StudentSubjectReportResponse, SubjectAttendanceReportFilter, \
+    MarkAttendanceByCRRequest, FacultyToCRRequest, ApprovalUpdateRequest, StudentStatusUpdateRequest, \
+    ApprovalsFilterParamsRequest, compute_period_range
 from backend.app.utils.connection_manager import manager
-from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
-from backend.app.utils.hash import hash_password, varify_hash
-from backend.app.utils.placeholder_cleaner import clean_placeholders
-from backend.app.utils.smtp import send_email_with_link
+from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
-from backend.app.utils.unique_faculty_id import generate_unique_faculty_id
-from backend.my_logger import log_event
-from bson import ObjectId
-from pymongo.errors import DuplicateKeyError
-from pymongo import ASCENDING, DESCENDING
-from pymongo.collation import Collation
-import json, os
+
 
 router = APIRouter(prefix="/attendance", tags=["Attendance Management"])
 
@@ -348,6 +338,13 @@ async def submit_attendance_by_cr(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Failed to mark attendance, Please try again") from e
     # --- 3. CRUCIAL: Deactivate the token so it cannot be used again ---
+    notification_message = {
+        "body": f"Attendance for sem {token_doc['sem']}, subject {token_doc['subject_code']}",
+        "title": f"Attendance marked by CR {current_user['id']}",
+        "type": "Attendance marked by CR. Requesting approval.",
+    }
+    await manager.send_personal_message(notification_message, token_doc['faculty_id'])
+
     try:
         await db.AttendanceTokens.update_one(
             {"_id": token_doc["_id"]},
@@ -357,6 +354,224 @@ async def submit_attendance_by_cr(
         raise HTTPException(status_code=400,detail="Attendance marked succesfully.") from e
 
     return {'message': 'Attendance marked succesfully.'}  # Placeholder
+
+@router.get("/approvals/{session_id}", status_code=status.HTTP_200_OK)
+async def get_session_for_approval(
+    session_id: str,
+    current_user: dict = Depends(faculty_required),
+):
+    # print("--> session_id: ",session_id)
+    # print("--> current_user_id: ",session_id)
+    # Fetch session owned by this faculty
+    session = await db.Attendance.find_one({
+        "session_id": session_id,
+        "faculty_id": current_user["id"]
+    })
+    print("--> session: ",session)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found or not accessible.")
+    # Ensure it's CR-submitted and pending
+    if session.get("status") == "marked_by_faculty":
+        raise HTTPException(status_code=409, detail="Session is already approval, since it was marked by faculty.")
+    if session.get("status") != "pending":
+            raise HTTPException(status_code=409, detail="Session is not pending for approval.")
+
+    # Compute aggregates (or read from session if you already store them)
+    records = session.get("attendance_records", [])
+    aggregates = _compute_aggregates(records)
+
+    seen = set()
+    duplicates = []
+    for r in records:
+        rn = r.get("registration_no")
+        if rn in seen:
+            duplicates.append(rn)
+        else:
+            seen.add(rn)
+
+    return {
+        "session_id": session["session_id"],
+        "subject_code": session.get("subject_code"),
+        "subject_name": session.get("subject_name"),
+        "department": session.get("department"),
+        "sem": session.get("semester"),
+        "date": session.get("date"),
+        "status": session.get("status"),
+        "submitted_by": session.get("submission_details"),
+        "attendance_records": records,
+        "aggregates": aggregates,
+        "anomalies": {
+            "duplicates": list(set(duplicates))
+        }
+    }
+
+@router.patch("/approvals/{session_id}", status_code=status.HTTP_200_OK)
+async def finalize_session_approval(
+    session_id: str,
+    body: ApprovalUpdateRequest,
+    current_user: dict = Depends(faculty_required),
+):
+    target = body.status.strip().lower()
+    if target not in {"approved", "rejected"}:
+        raise HTTPException(status_code=422, detail="Status must be updated to 'approved' or 'rejected'.")
+    # 1) Ensure session is pending and owned by faculty
+    filter_query = {
+        "session_id": session_id,
+        "faculty_id": current_user["id"],
+        "status": "pending"
+    }
+    update_doc = {
+        "$set": {
+            "status": target,
+            "decision_reason": body.reason,
+            "approved_by": current_user["id"],
+            "approved_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        },
+        "$push": {
+            "audit": {
+                "action": "finalize_session",
+                "to_status": target,
+                "reason": body.reason,
+                "by": current_user["id"],
+                "at": datetime.utcnow()
+            }
+        }
+    }
+
+    updated = await db.Attendance.find_one_and_update(
+        filter_query,
+        update_doc,
+        return_document=True
+    )
+    if not updated:
+        raise HTTPException(status_code=409, detail="Session not pending or not accessible.")
+
+    return {
+        "message": f"Session {session_id} marked as {target}.",
+        "session_id": session_id,
+        "status": target
+    }
+
+@router.patch("/approvals/{session_id}/students/{registration_no}", status_code=status.HTTP_200_OK)
+async def update_student_status_in_pending_session(
+    session_id: str,
+    registration_no: str,
+    body: StudentStatusUpdateRequest,
+    current_user: dict = Depends(faculty_required),
+):
+    new_status = body.status.strip().lower()
+    if new_status not in {"present", "absent", "leave"}:
+        raise HTTPException(status_code=422, detail="Status must be 'present', 'absent', or 'leave'.")
+    # 1) Ensure session is pending and owned by faculty
+    session = await db.Attendance.find_one({
+        "session_id": session_id,
+        "faculty_id": current_user["id"],
+        "status": "pending"
+    })
+    if not session:
+        raise HTTPException(status_code=409, detail="Session not pending or not accessible.")
+    # update specific student
+    result = await db.Attendance.update_one(
+        {
+            "session_id": session_id,
+            "faculty_id": current_user["id"],
+            "status": "pending",
+            "attendance_records.registration_no": registration_no
+        },
+        {
+            "$set": {
+                "attendance_records.$.status": new_status,
+                "updated_at": datetime.utcnow()
+            },
+            "$push": {
+                "audit": {
+                    "action": "update_student_status",
+                    "registration_no": registration_no,
+                    "to_status": new_status,
+                    "by": current_user["id"],
+                    "at": datetime.utcnow()
+                }
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Student not found in session records.")
+    # 3) Return refreshed aggregates
+    refreshed = await db.Attendance.find_one({
+        "session_id": session_id,
+        "faculty_id": current_user["id"]
+    }, {"attendance_records": 1, "_id": 0})
+
+    aggregates = _compute_aggregates(refreshed.get("attendance_records", []))
+    return {
+        "message": "Student status updated.",
+        "registration_no": registration_no,
+        "new_status": new_status,
+        "aggregates": aggregates
+    }
+
+@router.get("/approvals", status_code=status.HTTP_200_OK)
+async def list_approvals(
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, le=100, description="Page size"),
+    subject_code: Optional[str] = Query(None),
+    period: Optional[str] = Query("month"),
+    status: Optional[str] = Query("pending"),
+    sort: str = Query("-created_at", description="Sort field, prefix with '-' for desc"),
+    current_user: dict = Depends(faculty_required),
+):
+    status = status.strip().lower()
+    status_filters= ["pending", "marked_by_faculty"]
+
+    filters = {
+        "faculty_id": current_user["id"],
+    }
+    if status == "marked_by_cr":
+        filters["submission_details"] = status
+    if status in status_filters:
+        filters["status"]= status
+    if subject_code:
+        filters["subject_code"] = subject_code
+    if period:
+        start_utc, end_utc = compute_period_range(period, tz="Asia/Kolkata")
+        filters["date"] = {"$gte": start_utc, "$lt": end_utc}  # half-open [start, end) [2]
+
+    # print("--> filters:", filters)
+    sort_field = sort.lstrip("-")
+    sort_dir = -1 if sort.startswith("-") else 1
+    # print("--> filters:", filters)
+
+    total = await db.Attendance.count_documents(filters)
+
+    cursor = (
+        db.Attendance.find(filters, {
+            "_id": 0,
+            "session_id": 1,
+            "subject_code": 1,
+            "subject_name": 1,
+            "department": 1,
+            "semester": 1,
+            "date": 1,
+            "status": 1,
+            "submission_details": 1,
+        })
+        .sort(sort_field, sort_dir)
+        .skip((page - 1) * size)
+        .limit(size)
+    )
+
+    items = [doc async for doc in cursor]
+    aggregates= _compute_aggregates(items)
+
+    return {
+        "page": page,
+        "size": size,
+        "total": total,
+        "items": items,
+        "aggregates": aggregates,
+    }
 
 
 
