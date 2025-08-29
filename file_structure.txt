@@ -56,3 +56,57 @@ student-attendance-system/
     │ └── public/
     ├── README.md
     └── .env
+
+
+# -----------------------new frontend --------------------
+frontend/
+├─ app/
+│  ├─ layout.jsx                  // Root layout: html/body wrapper, imports globals, Providers [web:14]
+│  ├─ page.jsx                    // Landing or redirect-to-/login page [web:14]
+│  ├─ (public)/
+│  │  └─ login/
+│  │     └─ page.jsx              // Login page (was “page.jsx # Landing/login”) [web:14]
+│  ├─ admin/
+│  │  ├─ layout.jsx               // Admin-only guard/layout (sidebar, navbar) [web:14]
+│  │  ├─ dashboard/
+│  │  │  ├─ page.jsx              // Admin dashboard [web:14]
+│  │  │  ├─ loading.jsx           // Optional skeleton during load [web:14]
+│  │  │  └─ error.jsx             // Optional error boundary UI [web:14]
+│  │  ├─ students/
+│  │  │  └─ page.jsx              // Admin students list/manage [web:14]
+│  │  ├─ attendance/
+│  │  │  └─ page.jsx              // Admin attendance table/history [web:14]
+│  │  ├─ teachers/
+│  │  │  └─ page.jsx              // Admin teachers manage [web:14]
+│  │  ├─ batches/
+│  │  │  └─ page.jsx              // Admin batches manage [web:14]
+│  │  └─ reports/
+│  │     └─ page.jsx              // Admin reports/analytics [web:14]
+│  ├─ teacher/
+│  │  ├─ layout.jsx               // Teacher-only guard/layout [web:14]
+│  │  ├─ dashboard/
+│  │  │  └─ page.jsx              // Teacher dashboard [web:14]
+│  │  ├─ attendance/
+│  │  │  └─ page.jsx              // Teacher mark/view attendance [web:14]
+│  │  └─ students/
+│  │     └─ page.jsx              // Teacher students in assigned batches [web:14]
+│  ├─ providers.jsx               // React Query + Sonner providers (client) [web:14]
+│  └─ globals.css                 // Tailwind + CSS variables [web:14]
+├─ components/
+│  ├─ Sidebar.jsx                 // Shared sidebar (used by admin/teacher layouts)
+│  ├─ Navbar.jsx                  // Top navigation
+│  ├─ StudentTable.jsx            // Table (can wrap TanStack Table patterns)
+│  ├─ AttendanceTable.jsx         // Attendance list/history
+│  ├─ AttendanceMark.jsx          // Bulk marking widget
+│  ├─ StatsCard.jsx               // KPI card
+│  ├─ PieChartBlock.jsx           // Charts wrapper (Recharts/Tremor)
+│  └─ ...                         // Other shared UI blocks
+├─ utils/
+│  └─ api.js                      // Axios instance or fetch wrappers; base URL and interceptors
+├─ public/                        // Static assets
+├─ styles/
+│  ├─ globals.css                 // If not under app/globals.css, keep one source of truth
+│  └─ tailwind.config.js          // Tailwind config
+├─ next.config.js                 // Next configuration (JS-friendly)
+├─ package.json
+└─ .env
