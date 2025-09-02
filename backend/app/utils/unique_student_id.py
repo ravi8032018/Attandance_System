@@ -9,7 +9,7 @@ DEPARTMENT = os.getenv("DEPARTMENT")
 ADDMISSION_YEAR = os.getenv("ADDMISSION_YEAR")
 
 async def generate_unique_student_id(course, registration_year, department, prev_reg_no=None):
-    # print("Starting the generation of unique student id")
+    # print("Starting the generation of unique Student id")
 
     cursor = db["Students"].find(
         {"department": department, "course": course, "registration_year": registration_year}
@@ -22,7 +22,7 @@ async def generate_unique_student_id(course, registration_year, department, prev
         max_serial= int(result_list[0]["registration_no"][-3:])
         # print("max_serial: ",max_serial)
         new_serial_no = max_serial + 1
-    else:        # Start at 1 for first student
+    else:        # Start at 1 for first Student
         new_serial_no = 1
 
     # Format serial (e.g. '001', '002'), then build full ID

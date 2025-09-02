@@ -14,7 +14,7 @@ class Teacher(BaseModel):
     phone: Optional[str] = Field(None)
     subjects: list[str]                                 # List of Subject._id
     batches: list[str]
-    roles: List[str] = ['hod', 'teacher', 'student', 'admin']
+    roles: List[str] = ['hod', 'teacher', 'Student', 'admin']
     photo_url: Optional[str]
     active: bool = True
     created_at: datetime

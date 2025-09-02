@@ -8,7 +8,7 @@ load_dotenv(dotenv_path= "../../.env")
 DEPARTMENT = os.getenv("DEPARTMENT")
 
 async def generate_unique_faculty_id(department=DEPARTMENT):
-    # print("Starting the generation of unique student id")
+    # print("Starting the generation of unique Student id")
 
     cursor = db["Faculty"].find(
         {"department": department}).sort("faculty_id", DESCENDING).limit(1)
@@ -19,7 +19,7 @@ async def generate_unique_faculty_id(department=DEPARTMENT):
         max_serial= int(result_list[0]["faculty_id"][-2:])
         # print("max_serial: ",max_serial)
         new_serial_no = max_serial + 1
-    else:        # Start at 1 for first student
+    else:        # Start at 1 for first Student
         new_serial_no = 1
 
     # Format serial (e.g. '001', '002'), then build full ID

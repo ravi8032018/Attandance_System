@@ -46,7 +46,7 @@ async def mark_attendance_by_faculty(
         {"registration_no": 1, "_id": 0}
     )
     # absent_students =
-    # print("--> absent student records: ", absent_students_cursor)
+    # print("--> absent Student records: ", absent_students_cursor)
 
     final_attendance_records= [record for record in request_data["attendance_data"]]
     # print("\n--> final_attendance_records: ", final_attendance_records)
@@ -108,6 +108,15 @@ async def get_student_subject_attendance_report(
         current_user: dict = Depends(get_current_user)
 ):
     # print("\n--> payload: ",payload)
+    if "admin" not in current_user["role"]:
+        if "faculty" not in current_user.get("role", []):
+            try:
+                student_cursor= db.Students.find_one({"_id": current_user["id"]})
+                if not student_cursor:
+                        raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
+            except Exception as e:
+                raise HTTPException(status_code=403,detail="Access denied.")
+
     pipeline = [
         # 1. Match only the relevant class sessions
         {
@@ -117,11 +126,11 @@ async def get_student_subject_attendance_report(
                 "attendance_records.registration_no": payload.registration_no
             }
         },
-        # 2. Unwind the attendance_records array to process each student record individually
+        # 2. Unwind the attendance_records array to process each Student record individually
         {
             "$unwind": "$attendance_records"
         },
-        # 3. Match again to isolate the records for the specific student we want
+        # 3. Match again to isolate the records for the specific Student we want
         {
             "$match": {
                 "attendance_records.registration_no": payload.registration_no
@@ -296,7 +305,7 @@ async def submit_attendance_by_cr(
         {"registration_no": 1, "_id": 0}
     )
     # absent_students =
-    # print("--> absent student records: ", absent_students_cursor)
+    # print("--> absent Student records: ", absent_students_cursor)
 
     final_attendance_records = [record for record in request_data['attendance_data']]
     # print("\n--> final_attendance_records: ", final_attendance_records)
@@ -454,7 +463,7 @@ async def finalize_session_approval(
     }
 
 @router.patch("/approvals/{session_id}/students/{registration_no}", status_code=status.HTTP_200_OK)
-async def update_student_status_in_pending_session(
+async def update_attendance_session_in_pending(
     session_id: str,
     registration_no: str,
     body: StudentStatusUpdateRequest,
@@ -471,7 +480,7 @@ async def update_student_status_in_pending_session(
     })
     if not session:
         raise HTTPException(status_code=409, detail="Session not pending or not accessible.")
-    # update specific student
+    # update specific Student
     result = await db.Attendance.update_one(
         {
             "session_id": session_id,

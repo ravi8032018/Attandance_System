@@ -17,7 +17,7 @@ class SortOrder(str, Enum):
 # --------------- Requests (Incoming Data) ----------------
 
 class StudentBase(BaseModel):
-    email: EmailStr = Field(..., example="student@email.com")
+    email: EmailStr = Field(..., example="Student@email.com")
     course: str = Field(..., example="BSc")
     sem: str = Field(..., example="1")
     registration_year: str= Field(...,example="2025")
@@ -107,7 +107,7 @@ class StudentProfileUpdateByAdmin(StudentBase, StudentProfileUpdateRequest):
 
 
 
-# --------------- Public Responses (Outgoing Data for all, including student portal) --------
+# --------------- Public Responses (Outgoing Data for all, including Student portal) --------
 
 class StudentAdminResponse(BaseModel):
     id: str
@@ -145,7 +145,7 @@ class UpdateResponse(BaseModel):
     student: StudentResponse
 
 class StudentFullProfileResponse(BaseModel):
-    registration_no: str = Field(..., description="Unique registration number for the student")
+    registration_no: str = Field(..., description="Unique registration number for the Student")
     email: EmailStr = Field(..., description="Student's email address")
     first_name: Optional[str] = None
     last_name: Optional[str] = None

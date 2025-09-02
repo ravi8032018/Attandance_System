@@ -15,7 +15,7 @@ class AttendanceStatus(str, Enum):
     LEAVE = "leave"
 
 class GroupByOption(str, Enum):
-    STUDENT = "student"
+    STUDENT = "Student"
     SUBJECT = "subject"
     FACULTY = "faculty"
     DATE = "date"
@@ -40,8 +40,8 @@ class SubjectCode(str, Enum):
     CSDSC104 = "CSDSC104"
 
 class StudentAttendanceRecord(BaseModel):
-    registration_no: str = Field(..., description="The unique registration number of the student.")
-    status: AttendanceStatus = Field(..., description="Attendance status of the student.")
+    registration_no: str = Field(..., description="The unique registration number of the Student.")
+    status: AttendanceStatus = Field(..., description="Attendance status of the Student.")
 
 
 # ------------------------- Request --------------------------
@@ -74,7 +74,7 @@ class AttendanceReportFiltersRequest(BaseModel):
     # --- Date & Grouping ---
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    group_by: Optional[str] = None  # e.g., "student", "subject"
+    group_by: Optional[str] = None  # e.g., "Student", "subject"
 
 class SubjectAttendanceReportFilter(BaseModel):
     registration_no: str
@@ -149,7 +149,7 @@ class StudentSubjectReportResponse(BaseModel):
 # ------------------------- filters ------------------------
 class AttendanceReportFilters(BaseModel):
     # --- Who and What ---
-    student_id: Optional[str] = Field(None, description="Filter by a single student's registration_no.")
+    student_id: Optional[str] = Field(None, description="Filter by a single Student's registration_no.")
     subject_id: Optional[str] = Field(None, description="Filter by a single subject's code.")
     faculty_id: Optional[str] = Field(None, description="Filter by the faculty member who took the class.")
     department: Optional[str] = Field(None, description="Filter by academic department.")
@@ -160,7 +160,7 @@ class AttendanceReportFilters(BaseModel):
     end_date: Optional[date] = Field(None, description="Report end date (inclusive).")
 
     # --- How to Shape the Data ---
-    group_by: Optional[GroupByOption] = Field(None, description="Group results by student, subject, faculty, or date.")
+    group_by: Optional[GroupByOption] = Field(None, description="Group results by Student, subject, faculty, or date.")
     sort_by: Optional[str] = Field("date", description="Field to sort the results by.")
     sort_order: SortOrder = Field(SortOrder.DESC, description="Sort order: 'asc' or 'desc'.")
 

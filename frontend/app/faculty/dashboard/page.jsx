@@ -1,4 +1,4 @@
-// app/dashboard/faculty/page.jsx
+// app/faculty/dashboard/page.jsx
 import {SemesterPie} from '@/src/_hooks/charts'
 
 export default function FacultyDashboardPage() {

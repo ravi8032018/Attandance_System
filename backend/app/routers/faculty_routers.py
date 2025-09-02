@@ -54,7 +54,7 @@ async def faculty_create(
         "expires_at": expiry,
         "is_used": False
     })
-    # 3. Email the student with a link to set/reset password
+    # 3. Email the Student with a link to set/reset password
     link = f"http://localhost:8000/reset-fac-password?token={token}"
 
     email_data = {
@@ -92,7 +92,7 @@ async def faculty_create(
 @router.get("/faculty-id/{faculty_id}", response_model=FacultyAdminResponse)
 async def get_faculty_by_id(
         faculty_id: str = Path(..., description="The unique ID of the faculty member"),
-        current_user: dict = Depends(admin_required)  # Can be admin or faculty
+        current_user: dict = Depends(admin_required)
 ):
     faculty = await db['Faculty'].find_one({"faculty_id": faculty_id})
     if not faculty:
@@ -110,7 +110,7 @@ async def complete_profile(
 ):
     now= datetime.utcnow()
     faculty = await db["Faculty"].find_one({"faculty_id": faculty_id, "status": "active"})
-    # print("\nstudent", student)
+    # print("\nStudent", Student)
 
     if not faculty:
         raise HTTPException(status_code=404, detail="Faculty not found")
@@ -119,7 +119,7 @@ async def complete_profile(
     if "admin" not in current_user["role"]:
         if ObjectId(current_user["id"]) != faculty.get("_id"):
             # print(ObjectId(current_user["id"]))
-            # print(student.get("_id"))
+            # print(Student.get("_id"))
             raise HTTPException(status_code=403, detail="Not authorized to update this profile")
 
     clean_update= clean_placeholders(update_data.dict())
@@ -168,7 +168,7 @@ async def get_current_faculty_profile(
         print("faculty--> ", faculty)
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find faculty.") from e
-    # print("Student--> ", student)
+    # print("Student--> ", Student)
 
     if not faculty:
         raise HTTPException(status_code=404, detail="Faculty profile not found.")
@@ -192,7 +192,7 @@ async def update_current_student_profile(
 
     try:
         faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id), "status": "active"})
-        # print("current student--> ", student)
+        # print("current Student--> ", Student)
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find faculty.") from e
 
@@ -229,8 +229,9 @@ async def change_faculty_password(
         password_data: ChangePasswordRequest,
         current_user: dict = Depends(get_current_user)
 ):
-    if "faculty" not in current_user.get("role", []):
-        raise HTTPException(status_code=403, detail="Access denied. Only faculties can change their own password.")
+    if "admin" not in current_user["role"]:
+        if "faculty" not in current_user.get("role", []):
+            raise HTTPException(status_code=403, detail="Access denied. Only admins and faculties can change their own password.")
 
     faculty_id = current_user.get("id")
     if not faculty_id:

@@ -30,11 +30,11 @@ class FacultySignInRequest(BaseModel):
 
 class StudentSignUpRequest(BaseModel):
     name: str= Field(..., example="string")
-    email: EmailStr = Field(..., example="student@example.com")
+    email: EmailStr = Field(..., example="Student@example.com")
     password: str = Field(..., example="sstring")
 
 class StudentSignInRequest(BaseModel):
-    email: EmailStr = Field(..., example="student@example.com")
+    email: EmailStr = Field(..., example="Student@example.com")
     password: str = Field(..., example="sstring")
 
 class SetPasswordRequest(BaseModel):

@@ -1,4 +1,4 @@
-// app/(public)/login/page.jsx
+// app/(public)/Login/page.jsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import {PasswordStrengthBar} from "@/src/_hooks/password_strength"
 export default function LoginPage() {
   const router = useRouter();
   const [values, setValues] = useState({
-    role: "student",       // 'student' | 'faculty' | 'admin'
+    role: "Student",       // 'Student' | 'faculty' | 'admin'
     email: "",
     password: "",
   });
@@ -28,7 +28,7 @@ export default function LoginPage() {
           ? "/admin/signin"
           : values.role === ("faculty")
           ? "/faculty/signin"
-          : "/student/signin";
+          : "/Student/signin";
 
       const res = await fetch(base + endpoint, {
         method: "POST",
@@ -61,9 +61,9 @@ export default function LoginPage() {
       // if (typeof data?.message === "string") alert(data.message);
 
       // Route by token role
-      if (token_role === "admin") router.replace("/dashboard/admin");
-      else if (token_role === "faculty" || token_role === "hod") router.replace("/dashboard/faculty");
-      else router.replace("/dashboard/student");
+      if (token_role === "admin") router.replace("/admin/dashboard");
+      else if (token_role === "faculty" || token_role === "hod") router.replace("/faculty/dashboard");
+      else router.replace("/student/dashboard");
     } catch (e) {
       setErr(e?.message || "Network error");
     } finally {

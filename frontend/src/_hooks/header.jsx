@@ -16,7 +16,7 @@ export default function Header() {
   }, []);
 
   const hideDept = useScrolled({ hideAt:15, showAt:6, debounceMs: 100})
-  console.log(hideDept);
+  // console.log(hideDept);
   return (
     <header
       className={`overflow-hidden ease-in-out sticky top-0 z-0 bg-white border-transparent transition-all ${
@@ -56,7 +56,7 @@ export default function Header() {
           </Link>
 
           {/* Nav */}
-          <nav className={`overflow-hidden ease-in-out flex font mono transition-all duration-300 ${hideDept ? "text-2xs gap-2" : "text-md gap-4"}`}>
+          <nav className={`overflow-hidden ease-in-out flex font-mono transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-4" : "text-md gap-10"}`}>
             <Link href="/research" className="text-slate-700 hover:text-slate-900 ">
               Research
             </Link>

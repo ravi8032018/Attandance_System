@@ -22,7 +22,7 @@ async def faculty_signup(faculty: FacultySignUpRequest):
         if has_role(existing_faculty, 'faculty'):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User already registered as faculty, Please login."
+                detail="User already registered as faculty, Please Login."
             )
         # Add admin role to existing user
         await db.Faculty.update_one(
@@ -46,7 +46,7 @@ async def faculty_signup(faculty: FacultySignUpRequest):
             result =  await db.Faculty.insert_one(new_faculty)
             user_id = str(result.inserted_id)
         except pymongo.errors.DuplicateKeyError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User already registered as faculty, Please login.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User already registered as faculty, Please Login.")
 
     # Generate token with admin role
     token_data = {"sub": user_id, "token_role": "faculty"}
@@ -95,14 +95,14 @@ async def faculty_login(faculty: FacultySignInRequest):
     resp = JSONResponse(
         status_code=200,
         content={
-            "message": "Faculty login successful",
+            "message": "Faculty Login successful",
             "access_token": access_token,
             "token_type": "bearer",
             "token_role": "faculty"
         }
     )
     resp.set_cookie(
-        key="dept_faculty_token",
+        key="dept_user_token",
         value=access_token,
         httponly=True,
         secure=False,  # Set True if using HTTPS in production
@@ -110,7 +110,7 @@ async def faculty_login(faculty: FacultySignInRequest):
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 
-    log_event("Faculty login", user_email=existing_faculty["email"], user_name=existing_faculty["name"] if 'name' in existing_faculty else None, user_id=str(existing_faculty["_id"]), user_role="faculty")
+    log_event("Faculty Login", user_email=existing_faculty["email"], user_name=existing_faculty["name"] if 'name' in existing_faculty else None, user_id=str(existing_faculty["_id"]), user_role="faculty")
 
     return resp
 

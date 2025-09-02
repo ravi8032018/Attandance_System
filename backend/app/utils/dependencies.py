@@ -20,20 +20,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/signin")
 # ✅ Core extractor of user info
 # -----------------------------
 async def get_current_user(request: Request):
+    # print("--> testing frontend : entering get_current_user")
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token.",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("dept_user_token")
+    # print("--> token : {}".format(token))
     # 2. If not in cookie, look for Authorization header (for tools like Postman)
     if not token and "authorization" in request.headers:
         auth_header = request.headers["authorization"]
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
 
+    # print("--> testing frontend : just before not token")
     if not token:
         raise credentials_exception
+    # print("--> testing frontend : just after not token")
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -48,7 +52,7 @@ async def get_current_user(request: Request):
             user = await db.Admins.find_one({"_id": ObjectId(user_id)})
         if token_role == 'faculty' or token_role == 'hod':
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
-        if token_role == 'student' or token_role == 'cr':
+        if token_role == 'Student' or token_role == 'cr':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
         # print("--> user: ", user)
         if not user:
@@ -104,12 +108,12 @@ async def hod_required(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def student_required(current_user: dict = Depends(get_current_user)):
-    if current_user["token_role"] != "student":
+    if current_user["token_role"] != "Student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Student privileges required.",
         )
-    if 'student' not in current_user["role"]:
+    if 'Student' not in current_user["role"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Token role does not match roles assigned to user.",

@@ -17,7 +17,7 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
     token_doc = await db["PasswordResetDB"].find_one({
         "token": token,
         "type": "set_password",
-        "user_type": "student",
+        "user_type": "Student",
         "expires_at": {"$gt": now},
         "is_used": False
     })

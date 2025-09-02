@@ -22,7 +22,7 @@ async def admin_signup(admin: UserSignUpRequest):
         if has_role(existing_user, 'admin'):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User already registered as admin, Please login."
+                detail="User already registered as admin, Please Login."
             )
         # Add admin role to existing user
         await db.Admins.update_one(
@@ -43,7 +43,7 @@ async def admin_signup(admin: UserSignUpRequest):
             result =  await db.Faculty.insert_one(new_admin)
             user_id = str(result.inserted_id)
         except pymongo.errors.DuplicateKeyError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User already registered as faculty, Please login.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User already registered as faculty, Please Login.")
 
     # Generate token with admin role
     token_data = {"sub": user_id, "token_role": "admin"}
@@ -90,14 +90,14 @@ async def admin_login(admin: UserSignInRequest):
     resp = JSONResponse(
         status_code=200,
         content={
-            "message": "Admin login successful",
+            "message": "Admin Login successful",
             "access_token": access_token,
             "token_type": "bearer",
             "token_role": "admin"
         }
     )
     resp.set_cookie(
-        key="dept_admin_token",
+        key="dept_user_token",
         value=access_token,
         httponly=True,
         secure=False,  # Set True if using HTTPS in production
@@ -105,7 +105,7 @@ async def admin_login(admin: UserSignInRequest):
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 
-    log_event("Admin login", user_email=existing_user["email"], user_name=existing_user["name"], user_id=str(existing_user["_id"]), user_role="admin")
+    log_event("Admin Login", user_email=existing_user["email"], user_name=existing_user["name"], user_id=str(existing_user["_id"]), user_role="admin")
 
     return resp
 
