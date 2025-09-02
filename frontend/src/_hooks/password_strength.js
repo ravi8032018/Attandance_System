@@ -35,7 +35,7 @@ export function PasswordStrengthBar({ password }) {
           />
         ))}
       </div>
-      <p className="mt-1 text-xs text-slate-500">{labels[score]}</p>
+      <p className="mt-1 text-xs text-white">{labels[score]}</p>
     </div>
   );
 }

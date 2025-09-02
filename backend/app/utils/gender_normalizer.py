@@ -1,4 +1,4 @@
-# backend/app/utils/gender_normalizer.py
+# backend/app/_hooks/gender_normalizer.py
 from typing import Optional
 
 ALLOWED_GENDERS = {"male", "female", "other"}

@@ -1,4 +1,4 @@
-# backend/app/utils/auth_helpers.py
+# backend/app/_hooks/auth_helpers.py
 import os, json
 import smtplib
 from email.message import EmailMessage
