@@ -4,7 +4,7 @@ import SideNav from "./sidenav";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden">
+    <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden ">
       {/* Sidebar */}
 
       <aside className="md:w-64 flex-none border-b md:border-b-0 md:border-r">

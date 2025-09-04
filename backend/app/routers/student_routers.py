@@ -225,9 +225,9 @@ async def get_student_by_id(
         registration_no: str = Path(..., title="registration-no"),
         current_user: dict = Depends(get_current_user)
 ):
-    print("--> testing frontend: ", current_user)
+    # print("--> testing frontend: ", current_user)
     student = await db['Students'].find_one({"registration_no": registration_no})
-    print("--> testing frontend: ", student)
+    # print("--> testing frontend: ", student)
     # print("Student", Student)
 
     if "admin" not in current_user["role"]:
@@ -243,10 +243,12 @@ async def get_student_by_id(
 
     return StudentAdminResponse(
         id=str(student["_id"]),
-        enrollment_no=student["registration_no"],
+        registration_no=student["registration_no"],
         semester=student["sem"],
         first_name=student["first_name"] if "first_name" in student else None,
         last_name=student["last_name"] if "last_name" in student else None,
+        course=student['course'],
+        sem=student['sem'],
         dob=student.get("date_of_birth") if "dob" in student else None,
         gender=student.get("gender") if "gender" in student else None,
         contact_number=student.get("contact_number") if "contact_number" in student else None,
@@ -262,8 +264,9 @@ async def complete_profile(
         update_data: StudentProfileUpdateRequest,
         current_user: dict = Depends(get_current_user)
 ):
+    # print("\n--> registration_no:", registration_no)
     student = await db["Students"].find_one({"registration_no": registration_no, "status": "active"})
-    # print("\nStudent", Student)
+    # print("\nStudent", student)
 
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")

@@ -78,7 +78,7 @@ async def students_signup(Student: StudentSignUpRequest):
 @router.post("/signin", response_model=SignInResponse)
 async def students_login(student: StudentSignInRequest):
     existing_student = await db.Students.find_one({"email": student.email})
-    print(existing_student)
+    # print(existing_student)
 
     if not existing_student or not varify_hash(student.password, existing_student["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")

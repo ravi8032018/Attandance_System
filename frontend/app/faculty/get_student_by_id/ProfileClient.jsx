@@ -44,6 +44,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
         }
         if (cancelled) return;
         setS(student);
+        console.log("--> Student: ",student);
       } catch (e) {
         if (!cancelled) setErr(e?.message || "Failed to load profile");
       } finally {
@@ -63,64 +64,101 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
   }, [s]);
 
   return (
-    <main className="p-6">
+    <main className="p-4 h-full bg-[#f2f5f9]">
       {/* Breadcrumbs */}
-      <nav className="mb-4 text-sm text-slate-600">
-        <Link href="/dashboard/faculty" className="hover:underline">Dashboard</Link>
-        <span className="mx-2">/</span>
-        <Link href="/dashboard/faculty/students" className="hover:underline">Students</Link>
-        <span className="mx-2">/</span>
+      <nav className="mb-4 text-md text-slate-700 ">
+        <Link href="/faculty/dashboard" className="hover:underline">Dashboard</Link>
+        <span className="mx-1">/</span>
+        <Link href="/faculty/list_students" className="hover:underline">Students</Link>
+        <span className="mx-1">/</span>
         <span className="text-slate-900">{registrationNo}</span>
       </nav>
 
       {/* Header */}
+    <div className={`grid grid-cols-2 sm:grid-cols-1`}>
       <section className="mb-4 rounded-lg border bg-white p-4">
         {loading ? (
           <div className="animate-pulse">
-            <div className="h-5 w-60 rounded bg-slate-200" />
+            <div className="h-13 w-60 rounded bg-slate-200" />
             <div className="mt-2 h-4 w-96 rounded bg-slate-200" />
           </div>
         ) : err ? (
           <div className="text-rose-700">{err}</div>
         ) : s ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">{fullName}</h1>
-              <p className="text-slate-600">
-                Reg: <span className="font-medium">{s.registration_no}</span> • Course: {s.course ?? "—"} • Sem: {s.sem ?? "—"}
-              </p>
-              <p className="text-slate-600">
-                Status:{" "}
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
-                    s.status === "active"
-                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                      : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                  }`}
-                >
-                  {s.status ?? "—"}
-                </span>
-              </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left: Avatar + identity */}
+            <div className="flex items-start gap-4">
+              {/* Avatar with image + initials fallback */}
+              <div className="relative">
+                {s.photo_url ? (
+                  <img
+                    src={s.photo_url}
+                    alt={`${fullName} photo`}
+                    className="h-27 w-30 rounded-full object-cover ring-2 ring-gray-500"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div
+                    className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
+                    aria-label="avatar initials"
+                  >
+                    <span className="text-lg font-semibold">
+                      {(s.first_name).toUpperCase()}
+                      {(s.last_name).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Identity text */}
+              <div>
+                <h1 className="text-xl font-semibold">{fullName}</h1>
+                <p className="mt-0.5 text-slate-600">
+                  Reg_no: <span className="font-medium">{s.registration_no}<br></br></span>
+                </p>
+                <p className="text-slate-600">
+                  Course: {s.course ?? "—"}• Sem: {s.sem ?? "—"}
+                </p>
+                <p className="text-slate-600">
+                  Status:{" "}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
+                      s.status === "active"
+                        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                        : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                    }`}
+                  >
+                    {s.status ?? "—"}
+                  </span>
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+
+            {/* Right: Actions */}
+            <div className="flex flex-col items-stretch gap-2 sm:items-end sm:justify-end">
               <a
                 href={`/dashboard/faculty/students/${encodeURIComponent(registrationNo)}/attendance`}
-                className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50"
+                className="inline-flex items-center justify-center rounded-md border-2 border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700"
               >
                 View attendance
               </a>
-              <button className="rounded-md bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">
-                Message student
-              </button>
-              <button className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50">
-                Export profile
-              </button>
+              <div className="flex gap-2">
+                <button className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50">
+                  Message student
+                </button>
+                <button className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50">
+                  Export profile
+                </button>
+              </div>
             </div>
           </div>
+
         ) : (
           <div className="text-slate-600">No profile found.</div>
         )}
       </section>
+    </div>
 
       {/* Tabs */}
       <section className="mb-3">

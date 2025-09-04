@@ -25,10 +25,10 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
     if not token_doc:
         raise HTTPException(status_code=404, detail="Invalid or expired link invalid.")
 
-    hashed_pw = hash_password(req.new_password)
+    hashed_pw = await hash_password(req.new_password)
     await db["Students"].update_one(
         {"_id": ObjectId(token_doc["student_id"])},
-        {"$set": {"password": hashed_pw, "status": "active"}}
+        {"$set": {"password": str(hashed_pw), "status": "active"}}
     )
     await db["PasswordResetDB"].update_one(
         {"_id": token_doc["_id"]},

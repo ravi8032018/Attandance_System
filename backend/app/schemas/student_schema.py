@@ -111,10 +111,12 @@ class StudentProfileUpdateByAdmin(StudentBase, StudentProfileUpdateRequest):
 
 class StudentAdminResponse(BaseModel):
     id: str
-    enrollment_no: str
+    registration_no: str
     semester:Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
+    course: Optional[str]
+    sem: Optional[str]
     dob: Optional[date]
     gender: Optional[str]
     contact_number: Optional[str]

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ContactCell } from "../../../src/_hooks/Contact_Cell";
 
 function qs(obj) {
   const p = new URLSearchParams();
@@ -134,7 +135,7 @@ export default function StudentsClient({ initialQuery }) {
           <select
             value={query.limit}
             onChange={(e) => setLimit(parseInt(e.target.value, 10))}
-            className="rounded-md border px-2 py-1 text-sm"
+            className={`rounded-md border px-2 py-1 text-sm bg-[#ffffff] hover:drop-shadow-lg }`}
             aria-label="Rows per page"
           >
             {[10, 20, 50, 100].map((n) => (
@@ -153,57 +154,57 @@ export default function StudentsClient({ initialQuery }) {
                 status: "",
               })
             }
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-slate-50"
+            className="rounded-md border h-7 w-auto text-center px-3 py-auto text-sm font-semibold text-gray-900 bg-blue-400 hover:drop-shadow-lg"
           >
-            Clear filters
+            Clear
           </button>
         </div>
       </header>
 
       {/* Filters row */}
-      <section className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-5">
+      <section className="mb-4 text-sm grid grid-cols-1 gap-3 lg:grid-cols-5 ">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Registration no</label>
+          <label className="mb-1 block font-medium text-slate-600">Registration no</label>
           <input
             value={query.registration_no}
             onChange={(e) => update({ registration_no: e.target.value })}
-            placeholder="CSBSC2025008"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+            placeholder="CSBSC20XXXXX"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
+          <label className="mb-1 block font-medium text-slate-600">Email</label>
           <input
             value={query.email}
             onChange={(e) => update({ email: e.target.value })}
             placeholder="student@example.com"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">First name</label>
+          <label className="mb-1 block font-medium text-slate-600">First name</label>
           <input
             value={query.first_name}
             onChange={(e) => update({ first_name: e.target.value })}
-            placeholder="Ravi"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+            placeholder="Harry"
+            className="w-full rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Last name</label>
+          <label className="mb-1 block font-medium text-slate-600">Last name</label>
           <input
             value={query.last_name}
             onChange={(e) => update({ last_name: e.target.value })}
-            placeholder="Sharma"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+            placeholder="Puttar"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
+          <label className="mb-1 block font-medium text-slate-600">Status</label>
           <select
             value={query.status}
             onChange={(e) => update({ status: e.target.value })}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -213,37 +214,36 @@ export default function StudentsClient({ initialQuery }) {
       </section>
 
       {/* Sort bar */}
-      <section className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="text-xs font-medium text-slate-600">Sort by</label>
+      <section className="mb-3 flex flex-wrap items-center gap-2 ">
+        <label className="text-sm font-medium text-slate-600">Sort by</label>
         <select
           value={query.sort_by}
           onChange={(e) => update({ sort_by: e.target.value }, false)}
-          className="rounded-md border px-2 py-1 text-sm"
+          className="rounded-md border px-2 py-1 text-sm bg-[#ffffff]"
         >
-          <option value="created_at">Created</option>
-          <option value="registration_no">Registration no</option>
           <option value="email">Email</option>
+          <option value="registration_no">Registration no</option>
           <option value="first_name">First name</option>
           <option value="last_name">Last name</option>
-          <option value="status">Status</option>
+          <option value="created_at">Created At</option>
         </select>
         <select
           value={query.sort_order}
           onChange={(e) => update({ sort_order: e.target.value }, false)}
-          className="rounded-md border px-2 py-1 text-sm"
+          className="rounded-md border px-2 py-1 text-sm bg-[#ffffff]"
         >
-          <option value="desc">Desc</option>
           <option value="asc">Asc</option>
+          <option value="desc">Desc</option>
         </select>
       </section>
 
       {/* Table */}
-      <section className="rounded-lg border bg-white">
+      <section className=" bg-white border rounded-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full table-auto">
+          <table className="min-w-full table-fixed">
 
-            <thead className="bg-slate-50 text-center text-xs uppercase text-slate-500">
-              <tr>
+            <thead className="bg-slate-50 text-center text-xs uppercase text-slate-500 ">
+              <tr className={`divide-y divide-gray-500`}>
                 <th className="px-4 py-3">Registration no</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Name</th>
@@ -253,11 +253,11 @@ export default function StudentsClient({ initialQuery }) {
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Guardian email</th>
                 <th className="px-4 py-3">Roll no</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3 text-slate-50 table-cell border-gray-500 border-b-1">V</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y">
+            <tbody className="divide-y  divide-gray-200">
               {loading ? (
                 Array.from({ length: query.limit }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -277,13 +277,16 @@ export default function StudentsClient({ initialQuery }) {
                 </tr>
               ) : (
                 rows.map((s, idx) => (
-                  <tr key={s.registration_no ?? idx} className="text-center hover:bg-slate-50 ">
+                  <tr key={s.registration_no ?? idx} className="text-center text-sm font-mono hover:bg-slate-50 ">
                     <td className="px-4 py-3 font-medium">{s.registration_no}</td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm">{s.email}</div>
+
+                    <td className="px-auto py-auto transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+                      <a href={`mailto:${s.email}`}>
+                        {s.email}
+                      </a>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm">
+                      <div>
                         {(s.first_name ?? "").trim()} {(s.last_name ?? "").trim()}
                       </div>
                     </td>
@@ -300,20 +303,22 @@ export default function StudentsClient({ initialQuery }) {
                         {s.status ?? "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{s.contact_number ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <ContactCell student={s} />
+                    </td>
                     <td className="px-4 py-3">{s.guardian_email ?? "—"}</td>
                     <td className="px-4 py-3">{s.roll_number ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-3 py-3 text-center ">
+
                         <a
                           href={`get_student_by_id/${encodeURIComponent(
                             s.registration_no ?? ""
                           )}`}
-                          className="text-indigo-600 hover:text-indigo-500 text-sm"
+                          className="text-indigo-600 hover:text-indigo-500 hover:underline"
                         >
-                          View
+                          Details
                         </a>
-                      </div>
+                      {/*</div>*/}
                     </td>
                   </tr>
                 ))
@@ -326,7 +331,7 @@ export default function StudentsClient({ initialQuery }) {
         {err ? <div className="border-t bg-rose-50 px-4 py-2 text-sm text-rose-700">{err}</div> : null}
 
         {/* Pagination */}
-        <div className="flex items-center justify-between border-t px-4 py-3 text-sm">
+        <div className="flex items-center justify-between border-t bg-slate-50 px-4 py-2 text-sm">
           <div className="text-slate-600">
             {rows.length > 0
               ? `Showing ${(query.page - 1) * query.limit + 1}–${
@@ -334,25 +339,25 @@ export default function StudentsClient({ initialQuery }) {
                 } of ${total}`
               : `No results`}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ">
             <button
-              className="rounded-md border px-2 py-1.5 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-md border px-1.5 py-0.5 bg-white hover:drop-shadow-md disabled:opacity-50"
               onClick={() => setPage(query.page - 1)}
               disabled={query.page <= 1}
               aria-label="Previous page"
             >
-              Prev
+              &lt; Prev
             </button>
             <span className="px-2">
               Page {query.page} / {totalPages}
             </span>
             <button
-              className="rounded-md border px-2 py-1.5 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-md border px-1.5 py-0.5 bg-white hover:drop-shadow-md disabled:opacity-50"
               onClick={() => setPage(query.page + 1)}
               disabled={query.page >= totalPages}
               aria-label="Next page"
             >
-              Next
+              Next &gt;
             </button>
           </div>
         </div>

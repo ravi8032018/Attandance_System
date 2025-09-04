@@ -28,7 +28,7 @@ export default function LoginPage() {
           ? "/admin/signin"
           : values.role === ("faculty")
           ? "/faculty/signin"
-          : "/Student/signin";
+          : "/student/signin";
 
       const res = await fetch(base + endpoint, {
         method: "POST",
