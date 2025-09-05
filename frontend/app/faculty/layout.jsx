@@ -1,13 +1,19 @@
 // app/dashboard/layout.jsx
 import SideNav from "./sidenav";
+import { redirect } from "next/navigation";
+import { validateSession } from "@/src/validate_session";
 
+export default async function DashboardLayout({ children }) {
+  const session = await validateSession();
+  // console.log("--> inside dashboard session",session);
 
-export default function DashboardLayout({ children }) {
+  if (!session) redirect("/login");
+
   return (
     <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden ">
       {/* Sidebar */}
 
-      <aside className="md:w-64 flex-none border-b md:border-b-0 md:border-r">
+      <aside className="">
         <SideNav />
       </aside>
 

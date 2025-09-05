@@ -96,7 +96,7 @@ async def faculty_login(faculty: FacultySignInRequest):
         status_code=200,
         content={
             "message": "Faculty Login successful",
-            "access_token": access_token,
+            # "access_token": access_token,
             "token_type": "bearer",
             "token_role": "faculty"
         }
@@ -105,8 +105,9 @@ async def faculty_login(faculty: FacultySignInRequest):
         key="dept_user_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Set True if using HTTPS in production
-        samesite="lax",  # or "strict"
+        samesite="none",  # enables cross-site sending
+        secure=True,  # required with SameSite=None
+        path="/",
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 

@@ -256,6 +256,8 @@ async def get_student_by_id(
         batch_name=student.get("batch_name") if "batch_name" in student else None,
         status=student.get("status") if "status" in student else "inactive",
         photo_url=student.get("photo_url") if "photo_url" in student else None,
+        roll_number=student.get("roll_number") if "roll_number" in student else None,
+        guardian_email=student.get("guardian_email") if "guardian_email" in student else None,
     )
 
 @router.post("/complete-profile/{registration_no}")

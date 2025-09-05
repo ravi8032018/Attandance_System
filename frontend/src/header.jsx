@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useScrolled from "@/src/_hooks/is_scrolled";
+import LogoutButton from "@/src/logout"
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +31,7 @@ export default function Header() {
       >
         <div className="flex items-center justify-between">
           {/* Logo block */}
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/frontend/public" className="flex items-center gap-3">
             {/* Big logo shrinks on scroll */}
             <img
               src="https://upload.wikimedia.org/wikipedia/en/6/6e/Assam_University_Logo.png"
@@ -68,6 +69,7 @@ export default function Header() {
             </Link>
           </nav>
         </div>
+        <LogoutButton />
       </div>
     </header>
   );

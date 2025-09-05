@@ -1,9 +1,13 @@
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Query,status, BackgroundTasks
+from fastapi.params import Depends
+
 from backend.app.schemas.auth_schema import _gen_otp, _send_reset_email, ForgotPasswordRequest, ForgotPasswordRequestVerify, SetPasswordRequest
 from backend.app.utils.hash import varify_hash, hash_password
 from backend.app.db import db
 from datetime import datetime, timedelta, timezone
+
+from backend.app.utils.verify_cookie import verify_cookie
 from backend.my_logger import log_event
 
 router = APIRouter(tags=["reset-password"])
@@ -152,3 +156,40 @@ async def verify_password_otp(
 
 
 
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+
+@router.post("/logout")
+async def logout():
+    # Build an empty/204 response
+    res = JSONResponse(status_code=204, content=None)
+    # print(res)
+    # Primary deletion (FastAPI helper)
+    res.delete_cookie(
+        key="dept_user_token",
+        path="/",             # match your original path; default is "/"
+        # domain="localhost", # uncomment if you set a domain on login
+    )
+    # print("\n after delete")
+    # Belt-and-suspenders overwrite with expired cookie
+    res.set_cookie(
+        key="dept_user_token",
+        value="",
+        httponly=True,
+        secure=False,         # set True in production (HTTPS)
+        samesite="lax",       # mirror original samesite
+        max_age=0,
+        expires=0,
+        path="/",
+        # domain="your.domain", # mirror if used
+    )
+    # print("\n after set")
+    return res
+
+@router.get("/verify-me")
+async def get_me(session = Depends(verify_cookie)):
+    # If verify_cookie_jwt didn't raise, token is valid
+    return JSONResponse(
+        status_code=200,
+        content={"message": session['message']},
+    )

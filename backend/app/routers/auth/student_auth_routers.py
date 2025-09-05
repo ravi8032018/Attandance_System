@@ -86,7 +86,7 @@ async def students_login(student: StudentSignInRequest):
     if not has_role(existing_student, 'Student'):
         raise HTTPException(status_code=403, detail="Not authorized as Student")
 
-    token_data = {"sub": str(existing_student["_id"]), "token_role": "Student"}
+    token_data = {"sub": str(existing_student["_id"]), "token_role": "student"}
     access_token = create_access_token(token_data)
 
     # --- NEW CODE: Set token as a secure HTTP-only cookie --- #
@@ -94,7 +94,7 @@ async def students_login(student: StudentSignInRequest):
         status_code=200,
         content={
             "message": "Student Login successful",
-            "access_token": access_token,
+            # "access_token": access_token,
             "token_type": "bearer",
             "token_role": "Student"
         }

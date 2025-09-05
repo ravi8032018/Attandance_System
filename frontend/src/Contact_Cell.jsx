@@ -1,6 +1,5 @@
 "use client";
 import {useRef, useState, useEffect} from "react";
-import { WhatsAppIcon } from "@heroicons/react/solid";
 
 export function ContactCell({student}) {
   const [open, setOpen] = useState(false);
@@ -126,21 +125,6 @@ export function ContactCell({student}) {
             </svg>
                 WhatsApp
               </a>
-              {email && (
-                  <a
-                      role="menuitem"
-                      href={`mailto:${email}?subject=${encodeURIComponent("Faculty inquiry")}`}
-                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-200 focus:bg-slate-200 outline-none"
-                      onClick={() => setOpen(false)}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="size-4" xmlSpace="preserve">
-  <path fill="#2563eb" d="M8 14h32c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16c0-1.1.9-2 2-2z" />
-  <path fill="#ffffff" d="M10 16l14 9 14-9v0l-14 11L10 16z" />
-</svg>
-
-                    Email
-                  </a>
-              )}
             </div>
         )}
       </div>

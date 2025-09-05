@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {CapitalizeEachWord, CopyButton} from "@/src/_hooks/basic_fn";
+import {ContactCell} from "@/src/Contact_Cell";
 
 export default function ProfileClient({ registrationNo, initialTab = "overview" }) {
   const [tab, setTab] = useState(initialTab);
@@ -76,7 +78,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
 
       {/* Header */}
     <div className={`grid grid-cols-2 sm:grid-cols-1`}>
-      <section className="mb-4 rounded-lg border bg-white p-4">
+      <section className="mb-4 rounded-xl border bg-white p-4 shadow-sm hover:shadow-lg">
         {loading ? (
           <div className="animate-pulse">
             <div className="h-13 w-60 rounded bg-slate-200" />
@@ -87,14 +89,14 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
         ) : s ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Left: Avatar + identity */}
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
               {/* Avatar with image + initials fallback */}
               <div className="relative">
                 {s.photo_url ? (
                   <img
                     src={s.photo_url}
                     alt={`${fullName} photo`}
-                    className="h-27 w-30 rounded-full object-cover ring-2 ring-gray-500"
+                    className="h-auto w-46 rounded-full object-cover ring-2 ring-gray-500"
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
@@ -103,7 +105,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
                     className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
                     aria-label="avatar initials"
                   >
-                    <span className="text-lg font-semibold">
+                    <span className="font-semibold">
                       {(s.first_name).toUpperCase()}
                       {(s.last_name).toUpperCase()}
                     </span>
@@ -112,42 +114,30 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
               </div>
 
               {/* Identity text */}
-              <div>
-                <h1 className="text-xl font-semibold">{fullName}</h1>
+              <div className={`text-md`}>
+                <h1 className="text-2xl font-semibold">{fullName}</h1>
                 <p className="mt-0.5 text-slate-600">
                   Reg_no: <span className="font-medium">{s.registration_no}<br></br></span>
                 </p>
                 <p className="text-slate-600">
-                  Course: {s.course ?? "—"}• Sem: {s.sem ?? "—"}
-                </p>
-                <p className="text-slate-600">
-                  Status:{" "}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
-                      s.status === "active"
-                        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                        : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                    }`}
-                  >
-                    {s.status ?? "—"}
-                  </span>
+                  Course: {s.course ?? "—"}<br></br>Sem: {s.sem ?? "—"}
                 </p>
               </div>
             </div>
 
             {/* Right: Actions */}
-            <div className="flex flex-col items-stretch gap-2 sm:items-end sm:justify-end">
+            <div className="flex flex-col sm:items-end sm:justify-end pt-21">
+              <div className="flex gap-2">
               <a
                 href={`/dashboard/faculty/students/${encodeURIComponent(registrationNo)}/attendance`}
-                className="inline-flex items-center justify-center rounded-md border-2 border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700"
+                className="inline-flex items-center justify-center rounded-md border-2 border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700 shadow-sm hover:shadow-md"
               >
                 View attendance
               </a>
-              <div className="flex gap-2">
-                <button className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50">
+                <button className="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700 shadow-sm hover:shadow-md">
                   Message student
                 </button>
-                <button className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50">
+                <button className="rounded-md border px-3 py-2 text-sm border-indigo-600 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:drop-shadow-md">
                   Export profile
                 </button>
               </div>
@@ -167,11 +157,11 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm ${
-                tab === t ? "border-slate-900 text-slate-900" : "border-transparent text-slate-600 hover:text-slate-900"
+              className={`-mb-px border-b-3 px-6 py-2 text-md capitalize hover:text-slate-900 hover:shadow-sm ${
+                tab === t ? "border-slate-900 text-black font-sans bg-white shadow-md" : "border-transparent text-slate-600  "
               }`}
             >
-              {t.toUpperCase() + t.slice(1)}
+              {t}
             </button>
           ))}
         </div>
@@ -180,7 +170,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
       {tab === "overview" && (
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Left: details */}
-          <div className="lg:col-span-2 rounded-lg border bg-white p-4">
+          <div className="lg:col-span-2 rounded-lg border bg-white p-4  shadow-sm hover:shadow-lg">
             <h2 className="mb-3 text-base font-semibold">Student details</h2>
             {loading ? (
               <div className="space-y-2 animate-pulse">
@@ -191,28 +181,32 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
             ) : s ? (
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-slate-500">Email</dt>
-                  <dd className="text-sm">{s.email ?? "—"}</dd>
+                  <dt className="flex text-sm text-slate-500">Email</dt>
+                    <dd className="text-md transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+                      <a href={`mailto:${s.email}`}>{s.email ?? "—"}</a>
+                    </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">Roll number</dt>
-                  <dd className="text-sm">{s.roll_number ?? "—"}</dd>
+                  <dt className="text-sm text-slate-500">Roll number</dt>
+                  <dd className="text-md">{s.roll_number ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">Contact</dt>
-                  <dd className="text-sm">{s.contact_number ?? "—"}</dd>
+                  <dt className="text-sm text-slate-500">Contact</dt>
+                  <dd className="text-md">
+                    <ContactCell student={s} />
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">Guardian email</dt>
-                  <dd className="text-sm">{s.guardian_email ?? "—"}</dd>
+                  <dt className="text-sm text-slate-500">Guardian email</dt>
+                  <dd className="text-md">{s.guardian_email ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">Course</dt>
-                  <dd className="text-sm">{s.course ?? "—"}</dd>
+                  <dt className="text-sm text-slate-500">Course</dt>
+                  <dd className="text-md">{s.course ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">Semester</dt>
-                  <dd className="text-sm">{s.sem ?? "—"}</dd>
+                  <dt className="text-sm text-slate-500">Semester</dt>
+                  <dd className="text-md">{s.sem ?? "—"}</dd>
                 </div>
               </dl>
             ) : (
@@ -221,7 +215,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
           </div>
 
           {/* Right: contact/guardian */}
-          <div className="rounded-lg border bg-white p-4">
+          <div className="rounded-lg border bg-white p-4  shadow-sm hover:shadow-lg">
             <h2 className="mb-3 text-base font-semibold">Contact & Guardian</h2>
             {loading ? (
               <div className="space-y-2 animate-pulse">

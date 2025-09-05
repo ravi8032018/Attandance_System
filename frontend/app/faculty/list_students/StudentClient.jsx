@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ContactCell } from "../../../src/_hooks/Contact_Cell";
+import { ContactCell } from "../../../src/Contact_Cell";
 
 function qs(obj) {
   const p = new URLSearchParams();
