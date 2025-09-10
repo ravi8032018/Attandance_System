@@ -282,7 +282,7 @@ async def list_faculty(
 
     query_filter = {}
     if params.faculty_id:  # We'll treat this as faculty_id
-        query_filter["faculty_id"] = params.registration_no
+        query_filter["faculty_id"] = {"$regex": params.faculty_id, "$options": "i"}
     if params.email:
         query_filter["email"] = {"$regex": params.email, "$options": "i"}
     if params.first_name:

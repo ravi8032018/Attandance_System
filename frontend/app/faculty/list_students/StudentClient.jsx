@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ContactCell } from "../../../src/Contact_Cell";
+import { ContactCell } from "@/src/Contact_Cell";
 
 function qs(obj) {
   const p = new URLSearchParams();
@@ -26,6 +26,7 @@ export default function StudentsClient({ initialQuery }) {
   useEffect(() => {
     const next = {
       registration_no: sp.get("registration_no") ?? "",
+      sem: sp.get("sem") ?? "",
       email: sp.get("email") ?? "",
       first_name: sp.get("first_name") ?? "",
       last_name: sp.get("last_name") ?? "",
@@ -56,6 +57,7 @@ export default function StudentsClient({ initialQuery }) {
           limit: query.limit,
           registration_no: query.registration_no,
           email: query.email,
+          sem: query.sem,
           first_name: query.first_name,
           last_name: query.last_name,
           status: query.status,
@@ -97,6 +99,7 @@ export default function StudentsClient({ initialQuery }) {
     };
   }, [
     query.registration_no,
+    query.sem,
     query.email,
     query.first_name,
     query.last_name,
@@ -162,7 +165,7 @@ export default function StudentsClient({ initialQuery }) {
       </header>
 
       {/* Filters row */}
-      <section className="mb-4 text-sm grid grid-cols-1 gap-3 lg:grid-cols-5 ">
+      <section className="mb-4 text-sm grid grid-cols-1 gap-3 lg:grid-cols-6">
         <div>
           <label className="mb-1 block font-medium text-slate-600">Registration no</label>
           <input
@@ -173,11 +176,20 @@ export default function StudentsClient({ initialQuery }) {
           />
         </div>
         <div>
+          <label className="mb-1 block font-medium text-slate-600">Sem</label>
+          <input
+            value={query.sem}
+            onChange={(e) => update({ sem: e.target.value })}
+            placeholder="1"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+          />
+        </div>
+        <div>
           <label className="mb-1 block font-medium text-slate-600">Email</label>
           <input
             value={query.email}
             onChange={(e) => update({ email: e.target.value })}
-            placeholder="student@example.com"
+            placeholder="student@gmail.com"
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           />
         </div>

@@ -156,6 +156,9 @@ async def verify_password_otp(
 
 
 
+
+
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -191,5 +194,5 @@ async def get_me(session = Depends(verify_cookie)):
     # If verify_cookie_jwt didn't raise, token is valid
     return JSONResponse(
         status_code=200,
-        content={"message": session['message']},
+        content={"message": session['message'], "token_role": session['token_role']},
     )

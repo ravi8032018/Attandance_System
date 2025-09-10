@@ -57,7 +57,7 @@ export default function Header() {
           </Link>
 
           {/* Nav */}
-          <nav className={`overflow-hidden ease-in-out flex font-mono transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-4" : "text-md gap-10"}`}>
+          <nav className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-4" : "text-md gap-8"}`}>
             <Link href="/research" className="text-slate-700 hover:text-slate-900 ">
               Research
             </Link>
@@ -67,9 +67,11 @@ export default function Header() {
             <Link href="/news" className="text-slate-700 hover:text-slate-900">
               News
             </Link>
+            <div className={`overflow-hidden ease-in-out flex font-mono justify-items-center-safe transition-all duration-100 ${hideDept ? "text-sm font-semibold gap-4 max-h-0 opacity-0" : "text-md gap-10 max-h-8 opacity-100"}`}>
+              <LogoutButton />
+            </div>
           </nav>
         </div>
-        <LogoutButton />
       </div>
     </header>
   );

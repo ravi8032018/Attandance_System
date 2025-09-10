@@ -1,7 +1,5 @@
 from fastapi import Cookie, HTTPException, status, Request
 from bson import ObjectId
-
-
 from backend.app.db import db
 from backend.app.utils.jwt import verify_token
 
@@ -37,4 +35,5 @@ async def verify_cookie(request: Request, dept_user_token: str | None = Cookie(d
 
     return {
         "message": "cookie varified",
+        "token_role": token_role,
     }

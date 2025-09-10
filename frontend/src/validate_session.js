@@ -13,9 +13,15 @@ export async function validateSession() {
     headers: token ? { Cookie: `dept_user_token=${token}` } : {},
     cache: "no-store",
   });
-  // console.log("-->brfore res: ");
+  // console.log("-->before res: ");
   if (!res.ok) return null;
-  // console.log("-->after res: ");
+  const data = await res.json();
+  const role = String(data.token_role || "").trim().toLowerCase();
 
-  return res.json();
+  // console.log("-->before IF,, data.token_role : ", data.token_role);
+  if (role !== "faculty"){
+    // console.log("-->in IF,, data : ", data);
+    return null;
+  }
+  return data;
 }

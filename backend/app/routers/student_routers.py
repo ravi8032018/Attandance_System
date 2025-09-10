@@ -429,7 +429,7 @@ async def list_students(
     params: StudentFilterParamsRequest= Depends(),
     current_user: dict = Depends(get_current_user)
 ):
-    # print("--> testing frontend : entering list_students")
+    print("--> testing frontend : entering list_students")
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             raise HTTPException(status_code=403, detail="Access denied. Only admins and faculty can view all students.")
@@ -442,7 +442,7 @@ async def list_students(
 
     query_filter = {}
     if params.registration_no:
-        query_filter["registration_no"] = params.registration_no
+        query_filter["registration_no"] = {"$regex": params.registration_no, "$options": "i"}
     if params.email:
         query_filter["email"] = {"$regex": params.email, "$options": "i"}
     if params.first_name:
@@ -451,9 +451,11 @@ async def list_students(
         query_filter["last_name"] = {"$regex": params.last_name, "$options": "i"}
     if params.status:
         query_filter["status"] = params.status.lower() # Assumes status is stored in lowercase
-    # print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+    if params.sem:
+        query_filter["sem"] = params.sem.lower() # Assumes semester is stored in lowercase
+    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
     mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
-    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no"}
+    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "sem"}
     if params.sort_by not in ALLOWED_SORT_FIELDS:
         raise HTTPException(
             status_code=400,
