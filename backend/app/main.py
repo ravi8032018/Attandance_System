@@ -1,3 +1,4 @@
+# This MF needs internet
 from fastapi import FastAPI
 from backend.app.db import db
 from backend.app.routers.auth.admin_auth_routers import router as admin_auth_router

@@ -27,7 +27,7 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
     })
 
     if not token_doc:
-        raise HTTPException(status_code=404, detail="Invalid or expired link invalid.")
+        raise HTTPException(status_code=404, detail="Invalid or expired link.")
 
     hashed_pw = await hash_password(req.new_password)
     await db["Students"].update_one(

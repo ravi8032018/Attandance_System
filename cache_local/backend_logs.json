@@ -8117,3 +8117,120 @@
   ],
   "details": "\"Fetched 7 students. Filters: {'sem': '1'}\""
 }
+{
+  "action": "Faculty Login",
+  "timestamp": "2025-09-16T09:59:27.023920Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": "faculty"
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:00:17.658554Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:00:17.980712Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:00:18.299250Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:26.962613Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:27.513047Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:27.904716Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:32.545160Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:33.632230Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:33.980766Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:34.460682Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
+{
+  "action": "list students",
+  "timestamp": "2025-09-16T10:02:34.823746Z",
+  "user_email": "ravi.sharma@aus.ac.in",
+  "user_id": "68a74bf1526940942db8b431",
+  "user_role": [
+    "faculty"
+  ],
+  "details": "\"Fetched 7 students. Filters: {}\""
+}
