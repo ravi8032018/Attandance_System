@@ -21,7 +21,7 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
     token_doc = await db["PasswordResetDB"].find_one({
         "token": token,
         "type": "set_password",
-        "user_type": "Student",
+        # "user_type": "Student",
         "expires_at": {"$gt": now},
         "is_used": False
     })
@@ -38,7 +38,7 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
         {"_id": token_doc["_id"]},
         {"$set": {"is_used": True}}
     )
-    return ({"message": "Password reset successful. You may now log in."})
+    return {"message": "Password reset successful. You may now log in."}
 
 @router.post("/reset-fac-password")
 async def reset_fac_password(req:  SetPasswordRequest, token: str =Query(...)):
@@ -79,13 +79,13 @@ async def request_password_otp(
     email = str(payload.email).strip().lower()
     # Do not reveal existence; proceed quietly
     user = await db.Students.find_one({"email": email, "status": "active"}, {"_id": 1, "email": 1})
-    coll = "Students"
+    coll = "Student"
     if not user:
         user = await db.Faculty.find_one({"email": email, "status": "active"}, {"_id": 1, "email": 1})
         coll = "Faculty"
     if not user:
         user = await db.Admins.find_one({"email": email, "status": "active"}, {"_id": 1, "email": 1})
-        coll = "Admins"
+        coll = "Admin"
 
     print(f"--> user {user} coll {coll}")
     OTP= _gen_otp()
@@ -102,10 +102,10 @@ async def request_password_otp(
         "expires_at": expiry,
         "is_used": False
     })
-    background.add_task(_send_reset_email, email, OTP)  # send asynchronously [10]
+    background.add_task(_send_reset_email, email, OTP)  # send asynchronously
     log_event("otp requested for password change", user_email=payload.email)
     # Always return generic response
-    return {"message": "If the email exists, an OTP has been sent."}  # [11]
+    return {"message": "If the email exists, an OTP has been sent."}
 
 @router.post("/forgot-password/verify-otp", status_code=status.HTTP_200_OK)
 async def verify_password_otp(

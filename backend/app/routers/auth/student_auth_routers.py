@@ -2,7 +2,8 @@ import pymongo
 from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 from fastapi.params import Depends
 
-from backend.app.schemas.auth_schema import SignInResponse, StudentSignInRequest, _gen_otp, _send_reset_email, ForgotPasswordRequest, ForgotPasswordRequestVerify
+from backend.app.schemas.auth_schema import SignInResponse, StudentSignInRequest, _gen_otp, _send_reset_email, \
+    ForgotPasswordRequest, ForgotPasswordRequestVerify, StudentSignUpRequest
 from backend.app.utils.dependencies import get_current_user
 from backend.app.utils.hash import varify_hash, hash_password
 from backend.app.utils.jwt import create_access_token
@@ -14,7 +15,7 @@ from backend.my_logger import log_event
 
 router = APIRouter(prefix="/student", tags=["Student-auth"])
 
-'''
+# '''
 @router.post("/signup", response_model=SignInResponse)
 async def students_signup(Student: StudentSignUpRequest):
     existing_student = await db.Students.find_one({"email": Student.email})
@@ -35,10 +36,11 @@ async def students_signup(Student: StudentSignUpRequest):
         user_id = str(existing_student["_id"])
     else:
         # Create new admin user
+        passwd_hash = await hash_password(Student.password)
         new_student = {
             "name": Student.name,
             "email": Student.email,
-            "password": hash_password(Student.password),
+            "password": passwd_hash,
             "role": ["Student"],
             "created_at": now,
         }
@@ -73,7 +75,7 @@ async def students_signup(Student: StudentSignUpRequest):
     log_event("Student signup", user_email=new_student["email"], user_name=new_student["name"], user_id=user_id, user_role="Student")
 
     return resp
-'''
+# '''
 
 @router.post("/signin", response_model=SignInResponse)
 async def students_login(student: StudentSignInRequest):

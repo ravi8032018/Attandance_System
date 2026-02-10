@@ -11,7 +11,7 @@ from backend.my_logger import log_event
 
 router = APIRouter(prefix="/faculty", tags=["faculty-auth"])
 
-'''
+# '''
 @router.post("/signup", response_model=SignInResponse)
 async def faculty_signup(faculty: FacultySignUpRequest):
     existing_faculty = await db.Faculty.find_one({"email": faculty.email})
@@ -32,10 +32,11 @@ async def faculty_signup(faculty: FacultySignUpRequest):
         user_id = str(existing_faculty["_id"])
     else:
         # Create new admin user
+        passwd_hash = await hash_password(faculty.password)
         new_faculty = {
             "name": faculty.name,
             "email": faculty.email,
-            "password": hash_password(faculty.password),
+            "password": passwd_hash,
             "role": ["faculty"],
             "created_at": now,
             "updated_at": None,
@@ -73,13 +74,15 @@ async def faculty_signup(faculty: FacultySignUpRequest):
     log_event("Faculty signup", user_email=new_faculty["email"], user_name=new_faculty["name"], user_id=user_id, user_role="faculty")
 
     return resp
-'''
+# '''
+
+
 @router.post("/signin", response_model=SignInResponse)
 async def faculty_login(faculty: FacultySignInRequest):
     existing_faculty = await db.Faculty.find_one({"email": faculty.email})
     # print(existing_faculty)
 
-    if not existing_faculty or not varify_hash(faculty.password, existing_faculty["password"]):
+    if not existing_faculty or not (await varify_hash(faculty.password, existing_faculty["password"])):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if existing_faculty["status"] == "pending":
         raise HTTPException(status_code=401, detail="Faculty account is under approval")

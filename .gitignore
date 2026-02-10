@@ -90,5 +90,5 @@ next-env.d.ts
 demo.js
 demo2.py
 api_endpoints_info.txt
-
-#/cache_local
+passwd.txt
+/cache_local/

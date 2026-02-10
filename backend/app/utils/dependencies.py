@@ -43,16 +43,16 @@ async def get_current_user(request: Request):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         token_role: str = payload.get("token_role")  # ← This must match what you encode
-
+        print("--> Token Role:", token_role)
 
         if not user_id or not token_role:
             raise credentials_exception
-
+        user= None
         if token_role == 'admin':
             user = await db.Admins.find_one({"_id": ObjectId(user_id)})
         if token_role == 'faculty' or token_role == 'hod':
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
-        if token_role == 'Student' or token_role == 'cr':
+        if token_role == 'student' or token_role == 'cr':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
         # print("--> user: ", user)
         if not user:

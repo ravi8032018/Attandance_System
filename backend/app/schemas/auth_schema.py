@@ -73,9 +73,7 @@ def _gen_otp() -> str:
     return f"{secrets.randbelow(1_000_000):06d}"
 
 async def _send_reset_email(email: str, OTP: str) -> None:
-    # Implement with your mailer; keep content minimal, no PII
     now= datetime.utcnow()
-
     created= []
     email_data = {
         "email_to": email,

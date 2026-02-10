@@ -134,7 +134,15 @@ async def bulk_students_create(
         'sem': payload.sem,
         'course': payload.course,
     }
-    subjects_doc = await db.Curriculum.find_one(pay)
+    # subjects_doc = await db.Curriculum.find_one(pay)
+    subjects_doc = {
+        'subjects': {
+            "CSDSC101": "Python Programming",
+            "CSDSC102": "Data Structures",
+            "CSDSC103": "Database Management Systems",
+            "CSDSC104": "Computer Networks",
+        }
+    }
 
     for stu_mail in student_mails:
         # 1. Create the Student doc with inactive status)
@@ -142,7 +150,7 @@ async def bulk_students_create(
         print("Your Unique_Student_ID is ",unique_student_id, "\t",stu_mail)
 
         default_password = token_urlsafe(10)
-        hashed_default = hash_password(default_password)
+        hashed_default = await hash_password(default_password)
         stu_doc = {
             "email": stu_mail,
             "registration_no": unique_student_id,

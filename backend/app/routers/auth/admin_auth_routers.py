@@ -11,7 +11,7 @@ import pymongo
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 
-'''
+# '''
 @router.post("/signup", response_model=SignInResponse)
 async def admin_signup(admin: UserSignUpRequest):
     existing_user = await db.Admins.find_one({"email": admin.email})
@@ -32,15 +32,16 @@ async def admin_signup(admin: UserSignUpRequest):
         user_id = str(existing_user["_id"])
     else:
         # Create new admin user
+        passwd_hash = await hash_password(admin.password)
         new_admin = {
             "name": admin.name,
             "email": admin.email,
-            "password": hash_password(admin.password),
+            "password": passwd_hash,
             "role": ["admin"],
             "created_at": now,
         }
         try:
-            result =  await db.Faculty.insert_one(new_admin)
+            result =  await db.Admins.insert_one(new_admin)
             user_id = str(result.inserted_id)
         except pymongo.errors.DuplicateKeyError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User already registered as faculty, Please Login.")
@@ -70,14 +71,14 @@ async def admin_signup(admin: UserSignUpRequest):
     log_event("Admin signup", user_email=new_admin["email"], user_name=new_admin["name"], user_id=user_id, user_role="admin")
 
     return resp
-'''
+# '''
 
 @router.post("/signin", response_model=SignInResponse)
 async def admin_login(admin: UserSignInRequest):
     existing_user = await db.Admins.find_one({"email": admin.email})
-    # print(existing_user)
+    # print(existing_user["password"])
 
-    if not existing_user or not varify_hash(admin.password, existing_user["password"]):
+    if not existing_user or not (await varify_hash(admin.password, existing_user["password"])):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if not has_role(existing_user, 'admin'):

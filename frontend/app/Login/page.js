@@ -122,7 +122,7 @@ export default function LoginPage() {
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
               placeholder="••••••••"
               autoComplete="current-password"
-              minLength={8}
+              minLength={4}
               maxLength={32}
             />
           </div>
