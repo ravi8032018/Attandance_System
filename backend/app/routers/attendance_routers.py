@@ -1,11 +1,11 @@
 # In app/routers/attendance_router.py
 import secrets
 from time import process_time_ns
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 from fastapi import APIRouter, HTTPException, Path, Depends, status, Query
 from backend.app.db import db
-from datetime import timedelta, datetime, time
-from backend.app.schemas.attendence_schema import AttendanceSessionResponse, MarkAttendanceByFacultyRequest, \
+from datetime import timedelta, datetime, time, timezone
+from backend.app.schemas.attendence_schema import AttendanceSessionResponse, AttendanceStatus, MarkAttendanceByFacultyRequest, SessionStatus, StudentAttendanceRecord, \
     StudentSubjectReportResponse, SubjectAttendanceReportFilter, \
     MarkAttendanceByCRRequest, FacultyToCRRequest, ApprovalUpdateRequest, StudentStatusUpdateRequest, \
     ApprovalsFilterParamsRequest, compute_period_range
@@ -13,93 +13,132 @@ from backend.app.utils.connection_manager import manager
 from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
 
-
+# 
 router = APIRouter(prefix="/attendance", tags=["Attendance Management"])
-
-@router.post("/mark-by-faculty", response_model=AttendanceSessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/mark-by-faculty",response_model=AttendanceSessionResponse, status_code=status.HTTP_201_CREATED,
+)
 async def mark_attendance_by_faculty(
-        request_data: MarkAttendanceByFacultyRequest,
-        current_user: dict = Depends(faculty_required)
+    request_data: MarkAttendanceByFacultyRequest,
+    current_user: dict = Depends(faculty_required),
 ):
-    # print("\ncurrent user : ",current_user)
+    print("\ncurrent user : ", current_user)
     f_id = current_user.get("id")
-    # print(faculty_id)
-    request_data= request_data.dict()
+    print("Faculty ID:", f_id)
 
-    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data['attendance_data']]
-    # print("\n--> present_student_ids: ", present_student_ids)
+    # 1) Compute list of present students (from payload)
+    present_student_ids = [
+        str(record.registration_no) for record in request_data.attendance_data
+    ]
+    print("\n--> present_student_ids: ", present_student_ids)
 
+    # 2) Find ABSENT students
+    # subjects is an object like: { "CSDSC251": "DBMS", ... }
+    # so we match on "subjects.<code>": { $exists: true }
     absent_students_cursor = db.Students.find(
         {
             "status": "active",
-            "sem": request_data["sem"],
-            "department": request_data["department"],
-            "subjects": {
-                "$elemMatch": {
-                    "subject_code": request_data["subject_code"]
-                }
-            },
-            # --- The crucial part: find students NOT IN the present list ---
-            "registration_no": {"$nin": present_student_ids}
+            "semester": request_data.semester,
+            "department": request_data.department,
+            f"subjects.{request_data.subject_code}": {"$exists": True},
+            "registration_no": {"$nin": present_student_ids},
         },
-        # --- Projection: We only need their registration numbers ---
-        {"registration_no": 1, "_id": 0}
+        {"registration_no": 1, "_id": 0},
     )
-    # absent_students =
-    # print("--> absent Student records: ", absent_students_cursor)
+    absent_students = await absent_students_cursor.to_list(length=None)
+    print("--> absent Student records: ", absent_students)
 
-    final_attendance_records= [record for record in request_data["attendance_data"]]
-    # print("\n--> final_attendance_records: ", final_attendance_records)
+    # 3) Build full attendance list as Pydantic models (present + absent)
+    final_attendance_records: List[StudentAttendanceRecord] = [
+        record for record in request_data.attendance_data
+    ]
 
-    async for student in absent_students_cursor:
-        final_attendance_records.append({
-            "registration_no": student["registration_no"],
-            "status": "absent"
-        })
-    # print("\n--> Final attendance list: ",final_attendance_records)
-    session_id = f"{request_data['subject_code']}-{request_data['class_date'].strftime('%Y%m%d%H%M')}"
-    # print("--> Session id:", session_id)
+    for student in absent_students:
+        final_attendance_records.append(
+            StudentAttendanceRecord(
+                registration_no=student["registration_no"],
+                status=AttendanceStatus.ABSENT,  # adjust if enum name differs
+            )
+        )
+
+    print("\n--> Final attendance list (Pydantic): ", final_attendance_records)
+
+    # 4) Build session id
+    session_id = f"{request_data.subject_code}-{request_data.class_date.strftime('%d%m%Y')}"
+    print("--> Session id:", session_id)
+
+    # 5) Resolve subject_name from any one student doc (optional but needed for schema)
+    #    If you have a curriculum collection, prefer that instead.
+    any_student = await db.Students.find_one(
+        {
+            "status": "active",
+            "semester": request_data.semester,
+            "department": request_data.department,
+            f"subjects.{request_data.subject_code}": {"$exists": True},
+        },
+        {f"subjects.{request_data.subject_code}": 1, "_id": 0},
+    )
+    subject_name = None
+    if any_student:
+        # subjects: { "CSDSC251": "Database Management System", ... }
+        subject_name = any_student.get("subjects", {}).get(request_data.subject_code)
+    if not subject_name:
+        subject_name = ""  # or raise, depending on your rules
+
+    # 6) Prepare Mongo document (convert models & enums -> plain dicts & values)
+    attendance_records_doc = [
+        {
+            "registration_no": rec.registration_no,
+            "status": rec.status.value if hasattr(rec.status, "value") else rec.status,
+        }
+        for rec in final_attendance_records
+    ]
 
     new_session_doc = {
         "session_id": session_id,
         "faculty_id": f_id,
-        "subject_code": request_data["subject_code"],
-        "subject_name": request_data["subject_name"],
-        "department": request_data["department"],
-        "semester": request_data["sem"],
-        "date": request_data["class_date"],
-        "status": "marked_by_faculty",  # Direct marking by faculty
-        "submission_details": None,  # No CR submission in this case
-        "attendance_records": final_attendance_records,
+        "subject_code": request_data.subject_code,
+        "subject_name": subject_name,
+        "date": request_data.class_date.astimezone(timezone.utc),
+        "status": SessionStatus.MARKED_BY_FACULTY.value
+        if hasattr(SessionStatus.MARKED_BY_FACULTY, "value")
+        else "marked_by_faculty",
+        "attendance_records": attendance_records_doc,
         "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
+        "updated_at": datetime.utcnow(),
     }
-    # 3. Check for duplicates to prevent marking the same session twice
+    print("--> New session document prepared:", new_session_doc)
+
+    # 7) Prevent duplicate marking for same session
     existing_session = await db.Attendance.find_one({"session_id": session_id})
     if existing_session:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Attendance for this session ({session_id}) has already been marked."
+            detail=f"Attendance for this session ({session_id}) has already been marked.",
         )
-    # 4. Insert the new session document into the database
+
+    # 8) Insert
     try:
         result = await db.Attendance.insert_one(new_session_doc)
+        print("--> Inserted session_id:", session_id)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to mark attendance") from e
-    # 5. Fetch the newly created document to return it in the response
-    try:
-        created_session = await db.Attendance.find_one({"_id": result.inserted_id})
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Attendance marked successfully but failed to fetch details.") from e
+        print("--> Insert failed for session_id:", session_id, "error:", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to mark attendance",
+        ) from e
 
+    # 9) Fetch created doc and adapt to response schema
+    created_session = await db.Attendance.find_one({"_id": result.inserted_id})
     if not created_session:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve the attendance session."
+            detail="Failed to retrieve the attendance session.",
         )
-    # print("\n created_seesion: ",created_session)
+
+    # Convert _id to string for the "id" alias, let Pydantic handle enums & datetime
     created_session["_id"] = str(created_session["_id"])
-    # print("--> \nCreated session", created_session)
+    print("--> \nCreated session", created_session)
+
     return AttendanceSessionResponse(**created_session)
 
 @router.get("/report/student-subject", response_model=StudentSubjectReportResponse)
@@ -283,9 +322,7 @@ async def submit_attendance_by_cr(
     # --- 2. If token is valid, proceed with your existing "auto-absent" logic ---
     # ... (Your logic to find absentees and create final_attendance_records) ...
     # ... (Your logic to create the new_session_doc with status 'pending_approval') ...
-    request_data= request_data.dict()
-
-    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data['attendance_data']]
+    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data.attendance_data]
     # print("\n--> present_student_ids: ", present_student_ids)
 
     absent_students_cursor = db.Students.find(
@@ -307,7 +344,7 @@ async def submit_attendance_by_cr(
     # absent_students =
     # print("--> absent Student records: ", absent_students_cursor)
 
-    final_attendance_records = [record for record in request_data['attendance_data']]
+    final_attendance_records = [record for record in request_data.attendance_data]
     # print("\n--> final_attendance_records: ", final_attendance_records)
 
     async for student in absent_students_cursor:

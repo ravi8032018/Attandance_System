@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation";
 
 function StudentRow({ student, checked, onToggle }) {
   return (
-    <label className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 bg-[#f0f0ff]">
-      <div className="flex items-center gap-x-110">
-        <span className="w-30 text-md block text-slate-900">
-          {(student.first_name + " " + student.last_name) || student.registration_no}
-        </span>
-        <span className="text-sm block text-slate-800">{student.registration_no}</span>
-      </div>
+    <label className="flex items-center justify-between rounded-md border bg-[#f0f0ff] border-slate-200 px-3 py-2 ">
+      <span className="w-30 text-md block text-slate-900">
+        {(student.first_name + " " + student.last_name) || student.registration_no}
+      </span>
+      <span className="text-sm block text-slate-800">{student.registration_no}
+      </span>
       <span className={"gap-3 flex text-xs font-medium " + (checked ? "text-green-700" : "text-rose-700")}>
         {checked ? "present" : "absent"}
         <input
@@ -37,7 +36,7 @@ export default function FacultyAttendancePage() {
 
   // Metadata required by backend
   const [subjectCode, setSubjectCode] = React.useState("");
-  const [subjectName, setSubjectName] = React.useState("");
+  const [subjects, setSubjects] = React.useState([]);
   const [department, setDepartment] = React.useState("");
   const [sem, setSem] = React.useState("");
   const [classDate, setClassDate] = React.useState(() => new Date().toISOString().slice(0, 16));
@@ -68,11 +67,10 @@ export default function FacultyAttendancePage() {
         // Adjust the path and param keys to match your backend
         const params = qs({
           department: department,
-          sem: sem,                 // if backend expects 'semester', change key to semester
+          semester: sem,                 // if backend expects 'semester', change key to semester
           subject_code: subjectCode,
-          subject_name: subjectName,
         });
-
+console.log(params);
         const apiRosterUrl = `${api}/student/?${params}`;
         // console.log("Roster URL:", apiRosterUrl);
         console.log("--> apiRosterURL: ", apiRosterUrl);
@@ -116,12 +114,12 @@ export default function FacultyAttendancePage() {
 
 
     // Only fetch when all metadata is provided #
-    // if (department && sem && subjectCode && subjectName) {
-    if (true) {     // for testing only
+    if (department || sem || subjectCode ) {
+    // if (true) {     // for testing only
       console.log("--> all reqs ok loading roster");
       loadRoster();
     } else {
-      console.log("--> reqs not ok not loading roster: ", department, sem, subjectCode, subjectName);
+      console.log("--> reqs not ok not loading roster: ", department, sem, subjectCode);
       setStudents([]);
       setPresentSet(new Set());
     }
@@ -129,7 +127,49 @@ export default function FacultyAttendancePage() {
     return () => {
       ignore = true;
     };
-  }, [department, sem, subjectCode, subjectName]); // re-fetch on changes [1]
+  }, [department, sem, subjectCode]); // re-fetch on changes [1]
+
+  React.useEffect(() => {
+    let ignore = false;
+
+  async function loadSubjects() {
+    if (!department && !sem) {
+      setSubjects([]);
+      return;
+    }
+    try {
+      const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const params = qs({ department, semester: sem });
+      const res = await fetch(`${api}/curriculum?${params}`, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+
+      const data = await res.json();
+      console.log("--> Subjects API raw : ", data);
+
+      if (!res.ok) throw new Error(data?.detail || "Failed to load subjects");
+      if (ignore) return;
+
+      // data = { data: [ { subjects: [...] } ] }
+      const curriculumList = Array.isArray(data?.data) ? data.data : [];
+      const allSubjects = curriculumList.flatMap(item => item.subjects || []);
+
+      console.log("--> Subjects array used for dropdown : ", allSubjects);
+      setSubjects(allSubjects);
+    } catch (e) {
+      if (!ignore) {
+        setSubjects([]);
+        console.error(e);
+      }
+    }
+  }
+
+  loadSubjects();
+  return () => { ignore = true; };
+  }, [department, sem]);
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -173,12 +213,10 @@ export default function FacultyAttendancePage() {
       setError("");
       setInfo("");
 
-      // Build payload to match backend contract (you showed attendance_data, but sample response shows attendance_records)
       const payload = {
         subject_code: subjectCode,
-        subject_name: subjectName,
-        department,
-        sem,
+        department: department,
+        semester: sem,
         class_date: new Date(classDate).toISOString(),
         attendance_data: students.map((s) => ({
           registration_no: s.registration_no,
@@ -215,7 +253,6 @@ export default function FacultyAttendancePage() {
 
   const requiredOk =
     subjectCode.trim() &&
-    subjectName.trim() &&
     department.trim() &&
     sem.trim() &&
     classDate;
@@ -225,7 +262,7 @@ export default function FacultyAttendancePage() {
       <div className="mx-auto">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-slate-900 pb-2">
-            Mark Attendance (Faculty)
+            Mark Attendance
           </h1>
           <p className="text-sm text-slate-600">
             Select students who are present. Unchecked will be marked absent.
@@ -250,36 +287,21 @@ export default function FacultyAttendancePage() {
           </div>
         )}
 
-        {/* Metadata */}
-        <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-5">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-600">Subject code</label>
-            <input
-              value={subjectCode}
-              onChange={(e) => setSubjectCode(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="CSDSC"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-600">Subject name</label>
-            <input
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="DSA"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
+        {/* Filter Tabs */}
+      <section className="mb-4 flex flex-col gap-4 md:flex-row-1 md:gap-2 lg:flex-row">
+        {/* Dept + Sem grouped */}
+        <div className="flex flex-col gap-3 md:flex-row md:flex-[2]">
+          <div id="dept" className="flex flex-col gap-1 md:flex-1 min-w-[140px]">
             <label className="text-sm text-slate-600">Department</label>
             <input
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
+              onChange={(e) => setDepartment(e.target.value?.toUpperCase())}
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
               placeholder="CSE"
             />
           </div>
-          <div className="flex flex-col gap-1">
+
+          <div id="sem" className="flex flex-col gap-1 md:flex-1 min-w-[100px]">
             <label className="text-sm text-slate-600">Semester</label>
             <input
               value={sem}
@@ -288,16 +310,37 @@ export default function FacultyAttendancePage() {
               placeholder="3"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-600">Class date/time</label>
-            <input
-              type="datetime-local"
-              value={classDate}
-              onChange={(e) => setClassDate(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-            />
-          </div>
-        </section>
+        </div>
+
+        {/* Subject */}
+        <div id="subj" className="flex flex-col gap-1 md:flex-[3] min-w-[220px]">
+          <label className="text-sm text-slate-600">Subject</label>
+          <select
+            value={subjectCode}
+            onChange={(e) => setSubjectCode(e.target.value)}
+            className="w-full h-9.5 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+          >
+            <option value="">Select subject</option>
+            {subjects.map((subj) => (
+              <option key={subj.subject_code} value={subj.subject_code}>
+                {`${subj.subject_code} - ${subj.subject_name}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Class date/time */}
+        <div id="class-date/time" className="flex flex-col gap-1 md:flex-[2] min-w-[200px]">
+          <label className="text-sm text-slate-600">Class date/time</label>
+          <input
+            type="datetime-local"
+            value={classDate}
+            onChange={(e) => setClassDate(e.target.value)}
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+          />
+        </div>
+      </section>
+
 
         {/* Controls */}
         <div className="flex items-center justify-between gap-3">
@@ -305,7 +348,7 @@ export default function FacultyAttendancePage() {
             <input
               type="search"
               placeholder="Search by reg no or name"
-              className="w-100 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search students"
@@ -365,7 +408,7 @@ export default function FacultyAttendancePage() {
             <ul className="divide-y-2 p-0.5 border rounded-md divide-slate-300">
               {loading ? (
                 <div className="rounded-md border border-slate-200 px-3 py-6 text-center text-slate-500">
-                  Loading roster…
+                  Loading Students...
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="rounded-md border border-slate-200 px-3 py-6 text-center text-slate-500">

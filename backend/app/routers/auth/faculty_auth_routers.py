@@ -11,7 +11,7 @@ from backend.my_logger import log_event
 
 router = APIRouter(prefix="/faculty", tags=["faculty-auth"])
 
-# '''
+'''
 @router.post("/signup", response_model=SignInResponse)
 async def faculty_signup(faculty: FacultySignUpRequest):
     existing_faculty = await db.Faculty.find_one({"email": faculty.email})
@@ -74,7 +74,7 @@ async def faculty_signup(faculty: FacultySignUpRequest):
     log_event("Faculty signup", user_email=new_faculty["email"], user_name=new_faculty["name"], user_id=user_id, user_role="faculty")
 
     return resp
-# '''
+'''
 
 
 @router.post("/signin", response_model=SignInResponse)
@@ -82,7 +82,7 @@ async def faculty_login(faculty: FacultySignInRequest):
     existing_faculty = await db.Faculty.find_one({"email": faculty.email})
     # print(existing_faculty)
 
-    if not existing_faculty or not (await varify_hash(faculty.password, existing_faculty["password"])):
+    if not existing_faculty or not varify_hash(faculty.password, existing_faculty["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if existing_faculty["status"] == "pending":
         raise HTTPException(status_code=401, detail="Faculty account is under approval")
@@ -117,7 +117,4 @@ async def faculty_login(faculty: FacultySignInRequest):
     log_event("Faculty Login", user_email=existing_faculty["email"], user_name=existing_faculty["name"] if 'name' in existing_faculty else None, user_id=str(existing_faculty["_id"]), user_role="faculty")
 
     return resp
-
-
-
 

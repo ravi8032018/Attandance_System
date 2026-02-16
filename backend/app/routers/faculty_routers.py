@@ -32,6 +32,8 @@ async def faculty_create(
 
     faculty_dict["faculty_id"] = unique_faculty_id
     faculty_dict["designation"] = faculty.designation.upper()
+    faculty_dict["email"] = faculty.email or None
+    faculty_dict["department"] = faculty.department.upper() or None
     faculty_dict["created_by"] = current_admin["name"] or current_admin["email"]
     faculty_dict["status"] = "inactive"
     faculty_dict["role"] = ["faculty"]
@@ -82,7 +84,10 @@ async def faculty_create(
         json.dump(data, f, indent=2)  # Write ALL data back, including new item
         f.truncate()
 
-    send_email_with_link(f"{email_cache_dirr_path}/faculty_to_email.json")
+    try:
+        send_email_with_link(f"{email_cache_dirr_path}/faculty_to_email.json")
+    except Exception as e:
+        print("Error sending email:", e)
 
     log_event("create faculty", user_email=faculty_dict["email"], user_id=faculty_dict["faculty_id"], user_role="faculty", details=f"created by {current_admin['name']}")
 

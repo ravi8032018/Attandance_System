@@ -18,7 +18,9 @@ class FacultyBase(BaseModel):
     designation: str = Field(..., example="Assistant Professor")
 
 class FacultyCreateRequest(FacultyBase):
-    pass
+    department : str = Field(..., example='CS')
+    designation: str = Field(example="Assistant Professor")
+    email : EmailStr = Field(example="faculty@example.com")
 
 class FacultyProfileUpdateRequest(BaseModel):
     first_name: str

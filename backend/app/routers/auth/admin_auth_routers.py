@@ -78,7 +78,7 @@ async def admin_login(admin: UserSignInRequest):
     existing_user = await db.Admins.find_one({"email": admin.email})
     # print(existing_user["password"])
 
-    if not existing_user or not (await varify_hash(admin.password, existing_user["password"])):
+    if not existing_user or not varify_hash(admin.password, existing_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if not has_role(existing_user, 'admin'):

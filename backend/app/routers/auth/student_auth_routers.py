@@ -15,7 +15,7 @@ from backend.my_logger import log_event
 
 router = APIRouter(prefix="/student", tags=["Student-auth"])
 
-# '''
+'''
 @router.post("/signup", response_model=SignInResponse)
 async def students_signup(Student: StudentSignUpRequest):
     existing_student = await db.Students.find_one({"email": Student.email})
@@ -75,7 +75,7 @@ async def students_signup(Student: StudentSignUpRequest):
     log_event("Student signup", user_email=new_student["email"], user_name=new_student["name"], user_id=user_id, user_role="Student")
 
     return resp
-# '''
+'''
 
 @router.post("/signin", response_model=SignInResponse)
 async def students_login(student: StudentSignInRequest):

@@ -33,11 +33,19 @@ async def student_create(
     # this gets the subjects from Curriculam DB
     payload = {
         'department': student_dict['department'],
-        'sem': student_dict['sem'],
+        'semester': student_dict['sem'],
         'course': student_dict['course'],
     }
-    subjects_doc = await db.Curriculum.find_one(payload)
-
+    docs = await db.Curriculum.find_one(payload)
+    print("--> docs: ", docs)
+    data = docs["subjects"] if docs else None
+    print("--> data: ", data)
+    subjects_doc = {
+        "subjects": {
+            subject["subject_code"]: subject["subject_name"]
+            for subject in data if data is not None
+        }
+    }
     now = datetime.utcnow()
     unique_student_id = await generate_unique_student_id(student.course, student.registration_year, student.department)
     print("Your Unique_Student_ID is ", unique_student_id, " --> ", student.email)
@@ -50,9 +58,9 @@ async def student_create(
     student_dict['profile_complete']= False
     student_dict['updated_at']= datetime.utcnow()
     student_dict['updated_by']= None
-    student_dict['subjects']= subjects_doc['subjects']
+    student_dict['subjects']= subjects_doc['subjects'] if subjects_doc else {}
 
-    print(subjects_doc)
+    print("--> Subject_doc: ",subjects_doc)
     created=[]
     try:
         res = await db['Students'].insert_one(student_dict)
@@ -128,7 +136,7 @@ async def bulk_students_create(
     created = []
     created_mails=[]
 
-    # this gets the subjects from Curriculam DB
+    # this gets the subjects from Curriculum DB
     pay = {
         'department': payload.department,
         'sem': payload.sem,
@@ -236,7 +244,7 @@ async def get_student_by_id(
     # print("--> testing frontend: ", current_user)
     student = await db['Students'].find_one({"registration_no": registration_no})
     # print("--> testing frontend: ", student)
-    # print("Student", Student)
+    print("Student :", student)
 
     if "admin" not in current_user["role"]:
         if "faculty" not in (current_user["role"]):
@@ -252,11 +260,10 @@ async def get_student_by_id(
     return StudentAdminResponse(
         id=str(student["_id"]),
         registration_no=student["registration_no"],
-        semester=student["sem"],
+        semester=student["semester"] if "semester" in student else None,
         first_name=student["first_name"] if "first_name" in student else None,
         last_name=student["last_name"] if "last_name" in student else None,
         course=student['course'],
-        sem=student['sem'],
         dob=student.get("date_of_birth") if "dob" in student else None,
         gender=student.get("gender") if "gender" in student else None,
         contact_number=student.get("contact_number") if "contact_number" in student else None,
@@ -449,21 +456,58 @@ async def list_students(
     # print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
 
     query_filter = {}
+    expr_conditions = []
+
     if params.registration_no:
         query_filter["registration_no"] = {"$regex": params.registration_no, "$options": "i"}
+
     if params.email:
         query_filter["email"] = {"$regex": params.email, "$options": "i"}
+
     if params.first_name:
         query_filter["first_name"] = {"$regex": params.first_name, "$options": "i"}
+
     if params.last_name:
         query_filter["last_name"] = {"$regex": params.last_name, "$options": "i"}
+
     if params.status:
-        query_filter["status"] = params.status.lower() # Assumes status is stored in lowercase
-    if params.sem:
-        query_filter["sem"] = params.sem.lower() # Assumes semester is stored in lowercase
+        query_filter["status"] = params.status.lower()
+
+    if params.semester:
+        query_filter["semester"] = params.semester.lower()
+
+    if params.department:
+        query_filter["department"] = {"$regex": params.department, "$options": "i"}
+
+    if params.subject_code:
+        expr_conditions.append({
+            "$gt": [
+                {
+                    "$size": {
+                        "$filter": {
+                            "input": {"$objectToArray": "$subjects"},
+                            "as": "subj",
+                            "cond": {
+                                "$regexMatch": {
+                                    "input": "$$subj.k",
+                                    "regex": params.subject_code,
+                                    "options": "i"
+                                }
+                            }
+                        }
+                    }
+                },
+                0
+            ]
+        })
+
+    if expr_conditions:
+        query_filter["$expr"] = {"$and": expr_conditions}
+
     print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+
     mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
-    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "sem"}
+    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
     if params.sort_by not in ALLOWED_SORT_FIELDS:
         raise HTTPException(
             status_code=400,

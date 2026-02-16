@@ -99,9 +99,11 @@ class StudentFilterParamsRequest(BaseModel):
     first_name: Optional[str] = Field(None, description="Filter by first name (partial match)")
     last_name: Optional[str] = Field(None, description="Filter by last name (partial match)")
     status: Optional[str] = Field(None, description="Filter by status ('active', 'inactive')")
-    sem: Optional[str] = Field(None, description="Filter by semester (1,2,3...)")
+    semester: Optional[str] = Field(None, description="Filter by semester (1,2,3...)")
     sort_by: str = Field("created_at", description="Field to sort by")
     sort_order: SortOrder = Field(SortOrder.DESC, description="Sort order: 'asc' or 'desc'")
+    department: Optional[str] = Field(None, description="Sort by department (CS, EE, ME, etc.)")
+    subject_code: Optional[str] = Field(None, description="Filter by subject code (CS101, EE202, etc.)")
 
 class StudentProfileUpdateByAdmin(StudentBase, StudentProfileUpdateRequest):
     pass
@@ -117,7 +119,6 @@ class StudentAdminResponse(BaseModel):
     first_name: Optional[str]
     last_name: Optional[str]
     course: Optional[str]
-    sem: Optional[str]
     roll_number: Optional[str]
     dob: Optional[date]
     gender: Optional[str]
@@ -180,7 +181,7 @@ class StudentListResponse(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     status: str
-    sem: Optional[str] = None
+    semester: Optional[str] = None
     course: Optional[str] = None
     contact_number: Optional[str] = None
     guardian_email: Optional[EmailStr] = None

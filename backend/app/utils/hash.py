@@ -8,7 +8,7 @@ pwd_context = CryptContext(schemes=["bcrypt"])
 async def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-async def varify_hash(plain_password: str, hashed_password: str) -> bool:
-    print(plain_password, hashed_password)
+def varify_hash(plain_password: str, hashed_password: str) -> bool:
+    # print(plain_password, hashed_password)
     return pwd_context.verify(plain_password, hashed_password)
 
