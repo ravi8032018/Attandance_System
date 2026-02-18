@@ -77,8 +77,8 @@ class AttendanceReportFiltersRequest(BaseModel):
 
 class SubjectAttendanceReportFilter(BaseModel):
     registration_no: str
-    subject_code: str
-
+    subject_code: Optional[str] = Field(None, description="Subject code. If omitted, return report for all subjects.")
+    
 class MarkAttendanceByCRRequest(BaseModel):
     attendance_token: str
     attendance_data: List[StudentAttendanceRecord] = Field(..., description="List of students who were present (or on leave).")
@@ -133,14 +133,16 @@ class AttendanceSessionResponse(BaseModel):
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
 class StudentSubjectReportResponse(BaseModel):
-    total_classes: int
-    present_count: int
-    absent_count: int
-    excused_count: int
-    attendance_percentage: float
-    daily_records: List[dict] # A list of {date: "...", status: "..."}
+    subject_code: str | None = Field(None, description="Subject code for this report")
+    total_classes: int = Field(0, description="Total number of classes held for this subject")
+    present_count: int = Field(0, description="Number of times the student was marked present")
+    absent_count: int = Field(0, description="Number of times the student was marked absent")
+    excused_count: int = Field(0, description="Number of times the student was marked on leave/excused")
+    attendance_percentage: float = Field(0.0, description="Attendance percentage for this subject")
+    daily_records: List[dict] = Field(default_factory=list, description="A list of {date: '...', status: '...'}")
 
-
+class MultiSubjectReportResponse(BaseModel):
+    reports: list[StudentSubjectReportResponse]
 
 
 

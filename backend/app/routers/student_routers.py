@@ -263,6 +263,7 @@ async def get_student_by_id(
         semester=student["semester"] if "semester" in student else None,
         first_name=student["first_name"] if "first_name" in student else None,
         last_name=student["last_name"] if "last_name" in student else None,
+        department= student["department"],
         course=student['course'],
         dob=student.get("date_of_birth") if "dob" in student else None,
         gender=student.get("gender") if "gender" in student else None,

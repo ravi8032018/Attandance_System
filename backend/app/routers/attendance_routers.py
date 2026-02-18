@@ -5,7 +5,7 @@ from typing import Optional, Annotated, List
 from fastapi import APIRouter, HTTPException, Path, Depends, status, Query
 from backend.app.db import db
 from datetime import timedelta, datetime, time, timezone
-from backend.app.schemas.attendence_schema import AttendanceSessionResponse, AttendanceStatus, MarkAttendanceByFacultyRequest, SessionStatus, StudentAttendanceRecord, \
+from backend.app.schemas.attendence_schema import AttendanceSessionResponse, AttendanceStatus, MarkAttendanceByFacultyRequest, MultiSubjectReportResponse, SessionStatus, StudentAttendanceRecord, \
     StudentSubjectReportResponse, SubjectAttendanceReportFilter, \
     MarkAttendanceByCRRequest, FacultyToCRRequest, ApprovalUpdateRequest, StudentStatusUpdateRequest, \
     ApprovalsFilterParamsRequest, compute_period_range
@@ -13,10 +13,184 @@ from backend.app.utils.connection_manager import manager
 from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
 
-# 
+# some required helpers for handling
+async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
+    pipeline = [
+        {
+            "$match": {
+                "subject_code": payload.subject_code,
+                "status": {"$in": ["approved", "marked_by_faculty"]},
+                "attendance_records.registration_no": payload.registration_no,
+            }
+        },
+        {"$unwind": "$attendance_records"},
+        {
+            "$match": {
+                "attendance_records.registration_no": payload.registration_no
+            }
+        },
+        {
+            "$group": {
+                "_id": {
+                    "reg_no": "$attendance_records.registration_no",
+                    "subject_code": "$subject_code",
+                },
+                "present_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "present"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "absent_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "absent"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "excused_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "excused"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "daily_records": {
+                    "$push": {
+                        "date": "$date",
+                        "status": "$attendance_records.status",
+                    }
+                },
+            }
+        },
+    ]
+
+    result = await db.Attendance.aggregate(pipeline).to_list(1)
+    print("--> Aggregation result for single subject report:", result)
+    
+    if not result:
+        return MultiSubjectReportResponse(reports=[])
+
+    report_data = result[0]
+    present = report_data["present_count"]
+    absent = report_data["absent_count"]
+    excused = report_data["excused_count"]
+    total_classes = present + absent + excused
+
+    attendance_percentage = (
+        round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
+    )
+
+    return MultiSubjectReportResponse(    
+        reports=[   
+                 StudentSubjectReportResponse(
+                    subject_code=report_data["_id"]["subject_code"],
+                    total_classes=total_classes,
+                    present_count=present,
+                    absent_count=absent,
+                    excused_count=excused,
+                    attendance_percentage=attendance_percentage,
+                    daily_records=report_data["daily_records"],
+        )])
+
+async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
+    pipeline = [
+        {
+            "$match": {
+                "status": {"$in": ["approved", "marked_by_faculty"]},
+                "attendance_records.registration_no": payload.registration_no,
+            }
+        },
+        {"$unwind": "$attendance_records"},
+        {
+            "$match": {
+                "attendance_records.registration_no": payload.registration_no
+            }
+        },
+        {
+            "$group": {
+                "_id": {
+                    "reg_no": "$attendance_records.registration_no",
+                    "subject_code": "$subject_code",
+                },
+                "present_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "present"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "absent_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "absent"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "excused_count": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$attendance_records.status", "excused"]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+                "daily_records": {
+                    "$push": {
+                        "date": "$date",
+                        "status": "$attendance_records.status",
+                    }
+                },
+            }
+        },
+    ]
+
+    result = await db.Attendance.aggregate(pipeline).to_list(None)
+    print("--> Aggregation result for multi-subject report:", result)
+    
+    if not result:
+        return MultiSubjectReportResponse(reports=[])
+
+    reports: list[StudentSubjectReportResponse] = []
+    for doc in result:
+        present = doc["present_count"]
+        absent = doc["absent_count"]
+        excused = doc["excused_count"]
+        total_classes = present + absent + excused
+        attendance_percentage = (
+            round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
+        )
+
+        reports.append(
+            StudentSubjectReportResponse(
+                subject_code=doc["_id"]["subject_code"],
+                total_classes=total_classes,
+                present_count=present,
+                absent_count=absent,
+                excused_count=excused,
+                attendance_percentage=attendance_percentage,
+                daily_records=doc["daily_records"],
+            )
+        )
+
+    return MultiSubjectReportResponse(reports=reports)
+
+
 router = APIRouter(prefix="/attendance", tags=["Attendance Management"])
-@router.post("/mark-by-faculty",response_model=AttendanceSessionResponse, status_code=status.HTTP_201_CREATED,
-)
+
+@router.post("/mark-by-faculty",response_model=AttendanceSessionResponse, status_code=status.HTTP_201_CREATED)
 async def mark_attendance_by_faculty(
     request_data: MarkAttendanceByFacultyRequest,
     current_user: dict = Depends(faculty_required),
@@ -141,7 +315,7 @@ async def mark_attendance_by_faculty(
 
     return AttendanceSessionResponse(**created_session)
 
-@router.get("/report/student-subject", response_model=StudentSubjectReportResponse)
+@router.get("/report/student-subject", response_model=MultiSubjectReportResponse, status_code=status.HTTP_200_OK)
 async def get_student_subject_attendance_report(
         payload: SubjectAttendanceReportFilter = Depends(),
         current_user: dict = Depends(get_current_user)
@@ -156,84 +330,13 @@ async def get_student_subject_attendance_report(
             except Exception as e:
                 raise HTTPException(status_code=403,detail="Access denied.")
 
-    pipeline = [
-        # 1. Match only the relevant class sessions
-        {
-            "$match": {
-                "subject_code": payload.subject_code,
-                "status": {"$in": ["approved", "marked_by_faculty"]},
-                "attendance_records.registration_no": payload.registration_no
-            }
-        },
-        # 2. Unwind the attendance_records array to process each Student record individually
-        {
-            "$unwind": "$attendance_records"
-        },
-        # 3. Match again to isolate the records for the specific Student we want
-        {
-            "$match": {
-                "attendance_records.registration_no": payload.registration_no
-            }
-        },
-        # 4. Group the records to count statuses and collect daily records
-        {
-            "$group": {
-                "_id": "$attendance_records.registration_no",
-                "present_count": {
-                    "$sum": {"$cond": [{"$eq": ["$attendance_records.status", "present"]}, 1, 0]}
-                },
-                "absent_count": {
-                    "$sum": {"$cond": [{"$eq": ["$attendance_records.status", "absent"]}, 1, 0]}
-                },
-                "excused_count": {
-                    "$sum": {"$cond": [{"$eq": ["$attendance_records.status", "excused"]}, 1, 0]}
-                },
-                "daily_records": {
-                    "$push": {
-                        "date": "$date",
-                        "status": "$attendance_records.status"
-                    }
-                }
-            }
-        }
-    ]
-    try:
-        result = await db.Attendance.aggregate(pipeline).to_list(1)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cannot get data at the moment") from e
-
-    if not result:
-        # If no records are found, return a default empty report
-        return StudentSubjectReportResponse(
-            total_classes=0,
-            present_count=0,
-            absent_count=0,
-            excused_count=0,
-            attendance_percentage=0.0,
-            daily_records=[]
-        )
-
-    report_data = result[0]
-    # print("--> Report data", report_data)
-
-    total_classes = report_data["present_count"] + report_data["absent_count"] + report_data["excused_count"]
-    # print("--> Total classes", total_classes)
-
-    attendance_percentage = 0.0
-    if total_classes > 0:
-        # Standard attendance percentage calculation (present / total)
-        attendance_percentage = round((report_data["present_count"] / total_classes) * 100, 2)
-        # print("--> Attendance percentage", attendance_percentage)
-
-    return StudentSubjectReportResponse(
-        total_classes=total_classes,
-        present_count=report_data["present_count"],
-        absent_count=report_data["absent_count"],
-        excused_count=report_data["excused_count"],
-        attendance_percentage=attendance_percentage,
-        daily_records=report_data["daily_records"]
-    )
-
+    if payload.subject_code:
+        # Single subject – use your existing pipeline (maybe slightly adapted)
+        return await _single_subject_report(payload)
+    else:
+        # All subjects – use a pipeline grouped by subject_code
+        return await _all_subjects_report(payload)
+    
 @router.post("/initiate-for-cr", status_code=status.HTTP_201_CREATED)
 async def initiate_attendance_for_cr(
         initiate_request: FacultyToCRRequest,

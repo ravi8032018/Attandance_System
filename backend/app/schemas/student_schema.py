@@ -118,6 +118,7 @@ class StudentAdminResponse(BaseModel):
     semester:Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
+    department: Optional[str]
     course: Optional[str]
     roll_number: Optional[str]
     dob: Optional[date]

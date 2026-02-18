@@ -4,77 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {CapitalizeEachWord, CopyButton} from "@/src/_hooks/basic_fn";
 import {ContactCell} from "@/src/Contact_Cell";
-
-function AttendancePie({ present, absent }) {
-  const total = present + absent;
-  if (total <= 0) {
-    return (
-      <div className="flex h-40 items-center justify-center text-xs text-slate-500">
-        No data to display
-      </div>
-    );
-  }
-
-  const presentRatio = present / total;
-  const presentAngle = presentRatio * 360;
-
-  // SVG 100x100, radius 16, centered at 20,20
-  const radius = 16;
-  const center = 20;
-
-  // Helper to convert polar to cartesian
-  const polarToCartesian = (cx, cy, r, angleDeg) => {
-    const rad = (angleDeg - 90) * (Math.PI / 180);
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy + r * Math.sin(rad),
-    };
-  };
-
-  // Large-arc-flag for present slice
-  const largeArc = presentAngle > 180 ? 1 : 0;
-
-  const start = polarToCartesian(center, center, radius, 0);
-  const end = polarToCartesian(center, center, radius, presentAngle);
-
-  const presentPath = [
-    `M ${center} ${center}`,
-    `L ${start.x} ${start.y}`,
-    `A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y}`,
-    "Z",
-  ].join(" ");
-
-  // Absent slice is the remainder of the circle
-  const absentPath = [
-    `M ${center} ${center}`,
-    `L ${end.x} ${end.y}`,
-    `A ${radius} ${radius} 0 ${presentAngle > 180 ? 0 : 1} 1 ${start.x} ${start.y}`,
-    "Z",
-  ].join(" ");
-
-  return (
-    <div className="flex items-center gap-4">
-      <svg width={80} height={80} viewBox="0 0 40 40">
-        <path d={presentPath} fill="#22c55e" /> {/* emerald-500 */}
-        <path d={absentPath} fill="#f97373" />   {/* rose-400 */}
-      </svg>
-      <div className="space-y-1 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-sm bg-emerald-500" />
-          <span className="text-slate-700">
-            Present: <span className="font-semibold">{present}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-sm bg-rose-400" />
-          <span className="text-slate-700">
-            Absent: <span className="font-semibold">{absent}</span>
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { apiFetch } from "@/src/api_fetch";
+import { SemesterPie as AttendancePie } from "@/src/_hooks/charts";
 
 
 export default function ProfileClient({ registrationNo, initialTab = "overview" }) {
@@ -85,11 +16,13 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
 
   const [subjectCode, setSubjectCode] = useState("");
   const [subjects, setSubjects] = useState([]); 
+  const ALL_SUBJECTS = "__ALL__";
   const [attendance, setAttendance] = useState(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState("");
 
 
+  // Fetch student profile on mount or when registrationNo changes on overview tab
   useEffect(() => {
     let cancelled = false;
     async function run() {
@@ -100,7 +33,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
 
         // Try direct profile endpoint if you have it: /student/{registration_no}
         let url = `${base}/student/registration-no/${encodeURIComponent(registrationNo)}`;
-        let res = await fetch(url, { credentials: "include", headers: { Accept: "application/json" } });
+        let res = await apiFetch(url, { headers: { Accept: "application/json" } });
         console.log("--> res: ",res);
 
         if (res.status === 404) {
@@ -138,128 +71,185 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
     };
   }, [registrationNo]);
 
-useEffect(() => {
-  let cancelled = false;
-
-  async function loadAttendance() {
-    console.log("loadAttendance called, tab:", tab, "subjectCode:", subjectCode);
-
-    if (tab !== "attendance" || !subjectCode) {
-      console.log("Skipping attendance fetch (tab or subjectCode missing)");
-      setAttendance(null);
-      setAttendanceError("");
-      return;
-    }
-
-    setAttendanceLoading(true);
-    setAttendanceError("");
-
-    try {
-      const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-      const url = `${base}/attendance/report/student-subject?registration_no=${encodeURIComponent(
-        registrationNo
-      )}&subject_code=${encodeURIComponent(subjectCode)}`;
-
-      console.log("Fetching attendance from:", url);
-
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-
-      const data = await res.json().catch(() => ({}));
-      console.log("--> attendance data:", data);
-
-      if (!res.ok) {
-        const msg =
-          typeof data?.detail === "string"
-            ? data.detail
-            : data?.message || "Failed to load attendance";
-        throw new Error(msg);
-      }
-
-      if (cancelled) return;
-      setAttendance(data);
-    } catch (e) {
-      if (!cancelled) {
-        setAttendance(null);
-        setAttendanceError(e?.message || "Failed to load attendance");
-      }
-    } finally {
-      if (!cancelled) setAttendanceLoading(false);
-    }
-  }
-
-  loadAttendance();
-  return () => {
-    cancelled = true;
-  };
-}, [tab, registrationNo, subjectCode]);
-
-
+  // Load subjects for dropdown when student data is available (needs dept and sem)
   useEffect(() => {
-  let ignore = false;
+    let ignore = false;
 
-  async function loadSubjects() {
-    console.log("loadSubjects called, student:", s);
+    async function loadSubjects() {
+      console.log("loadSubjects called, student:", s);
 
-    // Wait until student data is loaded AND has dept/sem
-    if (!s || !s.department || !s.semester) {
-      console.log("No department/semester yet, clearing subjects");
-      setSubjects([]);
-      return;
-    }
-
-    try {
-      const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-      const params = new URLSearchParams({
-        department: s.department,
-        semester: s.semester,
-      });
-      const url = `${api}/curriculum?${params.toString()}`;
-      console.log("Fetching curriculum from:", url);
-
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-        headers: { Accept: "application/json" },
-      });
-
-      const data = await res.json().catch(() => ({}));
-      console.log("--> Subjects API raw : ", data);
-
-      if (!res.ok) {
-        console.error("Subjects API error status:", res.status, data);
-        throw new Error(data?.detail || data?.message || "Failed to load subjects");
-      }
-      if (ignore) return;
-
-      const curriculumList = Array.isArray(data?.data) ? data.data : [];
-      const allSubjects = curriculumList.flatMap((item) => item.subjects || []);
-
-      console.log("--> Subjects array used for dropdown : ", allSubjects);
-      setSubjects(allSubjects);
-
-      if (allSubjects.length > 0 && !subjectCode) {
-        console.log("Preselecting first subject:", allSubjects[0].subject_code);
-        setSubjectCode(allSubjects[0].subject_code);
-      }
-    } catch (e) {
-      if (!ignore) {
+      if (!s || !s.department || !s.semester) {
+        console.log("No department/semester yet, clearing subjects");
         setSubjects([]);
-        console.error("Failed to load subjects:", e);
+        return;
+      }
+
+      try {
+        const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const params = new URLSearchParams({
+          department: s.department,
+          semester: s.semester,
+        });
+        const url = `${api}/curriculum?${params.toString()}`;
+        console.log("Fetching curriculum from:", url);
+
+        const res = await apiFetch(url, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        console.log("--> Subjects API raw : ", data);
+
+        if (!res.ok) {
+          console.error("Subjects API error status:", res.status, data);
+          throw new Error(data?.detail || data?.message || "Failed to load subjects");
+        }
+        if (ignore) return;
+
+        const curriculumList = Array.isArray(data?.data) ? data.data : [];
+        const allSubjects = curriculumList.flatMap((item) => item.subjects || []);
+        console.log("--> Subjects array used for dropdown : ", allSubjects);
+
+        setSubjects(allSubjects);
+
+        if (allSubjects.length > 0 && !subjectCode) {
+          console.log("Preselecting first subject:", allSubjects[0].subject_code);
+          // Option A: preselect first subject
+          setSubjectCode(allSubjects[0].subject_code);
+          // Option B: force “nothing selected” and let user choose:
+          // setSubjectCode("");
+        }
+
+      } catch (e) {
+        if (!ignore) {
+          setSubjects([]);
+          console.error("Failed to load subjects:", e);
+        }
       }
     }
-  }
 
-  loadSubjects();
-  return () => {
-    ignore = true;
-  };
-}, [s, subjectCode]);
+    loadSubjects();
+    return () => {
+      ignore = true;
+    };
+  }, [s]); 
 
+  // Load attendance data when tab is "attendance" and subjectCode is set
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAttendance() {
+      if (tab !== "attendance" || !subjectCode) {
+        console.log("Skipping attendance fetch (tab or subjectCode missing)");
+        setAttendance(null);
+        setAttendanceError("");
+        return;
+      }
+      console.log("loadAttendance called, tab:", tab, "subjectCode:", subjectCode);
+
+      setAttendanceLoading(true);
+      setAttendanceError("");
+
+      try {
+        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        // Build URL based on whether we want single or all
+        let url = `${base}/attendance/report/student-subject?registration_no=${encodeURIComponent(
+          registrationNo
+        )}`;
+        if (subjectCode !== ALL_SUBJECTS) {
+          url += `&subject_code=${encodeURIComponent(subjectCode)}`;
+        }
+
+        console.log("Fetching attendance from:", url);
+
+        const res = await apiFetch(url, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        console.log("--> attendance data (multi):", data);
+
+        if (!res.ok) {
+          const msg =
+            typeof data?.detail === "string"
+              ? data.detail
+              : data?.message || "Failed to load attendance";
+          throw new Error(msg);
+        }
+
+        const reports = Array.isArray(data?.reports) ? data.reports : [];
+        console.log("--> reports:", reports);
+
+        let combined = null;
+
+        if (subjectCode === ALL_SUBJECTS) {
+          // Combine all subjects
+          let totalPresent = 0;
+          let totalAbsent = 0;
+          let totalExcused = 0;
+          let totalClasses = 0;
+          const allDaily = [];
+
+          for (const r of reports) {
+            totalPresent += r.present_count || 0;
+            totalAbsent += r.absent_count || 0;
+            totalExcused += r.excused_count || 0;
+            totalClasses += r.total_classes || 0;
+            if (Array.isArray(r.daily_records)) {
+              allDaily.push(
+                ...r.daily_records.map((d) => ({
+                  ...d,
+                  subject_code: r.subject_code,
+                }))
+              );
+            }
+          }
+
+          const attendance_percentage =
+            totalClasses > 0
+              ? Math.round((totalPresent / totalClasses) * 100)
+              : 0;
+
+          combined = {
+            subject_code: "ALL",
+            total_classes: totalClasses,
+            present_count: totalPresent,
+            absent_count: totalAbsent,
+            excused_count: totalExcused,
+            attendance_percentage,
+            daily_records: allDaily,
+          };
+        } else {
+          // single subject: pick the matching report or first
+          combined =
+            reports.find((r) => r.subject_code === subjectCode) ??
+            reports[0] ??
+            null;
+        }
+
+        console.log("--> normalized attendance:", combined);
+
+        if (cancelled) return;
+        setAttendance(combined);
+      } catch (e) {
+        if (!cancelled) {
+          setAttendance(null);
+          setAttendanceError(e?.message || "Failed to load attendance");
+        }
+      } finally {
+        if (!cancelled) setAttendanceLoading(false);
+      }
+    }
+
+    loadAttendance();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, registrationNo, subjectCode]);
 
   const fullName = useMemo(() => {
     const fn = (s?.first_name ?? "").trim();
@@ -355,7 +345,7 @@ useEffect(() => {
       {/* Tabs */}
       <section className="mb-3">
         <div className="flex border-b-2 border-slate-300">
-          {["overview", "attendance", "courses"].map((t) => (
+          {["overview", "attendance"].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -437,113 +427,129 @@ useEffect(() => {
       )}
 
       {tab === "attendance" && (
-  <section className="rounded-lg border bg-white p-4">
-    <h2 className="mb-3 text-base font-semibold">Attendance</h2>
-
-    {/* Subject code input + dropdown from curriculum */}
-    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:gap-4">
-      <div className="flex flex-col gap-1 md:w-1/3">
-        <label className="text-sm text-slate-600">Subject code</label>
-        <input
-          type="text"
-          value={subjectCode}
-          onChange={(e) => setSubjectCode(e.target.value.toUpperCase())}
-          className="rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-          placeholder="CSDSC251"
-        />
-      </div>
-      <div className="flex flex-col gap-1 md:w-1/3">
-        <label className="text-sm text-slate-600">Or pick from list</label>
-        <select
-          value={subjectCode}
-          onChange={(e) => setSubjectCode(e.target.value)}
-          className="rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-        >
-          <option value="">Select subject</option>
-          {subjects.map((subj) => (
-            <option key={subj.subject_code} value={subj.subject_code}>
-              {`${subj.subject_code} - ${subj.subject_name}`}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-
-    {/* Content: same card + pie chart as before */}
-    {attendanceLoading ? (
-      <p className="text-sm text-slate-600">Loading attendance…</p>
-    ) : attendanceError ? (
-      <p className="text-sm text-rose-700">{attendanceError}</p>
-    ) : !subjectCode ? (
-      <p className="text-sm text-slate-600">
-        Enter or select a subject code to view attendance.
-      </p>
-    ) : !attendance ? (
-      <p className="text-sm text-slate-600">
-        No attendance data available for this subject.
-      </p>
-    ) : (
-      <div className="space-y-4">
-        {/* Summary card */}
-        <div className="rounded-xl border bg-slate-50 px-4 py-3 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-800">
-                Summary for {subjectCode}
-              </h3>
-              <p className="text-xs text-slate-500">
-                Total classes:{" "}
-                <span className="font-semibold">
-                  {attendance.total_classes}
-                </span>{" "}
-                • Attendance:{" "}
-                <span className="font-semibold">
-                  {attendance.attendance_percentage}%
-                </span>
-              </p>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-                <div className="rounded-md bg-white px-3 py-2 border">
-                  <div className="text-slate-500">Present</div>
-                  <div className="text-lg font-semibold text-emerald-700">
-                    {attendance.present_count}
-                  </div>
-                </div>
-                <div className="rounded-md bg-white px-3 py-2 border">
-                  <div className="text-slate-500">Absent</div>
-                  <div className="text-lg font-semibold text-rose-700">
-                    {attendance.absent_count}
-                  </div>
-                </div>
-                <div className="rounded-md bg-white px-3 py-2 border">
-                  <div className="text-slate-500">Excused</div>
-                  <div className="text-lg font-semibold text-sky-700">
-                    {attendance.excused_count}
-                  </div>
-                </div>
+        <section className="">
+          {/* Outer card always present */}
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm max-w-200">
+            {/* Card header + selector */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900 px-1">
+                  Attendance
+                </h2>
+              </div>
+              {/* Selector ALWAYS visible */}
+              <div className="flex flex-col ">
+                <select
+                  value={subjectCode}
+                  onChange={(e) => setSubjectCode(e.target.value)}
+                  className="rounded-lg border-2 border-slate-300 bg-white/50 px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 overflow-ellipsis"
+                >
+                  <option value="">Select subject</option>
+                  <option value={ALL_SUBJECTS}>All subjects (combined)</option>
+                  {subjects.map((subj) => (
+                    <option key={subj.subject_code} value={subj.subject_code}>
+                      {`${subj.subject_code} • ${subj.subject_name}`}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <AttendancePie
-              present={attendance.present_count}
-              absent={attendance.absent_count}
-            />
+            {/* Main content area: 2‑column layout with skeletons */}
+            <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+              {/* LEFT: KPIs + messages */}
+              <div className="flex flex-col gap-3 mb-2 text-xs w-full max-w-xs">
+                {/* Loading skeleton */}
+                {attendanceLoading && (
+                  <>
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
+                  </>
+                )}
+
+                {!attendanceLoading && subjectCode && !attendance && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      No attendance data available for this subject.
+                    </p>
+                )}
+
+                {!attendanceLoading &&
+                  attendance &&
+                  !attendanceError &&
+                  subjectCode && (
+                    <>
+                      <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 h-14">
+                        <div className="flex items-center text-sm font-medium text-emerald-700">
+                          Present
+                        </div>
+                        <div className="text-2xl font-bold text-emerald-700">
+                          {attendance.present_count}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 h-14">
+                        <div className="flex items-center text-sm font-medium text-rose-700">
+                          Absent
+                        </div>
+                        <div className="text-2xl font-semibold text-rose-700">
+                          {attendance.absent_count}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-sky-100 bg-[#f59e0b]/13 px-3 py-2 h-14">
+                        <div className="flex items-center text-sm font-medium text-[#d99621]">
+                          Excused
+                        </div>
+                        <div className="text-2xl font-semibold text-[#f59e0b]">
+                          {attendance.excused_count}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                {/* Messages for global states */}
+                {!attendanceLoading && attendanceError && (
+                  <p className="text-sm text-rose-700">{attendanceError}</p>
+                )}
+                {!attendanceLoading && !attendanceError && !subjectCode && (
+                  <p className="text-sm text-slate-600">
+                    Select a subject above to view attendance.
+                  </p>
+                )}
+              </div>
+
+              {/* RIGHT: pie or its skeleton, always visible when a subject is chosen */}
+            <div className="flex flex-col items-center gap-2 mt-2 mr-15">
+              <div>
+                {attendanceLoading && subjectCode && (
+                  <div className="h-40 w-40 animate-pulse rounded-full bg-slate-100" />
+                )}
+                {!attendanceLoading && attendance && subjectCode && (
+                  <AttendancePie
+                    present={attendance.present_count}
+                    absent={attendance.absent_count}
+                    // h={55}
+                    // w={55}
+                  />
+                )}
+              </div>
+            
+              <div>
+                {subjectCode && attendance && !attendanceLoading && !attendanceError && (
+                  <p className="text-xs text-slate-500">
+                    Total classes{" "}
+                    <span className="text-sm font-semibold text-slate-800">
+                      {attendance.total_classes}
+                    </span>{" "}
+                    &nbsp;·Attendance{" "}
+                    <span className="text-sm font-semibold text-emerald-600">
+                      {attendance.attendance_percentage}%
+                    </span>
+                  </p>
+                )}
+              </div>               
+            </div>
+            </div>
           </div>
-        </div>
-
-        {/* Daily records card (same as before) */}
-        {/* ... keep the daily records list code you already have ... */}
-      </div>
-    )}
-  </section>
-)}
-
-
-
-
-      {tab === "courses" && (
-        <section className="rounded-lg border bg-white p-4">
-          <h2 className="mb-3 text-base font-semibold">Courses</h2>
-          <p className="text-sm text-slate-600">List enrolled courses with credits and instructor, connect to your courses endpoint.</p>
         </section>
       )}
     </main>

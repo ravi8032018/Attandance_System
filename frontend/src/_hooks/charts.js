@@ -5,13 +5,13 @@ import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export function SemesterPie({ present = 70, absent = 30, h=25, w=25}) {
+export function SemesterPie({ present = 70, absent = 30, excused = 0, h=25, w=25}) {
   const data = {
-    labels: ["Present", "Absent"],
+    labels: ["Present", "Absent", "Excused"],
     datasets: [
       {
-        data: [present, absent],
-        backgroundColor: ["#22c55e", "#ef4444"],
+        data: [present, absent, excused],
+        backgroundColor: ["#22c55e", "#ef4444", "#f59e0b"],
         borderWidth: 2,
       },
     ],
