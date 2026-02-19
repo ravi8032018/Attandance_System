@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ContactCell } from "@/src/Contact_Cell";
+import { apiFetch } from "@/src/api_fetch";
 
 function qs(obj) {
   const p = new URLSearchParams();
@@ -67,8 +68,8 @@ export default function StudentsClient({ initialQuery }) {
         const url = `${base}/student/?${qs(params)}`;
         console.log("URL: ",url);
 
-        const res = await fetch(url, {
-          credentials: "include", // if using cookies
+        const res = await apiFetch(url, {
+          credentials: "include", 
           headers: { Accept: "application/json" },
         });
         const data = await res.json().catch(() => ({}));
@@ -126,7 +127,6 @@ export default function StudentsClient({ initialQuery }) {
   const setPage = (p) => update({ page: Math.max(1, Math.min(totalPages, p)) }, false);
   const setLimit = (n) => update({ limit: n }, true);
 
-  // UI
   return (
     <main className="p-6">
       <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -302,7 +302,7 @@ export default function StudentsClient({ initialQuery }) {
                         {(s.first_name ?? "").trim()} {(s.last_name ?? "").trim()}
                       </div>
                     </td>
-                    <td className="px-4 py-3">Sem {s.sem ?? "—"}</td>
+                    <td className="px-4 py-3">{s.semester ?? "—"}</td>
                     <td className="px-4 py-3">{s.course ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span

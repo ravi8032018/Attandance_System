@@ -7,12 +7,11 @@ import React from "react";
 import LogoutButton from "@/src/logout";
 
 const links = [
-  { href: "/faculty/dashboard", label: "My Dashboard", icon: "👩‍🏫" },
-  { href: "/faculty/list_students", label: "Students", icon: "🎓" },
-  { href: "/faculty/take-attendance", label: "Take Attendance", icon: "🛠️" },
+  { href: "/student/dashboard", label: "My Dashboard", icon: "🛠️" },
+  { href: "/student/profile", label: "My Profile", icon: "👩‍🏫" },        
 ];
 
-export default function SideNav() {
+export function StudentSideNav() {
   const pathname = usePathname();
   const [expanded, setExpanded] = React.useState(true);
 
@@ -20,6 +19,7 @@ export default function SideNav() {
     const saved = localStorage.getItem("sidenav-expanded");
     if (saved !== null) setExpanded(saved === "true");
   }, []);
+  
   React.useEffect(() => {
     localStorage.setItem("sidenav-expanded", String(expanded));
   }, [expanded]);
@@ -31,7 +31,7 @@ export default function SideNav() {
         // sticky + full viewport height
         "bg-[#f8fafb] border-slate-300 " +
         "transition-all duration-300 ease-in-out " +
-        (expanded ? "w-64" : "w-16")
+        (expanded ? "w-64" : "w-14")
       }
       aria-label="Primary"
     >
@@ -42,6 +42,8 @@ export default function SideNav() {
             <div className={"text-md font-semibold text-slate-900 overflow-hidden " + (expanded ? "opacity-100" : "opacity-0 pointer-events-none")}>
               Menu
             </div>
+
+            {/*menu flip arrow*/}
             <button
               type="button"
               className="rounded p-2 text-slate-600 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -54,19 +56,19 @@ export default function SideNav() {
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" className={"transition-transform " + (expanded ? "" : "rotate-180")}>
                 <path fill="currentColor" d="M9 6l6 6-6 6" />
               </svg>
-              {/*menu flip arrow*/}
             </button>
           </div>
 
-          <ul id="sidenav-list" className="px-2 space-y-0 overflow-y-auto">
+            {/*items*/}
+          <ul id="sidenav-list" className="px-2 space-y-0 overflow-y-auto ">
             {links.map((l) => {
               const active = pathname === l.href || pathname.startsWith(l.href + "/");
               return (
-                <li key={l.href}>
+                <li key={l.href} className="mb-1">
                   <Link
                     href={l.href}
                     className={
-                      "flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-slate-900 transition-colors " +
+                      "flex items-center rounded-md px-2 py-2 text-sm font-medium text-slate-900 transition-colors " +
                       (active ? "bg-indigo-200" : "hover:bg-indigo-200")
                     }
                     aria-current={active ? "page" : undefined}

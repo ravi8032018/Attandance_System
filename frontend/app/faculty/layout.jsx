@@ -1,11 +1,11 @@
 // app/dashboard/layout.jsx
-import SideNav from "../../src/sidenav";
+import FacultySideNav from "../../src/FacultySidenav";
 import { redirect } from "next/navigation";
 import { validateSession } from "@/src/validate_session";
 
-export default async function DashboardLayout({ children }) {
-  const session = await validateSession();
-  console.log("--> inside dashboard session",session);
+export default async function FacultyLayout({ children }) {
+  const session = await validateSession("faculty");
+  // console.log("--> inside dashboard session",session);
 
   if (!session) redirect("/login");
 
@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }) {
       {/* Sidebar */}
 
       <aside className="bg-slate-50 border-r-2 border-[#d2d9d8]">
-        <SideNav />
+        <FacultySideNav />
       </aside>
 
 

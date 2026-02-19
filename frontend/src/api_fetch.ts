@@ -10,7 +10,7 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
-    throw new Error("Unauthorized");
+    // throw new Error("Unauthorized");
   }
 
   return res;

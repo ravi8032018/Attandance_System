@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional, List
 from backend.app.schemas.curriculum_schema import CurriculumListResponse, CurriculumItem, SubjectItem
 from backend.app.utils.dependencies import get_current_user
-import asyncio
+from bson import ObjectId
 router = APIRouter(prefix="/curriculum", tags=["curriculum"])
 
 @router.get("/", response_model=CurriculumListResponse)
@@ -13,8 +13,21 @@ async def list_curriculum(
     current_user: dict = Depends(get_current_user),
 ):
     # Optional: restrict to admin/faculty only
-    if "admin" not in current_user["role"] and "faculty" not in current_user.get("role", []):
-        raise HTTPException(status_code=403, detail="Access denied.")
+    # print("--> Curriculum request by user:", current_user)
+    if "admin" not in current_user["role"]:
+        if "faculty" not in current_user.get("role", []):
+            if "student" in current_user.get("role", []):
+                # Students can only see curriculum for their own department and semester
+                student = await db.Students.find_one({"_id": ObjectId(current_user["id"])})
+                # student = await student_cursor.to_list(None) 
+                # print(f"student: {student}")
+                if not student:
+                    raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
+                student_dept = student.get("department")
+                student_sem = student.get("semester")
+                print(f"Student dept: {student_dept}, sem: {student_sem}")
+                if (department and department != student_dept) or (semester and semester != student_sem):
+                    raise HTTPException(status_code=403, detail="Access denied.")
 
     # Build optional Mongo filter
     query_filter: dict = {}

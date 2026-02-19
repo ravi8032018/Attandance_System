@@ -108,12 +108,12 @@ async def hod_required(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def student_required(current_user: dict = Depends(get_current_user)):
-    if current_user["token_role"] != "Student":
+    if current_user["token_role"] != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Student privileges required.",
         )
-    if 'Student' not in current_user["role"]:
+    if 'student' not in current_user["role"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Token role does not match roles assigned to user.",

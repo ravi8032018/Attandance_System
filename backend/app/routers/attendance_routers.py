@@ -2,6 +2,7 @@
 import secrets
 from time import process_time_ns
 from typing import Optional, Annotated, List
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Path, Depends, status, Query
 from backend.app.db import db
 from datetime import timedelta, datetime, time, timezone
@@ -320,15 +321,16 @@ async def get_student_subject_attendance_report(
         payload: SubjectAttendanceReportFilter = Depends(),
         current_user: dict = Depends(get_current_user)
 ):
-    # print("\n--> payload: ",payload)
+    print("--> Report request by user:", current_user)
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             try:
-                student_cursor= db.Students.find_one({"_id": current_user["id"]})
-                if not student_cursor:
-                        raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
+                student_cursor = await db.Students.find_one({"_id": ObjectId(current_user["id"])})
+                print("--> Student cursor for report access check:", student_cursor)
+                if (student_cursor["registration_no"]) != payload.registration_no:
+                    raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
             except Exception as e:
-                raise HTTPException(status_code=403,detail="Access denied.")
+                raise HTTPException(status_code=403,detail="Something went wrong, Please try again") from e
 
     if payload.subject_code:
         # Single subject – use your existing pipeline (maybe slightly adapted)

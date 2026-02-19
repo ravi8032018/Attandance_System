@@ -38,7 +38,7 @@ async def student_create(
     }
     docs = await db.Curriculum.find_one(payload)
     print("--> docs: ", docs)
-    data = docs["subjects"] if docs else None
+    data = docs["subjects"] if docs else None 
     print("--> data: ", data)
     subjects_doc = {
         "subjects": {
@@ -53,7 +53,7 @@ async def student_create(
     student_dict["registration_no"] = unique_student_id
     student_dict["created_by"] = current_admin["name"]
     student_dict["status"] = "inactive"
-    student_dict["role"] = ["Student"]
+    student_dict["role"] = ["student"]
     student_dict["created_at"] = datetime.utcnow()
     student_dict['profile_complete']= False
     student_dict['updated_at']= datetime.utcnow()
@@ -166,7 +166,7 @@ async def bulk_students_create(
             "registration_year": payload.registration_year,
             "department": payload.department,
             "course": payload.course,
-            "role": ["Student"],
+            "role": ["student"],
             "status": "inactive",
             "created_by": current_admin["name"],
             "created_at": now,
@@ -327,7 +327,7 @@ async def complete_profile(
 async def get_current_student_profile(
         current_user: dict = Depends(student_required)
 ):
-    # print("current_user--> ", current_user)
+    print("current_user--> ", current_user)
     student_id = current_user.get("id")
 
     if not student_id:
@@ -351,7 +351,7 @@ async def update_current_student_profile(
         update_data: StudentSelfUpdateRequest,
         current_user: dict = Depends(get_current_user)
 ):
-    if "Student" not in current_user.get("role", []):
+    if "student" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only students can update their own profile.")
     # print("current user--> ", current_user)
     student_id = current_user.get("id")
