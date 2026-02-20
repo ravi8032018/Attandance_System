@@ -53,7 +53,7 @@ async def student_create(
     student_dict["registration_no"] = unique_student_id
     student_dict["created_by"] = current_admin["name"]
     student_dict["status"] = "inactive"
-    student_dict["role"] = ["student"]
+    student_dict["role"] = ["student"]  
     student_dict["created_at"] = datetime.utcnow()
     student_dict['profile_complete']= False
     student_dict['updated_at']= datetime.utcnow()
@@ -600,4 +600,48 @@ async def update_student_by_admin(
 
     return updated_student
 
+@router.post("/{registration_no}/promote-to-cr", status_code=status.HTTP_200_OK)
+async def promote_student_to_cr(
+        registration_no: str = Path(..., description="The registration number of the Student to promote to CR"),
+        current_user: dict = Depends(admin_required)
+):
+    try:
+        updated_student = await db.Students.find_one(
+            {"registration_no": registration_no, "status": "active"}
+            )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+    if updated_student is None:
+        student_exists = await db.Students.find_one({"registration_no": registration_no})
+        if not student_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Student with registration number {registration_no} not found."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Student with registration number {registration_no} is inactive and cannot be promoted."
+            )
+
+    # Check if the student is already a CR    
+    if "cr" in updated_student.get("role", []):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Student with registration number {registration_no} is already a CR"
+        )
+    
+    # Add "cr" to the student's role array
+    try:
+        await db.Students.update_one(
+            {"registration_no": registration_no, "status": "active"},
+            {"$addToSet": {"role": "cr"}}  # addToSet ensures "cr" is not added multiple times
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error while promoting to CR: {str(e)}")
+    
+    log_event("promote student to CR", user_email=current_user["email"], user_name=current_user["name"], user_id=current_user["id"], user_role=current_user["role"])
+
+    return {"message": f"Student with registration number {registration_no} has been promoted to CR.", "status_code": status.HTTP_200_OK}

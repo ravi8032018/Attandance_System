@@ -294,7 +294,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
                   />
                 ) : (
                   <div
-                    className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
+                    className="h-26 w-26 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
                     aria-label="avatar initials"
                   >
                     <span className="font-semibold">

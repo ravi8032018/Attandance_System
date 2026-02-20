@@ -386,7 +386,7 @@ async def initiate_attendance_for_cr(
     # 4. Send the real-time notification to the CR via WebSocket
     notification_message = {
         "type": "attendance_request",
-        "title": f"Attendance Request for {initiate_request.subject_code}",
+        "title": f"Attendance Request for {initiate_request.subject_code}-{initiate_request.subject_name}",
         "body": "Please take attendance. You have 15 minutes.",
         "link": magic_link
     }
