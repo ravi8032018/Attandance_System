@@ -99,9 +99,9 @@ class StudentFilterParamsRequest(BaseModel):
     first_name: Optional[str] = Field(None, description="Filter by first name (partial match)")
     last_name: Optional[str] = Field(None, description="Filter by last name (partial match)")
     status: Optional[str] = Field(None, description="Filter by status ('active', 'inactive')")
-    semester: Optional[str] = Field(None, description="Filter by semester (1,2,3...)")
     sort_by: str = Field("created_at", description="Field to sort by")
     sort_order: SortOrder = Field(SortOrder.DESC, description="Sort order: 'asc' or 'desc'")
+    semester: Optional[str] = Field(None, description="Filter by semester (1,2,3...)")
     department: Optional[str] = Field(None, description="Sort by department (CS, EE, ME, etc.)")
     subject_code: Optional[str] = Field(None, description="Filter by subject code (CS101, EE202, etc.)")
 

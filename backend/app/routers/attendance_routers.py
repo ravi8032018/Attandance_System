@@ -1,4 +1,5 @@
 # In app/routers/attendance_router.py
+from enum import Enum
 import secrets
 from time import process_time_ns
 from typing import Optional, Annotated, List
@@ -11,6 +12,7 @@ from backend.app.schemas.attendence_schema import AttendanceSessionResponse, Att
     MarkAttendanceByCRRequest, FacultyToCRRequest, ApprovalUpdateRequest, StudentStatusUpdateRequest, \
     ApprovalsFilterParamsRequest, compute_period_range
 from backend.app.utils.connection_manager import manager
+from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
 
@@ -344,52 +346,56 @@ async def initiate_attendance_for_cr(
         initiate_request: FacultyToCRRequest,
         current_user: dict = Depends(faculty_required)
 ):
+    print("--> Initiate attendance for CR request received:", initiate_request)
     try:
         cr_user = await db.Students.find_one({
             "department": initiate_request.department,
-            "sem": initiate_request.sem,
-            "role": "cr"
+            "semester": initiate_request.semester,
+            "role": "cr",
+            "status": "active"
         })
+        print("--> CR user found for request:", cr_user)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"CR for sem {initiate_request.sem} not found.") from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"CR for semester {initiate_request.semester} not found.") from e
     # print("--> cr_user: {}".format(cr_user))
     cr_user_id = str(cr_user["_id"])
 
     # 1. Generate a secure token and set expiration
     token = secrets.token_hex(20)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expires = now + timedelta(minutes=15)
+
 
     # 2. Save the token to the database
     token_doc = {
         "attendance_token": token,
         "subject_code": initiate_request.subject_code,
-        "subject_name": initiate_request.subject_name,
         "department": initiate_request.department,
-        "sem": initiate_request.sem,
+        "semester": initiate_request.semester,
         "faculty_id": current_user["id"],
         "cr_id": cr_user_id,
         "cr_registration_no": cr_user["registration_no"],
         "date": initiate_request.class_date,
         "created_at": now,
         "expires_at": expires,
-        "status": "pending"
+        "is_used": False,
     }
     try:
         await db.AttendanceTokens.insert_one(token_doc)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Cannot request CR at the moment, Please try again") from e
     # 3. Construct the "Magic Link"
-    base_url = "http://localhost:8000/cr/take-attendance"
-    magic_link = f"{base_url}?token={token}"
+    base_url = "http://localhost:8000/student/cr/"
+    magic_link = f"{base_url}/{token}/take-attendance"
 
     # 4. Send the real-time notification to the CR via WebSocket
     notification_message = {
-        "type": "attendance_request",
-        "title": f"Attendance Request for {initiate_request.subject_code}-{initiate_request.subject_name}",
+        "type": "cr_attendance_session_started",
+        "title": f"Attendance Request for {initiate_request.subject_code} - {cr_user['subjects'][initiate_request.subject_code]}",
         "body": "Please take attendance. You have 15 minutes.",
-        "link": magic_link
+        "token": token,
     }
+    print("--> Sending notification to CR (user_id: {}): {}".format(cr_user['registration_no'], notification_message))
     await manager.send_personal_message(notification_message, cr_user_id)
 
     return {"message": "Attendance initiated. CR has been notified."}
@@ -400,40 +406,57 @@ async def submit_attendance_by_cr(
         current_user: dict = Depends(cr_required)
 ):
     # print(current_user)
-    now = datetime.utcnow()
     # print("\n--> request_data: {}".format(request_data))
     # 1. Find and validate the token from the database
     try:
         token_doc = await db.AttendanceTokens.find_one({
-            "status": "pending",
             "attendance_token": str(request_data.attendance_token),
+            "is_used": False,
         })
     except Exception as e:
         raise HTTPException(status_code=400,detail="111111Invalid or expired session, or attendance already marked") from e
-    # print("--> token_doc: {}".format(token_doc))
+    print("--> token_doc: {}".format(token_doc))
+    
     if not token_doc:
         raise HTTPException(status_code=404, detail="22222Invalid or expired session, or attendance already marked.")
 
     if token_doc['cr_id'] != current_user['id']:
         raise HTTPException(status_code=403, detail="an unexpected error occurred")
+    
+    if token_doc['subject_code'] != request_data.subject_code or token_doc['department'] != request_data.department or token_doc['semester'] != request_data.semester:
+        raise HTTPException(status_code=403, detail="Session details mismatch. Please use the correct attendance link.")
 
-    if now > token_doc["expires_at"]:
+    print("--> Date from token_doc: {}, Date from request: {}".format(token_doc['date'], request_data.class_date))
+
+    now = datetime.now(timezone.utc)
+    expiry = token_doc['expires_at']
+    
+    # If expires_at is naive, attach UTC tzinfo
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    else:
+    # optionally normalize to UTC
+        expiry = expiry.astimezone(timezone.utc)
+
+    print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {token_doc['is_used']}")
+    
+    if now > expiry:
         await db.AttendanceTokens.update_one(
             {"_id": token_doc["_id"]},
-            {"$set": {"status": "expired"}}
+            {"$set": {"is_used": True}}
         )
         raise HTTPException(status_code=410, detail="This attendance link has expired.")
 
     # --- 2. If token is valid, proceed with your existing "auto-absent" logic ---
     # ... (Your logic to find absentees and create final_attendance_records) ...
     # ... (Your logic to create the new_session_doc with status 'pending_approval') ...
-    present_student_ids = [str(attandance_data['registration_no']) for attandance_data in request_data.attendance_data]
+    present_student_ids = [str(attandance_data.registration_no) for attandance_data in request_data.attendance_data]
     # print("\n--> present_student_ids: ", present_student_ids)
 
     absent_students_cursor = db.Students.find(
         {
             "status": "active",
-            "sem": token_doc["sem"],
+            "semester": token_doc["semester"],
             "department": token_doc["department"],
             "subjects": {
                 "$elemMatch": {
@@ -449,7 +472,17 @@ async def submit_attendance_by_cr(
     # absent_students =
     # print("--> absent Student records: ", absent_students_cursor)
 
-    final_attendance_records = [record for record in request_data.attendance_data]
+    # 1) Start from CR‑submitted records, but convert to dicts
+    final_attendance_records: list[dict] = []
+
+    for rec in request_data.attendance_data:
+        # rec is StudentAttendanceRecord
+        rec_dict = rec.model_dump() if hasattr(rec, "model_dump") else rec.dict()
+        # Ensure status is a plain string, not Enum
+        status = rec_dict.get("status")
+        if isinstance(status, Enum):
+            rec_dict["status"] = status.value
+        final_attendance_records.append(rec_dict)
     # print("\n--> final_attendance_records: ", final_attendance_records)
 
     async for student in absent_students_cursor:
@@ -457,7 +490,7 @@ async def submit_attendance_by_cr(
             "registration_no": student["registration_no"],
             "status": "absent"
         })
-    # print("\n--> Final attendance list: ",final_attendance_records)
+    print("\n--> \n\nFinal attendance list: ",final_attendance_records)
     session_id = f"{token_doc['subject_code']}-{token_doc['date'].strftime('%Y%m%d%H%M')}"
     # print("--> Session id:", session_id)
 
@@ -465,9 +498,8 @@ async def submit_attendance_by_cr(
         "session_id": session_id,
         "faculty_id": token_doc['faculty_id'],
         "subject_code": token_doc["subject_code"],
-        "subject_name": token_doc["subject_name"],
         "department": token_doc["department"],
-        "semester": token_doc["sem"],
+        "semester": token_doc["semester"],
         "date": token_doc["date"],
         "status": "pending",  # waiting for approval by faculty
         "submission_details": "marked_by_cr",  # CR submission
@@ -475,6 +507,7 @@ async def submit_attendance_by_cr(
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
+    print("\n--> \n\nNew session doc: ",new_session_doc)
     # 3. Check for duplicates to prevent marking the same session twice
     existing_session = await db.Attendance.find_one({"session_id": session_id})
     if existing_session:
@@ -483,14 +516,17 @@ async def submit_attendance_by_cr(
             detail=f"Attendance for this session ({session_id}) has already been marked."
         )
     # 4. Insert the new session document into the database
+    print("--> Attempting to insert new attendance session for CR submission...")
+    result = await db.Attendance.insert_one(new_session_doc)
     try:
-        result = await db.Attendance.insert_one(new_session_doc)
+        pass
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Failed to mark attendance, Please try again") from e
     # --- 3. CRUCIAL: Deactivate the token so it cannot be used again ---
+    print("--> Marking token as used to prevent reuse...")
     notification_message = {
-        "body": f"Attendance for sem {token_doc['sem']}, subject {token_doc['subject_code']}",
+        "body": f"Attendance for sem {token_doc['semester']}, subject {token_doc['subject_code']}",
         "title": f"Attendance marked by CR {current_user['id']}",
         "type": "Attendance marked by CR. Requesting approval.",
     }
@@ -499,12 +535,12 @@ async def submit_attendance_by_cr(
     try:
         await db.AttendanceTokens.update_one(
             {"_id": token_doc["_id"]},
-            {"$set": {"status": "used"}}
+            {"$set": {"is_used": True}}
         )
     except Exception as e:
         raise HTTPException(status_code=400,detail="Attendance marked succesfully.") from e
 
-    return {'message': 'Attendance marked succesfully.'}  # Placeholder
+    return {'message': 'Attendance marked succesfully.', 'session_id': session_id}  # Placeholder
 
 @router.get("/approvals/{session_id}", status_code=status.HTTP_200_OK)
 async def get_session_for_approval(
@@ -724,5 +760,30 @@ async def list_approvals(
         "aggregates": aggregates,
     }
 
+@router.get("/session-details/{token}", status_code=status.HTTP_200_OK)
+async def get_attendance_session_details(
+    token: str,
+    current_user: dict = Depends(cr_required),
+):
+    try:
+        token_doc = await db.AttendanceTokens.find_one({
+            "attendance_token": token,
+            "is_used": False,
+        })
+    except Exception as e:
+        raise HTTPException(status_code=400,detail="Invalid or expired session.") from e
 
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Invalid or expired session.")
+
+    if token_doc['cr_id'] != current_user['id']:
+        raise HTTPException(status_code=403, detail="an unexpected error occurred")
+    
+    print("--> token_doc for session details: {}".format(token_doc))
+    return {
+        "subject_code": token_doc["subject_code"],
+        "department": token_doc["department"],
+        "semester": token_doc["semester"],
+        "class_date": token_doc["date"],
+    }
 

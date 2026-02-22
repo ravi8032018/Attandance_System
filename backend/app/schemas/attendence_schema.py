@@ -81,13 +81,16 @@ class SubjectAttendanceReportFilter(BaseModel):
     
 class MarkAttendanceByCRRequest(BaseModel):
     attendance_token: str
+    subject_code: str
+    department: str
+    semester: str
+    class_date: datetime = Field(..., description="The date and time the class was held.")
     attendance_data: List[StudentAttendanceRecord] = Field(..., description="List of students who were present (or on leave).")
 
 class FacultyToCRRequest(BaseModel):
     subject_code: str = Field(..., description="The unique code for the subject/paper.")
-    subject_name: str = Field(..., description="The name for the subject/paper.")
     department: str
-    sem: str
+    semester: str
     class_date: datetime = Field(..., description="The date and time the class was held.")
 
     @validator('subject_code', pre=True)

@@ -6,12 +6,12 @@ from backend.app.schemas.student_schema import StudentCreateRequest, StudentBulk
     StudentFilterParamsRequest, StudentProfileUpdateByAdmin
 from backend.app.schemas.student_schema import  StudentOutResponse, StudentAdminResponse, StudentListResponse, StudentPaginatedResponse
 from secrets import token_urlsafe
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
-from backend.app.utils.dependencies import admin_required, get_current_user, student_required
+from backend.app.utils.dependencies import admin_required, cr_required, get_current_user, student_required
 from backend.app.utils.unique_student_id import generate_unique_student_id
 from backend.app.schemas.student_schema import StudentBulkCreateRequest
 from backend.my_logger import log_event
@@ -645,3 +645,125 @@ async def promote_student_to_cr(
     log_event("promote student to CR", user_email=current_user["email"], user_name=current_user["name"], user_id=current_user["id"], user_role=current_user["role"])
 
     return {"message": f"Student with registration number {registration_no} has been promoted to CR.", "status_code": status.HTTP_200_OK}
+
+@router.get("/list-students-for-cr", response_model=StudentPaginatedResponse)
+async def list_students_for_cr(
+    token: str,
+    params: StudentFilterParamsRequest= Depends(),
+    current_user: dict = Depends(cr_required)
+):
+    print("--> testing frontend : entering list_students", current_user)
+    print("--> params: ", params, "\n\ntoken:", token.strip())
+    # 1) Load and validate session
+    session = await db.AttendanceTokens.find_one({"attendance_token": token, "cr_id": current_user["id"]})
+    print("--> testing frontend : session found", session)
+    if not session:
+        raise HTTPException(404, "Session not found")
+
+    now = datetime.now(timezone.utc)
+    expiry = session['expires_at']
+    
+    # If expires_at is naive, attach UTC tzinfo
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    else:
+    # optionally normalize to UTC
+        expiry = expiry.astimezone(timezone.utc)
+
+    print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {session['is_used']}")
+    
+    if expiry < now or session['is_used'] != False:
+        print("--> session expired or already used")
+        raise HTTPException(410, "Session expired")
+    
+    print("--> session is valid, proceeding to list students for CR")
+    # check and match the subject code, sem ....
+
+
+    # This check is redundant if `ge=1` is working, but serves as a manual safeguard
+    if params.limit < 1:
+        raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")
+    # print(f"DEBUG: Received sort_by = '{params.sort_by}' (type: {type(params.sort_by)})")
+    # print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
+
+    query_filter = {}
+    expr_conditions = []
+
+    if params.registration_no:
+        query_filter["registration_no"] = {"$regex": params.registration_no, "$options": "i"}
+
+    if params.email:
+        query_filter["email"] = {"$regex": params.email, "$options": "i"}
+
+    if params.first_name:
+        query_filter["first_name"] = {"$regex": params.first_name, "$options": "i"}
+
+    if params.last_name:
+        query_filter["last_name"] = {"$regex": params.last_name, "$options": "i"}
+
+    if params.status:
+        query_filter["status"] = params.status.lower()
+
+    if params.semester:
+        query_filter["semester"] = params.semester.lower()
+
+    if params.department:
+        query_filter["department"] = {"$regex": params.department, "$options": "i"}
+
+    if params.subject_code:
+        expr_conditions.append({
+            "$gt": [
+                {
+                    "$size": {
+                        "$filter": {
+                            "input": {"$objectToArray": "$subjects"},
+                            "as": "subj",
+                            "cond": {
+                                "$regexMatch": {
+                                    "input": "$$subj.k",
+                                    "regex": params.subject_code,
+                                    "options": "i"
+                                }
+                            }
+                        }
+                    }
+                },
+                0
+            ]
+        })
+
+    if expr_conditions:
+        query_filter["$expr"] = {"$and": expr_conditions}
+
+    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+
+    mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
+    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
+    if params.sort_by not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sort_by field. Allowed fields are: {', '.join(sorted(ALLOWED_SORT_FIELDS))}"
+        )
+    # Define collation for case-insensitive sorting on string fields
+    collation = Collation(locale='en', strength=2)
+    total_count = await db["Students"].count_documents(query_filter)
+
+    students_cursor = db["Students"].find(query_filter).collation(collation).sort(params.sort_by, mongo_sort_order).skip(params.skip).limit(params.limit)
+
+    students_data = [StudentListResponse(**student) async for student in students_cursor]
+    print("--> testing frontend : students_data fetched", students_data)
+    
+    log_event(
+        "list students by cr",
+        user_email=current_user["email"],
+        user_id=current_user["id"],
+        user_role=current_user["role"],
+        details=f"Fetched {len(students_data)} students. Filters: {query_filter}"
+    )
+
+    return StudentPaginatedResponse(
+        data=students_data,
+        total_count=  total_count,
+        page=params.skip // params.limit + 1,
+        limit=params.limit
+    )

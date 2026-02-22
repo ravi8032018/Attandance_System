@@ -1,10 +1,10 @@
 // app/faculty/attendance/page.jsx
 "use client";
 
-import React  from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
+import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/src/api_fetch";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function StudentRow({ student, checked, onToggle }) {
   return (
@@ -42,10 +42,14 @@ export default function FacultyAttendancePage() {
   const [department, setDepartment] = React.useState("");
   const [sem, setSem] = React.useState("");
   const [classDate, setClassDate] = React.useState(() => new Date().toISOString().slice(0, 16));
+  const [loadingMeta, setLoadingMeta] = React.useState(true);
 
   // Dynamic roster from backend
   const [students, setStudents] = React.useState([]);
   const [presentSet, setPresentSet] = React.useState(() => new Set());
+  const params = useParams();
+  // params will look like: { token: '2d8f78...', ... }
+  const token = params.token ;
 
   // Build query string helper
   function qs(obj) {
@@ -58,6 +62,7 @@ export default function FacultyAttendancePage() {
 
   // Fetch roster whenever filters change (requires all four fields)
   React.useEffect(() => {
+    if (!token) return;
     let ignore = false;
 
     async function loadRoster() {
@@ -65,15 +70,17 @@ export default function FacultyAttendancePage() {
         setLoading(true);
         setError("");
 
+        console.log("--> loading roster with token:", token, "dept:", department, "sem:", sem, "subject:", subjectCode);
         const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
         // Adjust the path and param keys to match your backend
         const params = qs({
+          token: token,
           department: department,
-          semester: sem,                 
+          semester: sem,                 // if backend expects 'semester', change key to semester
           subject_code: subjectCode,
         });
         console.log(params);
-        const apiRosterUrl = `${api}/student/?${params}`;
+        const apiRosterUrl = `${api}/student/list-students-for-cr?${params}`;
         // console.log("Roster URL:", apiRosterUrl);
         console.log("--> apiRosterURL: ", apiRosterUrl);
 
@@ -131,6 +138,7 @@ export default function FacultyAttendancePage() {
     };
   }, [department, sem, subjectCode]); // re-fetch on changes [1]
 
+  // Fetch curriculum subjects when dept or sem changes, to populate subject dropdown)
   React.useEffect(() => {
     let ignore = false;
 
@@ -216,6 +224,7 @@ export default function FacultyAttendancePage() {
       setInfo("");
 
       const payload = {
+        attendance_token: token,
         subject_code: subjectCode,
         department: department,
         semester: sem,
@@ -227,7 +236,7 @@ export default function FacultyAttendancePage() {
       };
 
       const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-      const res = await fetch(`${api}/attendance/mark-by-faculty`, {
+      const res = await apiFetch(`${api}/attendance/submit-by-cr`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -239,13 +248,14 @@ export default function FacultyAttendancePage() {
         throw new Error(msg || "Failed to mark attendance");
       }
       const api_response = await res.json();
+      console.log("--> Attendance submission API response : ", api_response);
 
       setInfo(
         `Attendance saved • Session: ${api_response.session_id || "N/A"} • Status: ${
           api_response.status || "ok"
         }`
       );
-      // Optional: router.replace("/faculty/dashboard"); router.refresh();
+      router.replace("/student/dashboard"); router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error saving attendance");
     } finally {
@@ -253,78 +263,53 @@ export default function FacultyAttendancePage() {
     }
   }
 
-  function PingCRButton({
-    subjectCode,
-    department,
-    semester,
-    class_date,
-    setError,
-    setInfo,
-  }) {
-  const [loading, setLoading] = useState(false);
-  const canPing = subjectCode.trim() && department.trim() && semester.trim() && class_date;
-  const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
-  const handlePingCR = async () => {
-    // validate required fields for Ping CR
-    if (!subjectCode.trim() || !department.trim() || !semester.trim() || !class_date) {
-      setError("Please select Department, Semester, Subject and Class date/time before pinging CR.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setInfo("");
-
-    try {
-      const res = await apiFetch(
-        `${api}/attendance/initiate-for-cr`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            subject_code: subjectCode,
-            department: department,
-            semester: semester,
-            class_date: new Date(class_date).toISOString(),
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Failed to initiate CR attendance");
-      }
-
-      const data = await res.json();
-      console.log("initiate-for-cr response", data);
-      setInfo("Ping sent to CR successfully.");
-    } catch (e) {
-      setError(e.message ?? "Error initiating CR attendance");
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <button
-      type="button"
-      onClick={handlePingCR}
-      disabled={loading || !canPing}
-      className="w-auto text-white block rounded-md border px-3 py-2 text-md outline-none focus:ring-2 focus:ring-indigo-200 bg-green-700 hover:bg-green-600 disabled:bg-gray-400 "
-    >
-      {loading ? "Pinging CR..." : "Ping CR"}
-    </button>
-    );
-  }
-
   const requiredOk =
     subjectCode.trim() &&
     department.trim() &&
     sem.trim() &&
     classDate;
+
+    useEffect(() => {
+    if (!token) return;
+
+    async function loadMeta() {
+      try {
+        setLoadingMeta(true);
+        setError(null);
+        const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        const res = await fetch(
+          `${api}/attendance/session-details/${encodeURIComponent(
+            token
+          )}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        );
+
+        const data = await res.json().catch(() => ({}));
+        console.log("--> Session details API response : ", data);
+
+        if (!res.ok) {
+          throw new Error(data.detail ?? 'Failed to load session details');
+        }
+
+        setSubjectCode(data.subject_code);
+        setDepartment(data.department);
+        setSem(data.semester);
+        // convert ISO date to input[type=datetime-local] format if needed
+        if (data.class_date) {
+          const d = new Date(data.class_date);
+          setClassDate(d.toISOString().slice(0, 16));
+        }
+      } catch (e) {
+        setError(e.message ?? 'Error loading session');
+      } finally {
+        setLoadingMeta(false);}
+    }
+
+    loadMeta();
+  }, [token]);
 
   return (
     <main className="p-4 md:p-6 bg-slate-100">
@@ -339,14 +324,7 @@ export default function FacultyAttendancePage() {
             </p>
           </div>
           <div className="pt-2" title="Initiate attendance for CR">
-            <PingCRButton
-              subjectCode={subjectCode}
-              department={department} 
-              semester={sem}
-              class_date={classDate}
-              setError={setError}
-              setInfo={setInfo}
-            ></PingCRButton>
+
           </div>
         </header>
 

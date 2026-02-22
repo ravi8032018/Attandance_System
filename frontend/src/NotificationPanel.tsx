@@ -7,12 +7,7 @@ type NotificationMessage = {
   type: string;
   title?: string;
   body?: string;
-  timestamp?: string;
-  session_id?: string;
-  subject_code?: string;
-  batch_id?: string;
   token?: string;
-  expires_at?: string;
 };
 
 const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000';
@@ -60,6 +55,7 @@ export function NotificationPanel() {
 
   return (
     <div className="border rounded-2xl p-4 w-full max-w-2xl bg-white shadow-sm">
+      {/* header and status */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="font-semibold">Notifications</h2>
         <span
@@ -84,40 +80,38 @@ export function NotificationPanel() {
           {notifications.map((n, idx) => (
             <li
               key={idx}
-              className="border rounded p-2 text-sm bg-gray-50"
+              className="border rounded p-2 pl-3 text-sm bg-gray-50"
             >
-              <div className="font-medium">
+              <div className="text-[16px] font-semibold">
                 {n.title ?? n.type}
               </div>
 
               {/* Special rendering for CR attendance session */}
               {n.type === 'cr_attendance_session_started' ? (
-                <div className="space-y-1">
-                  <div className="text-gray-700">
-                    New CR attendance session started for {n.subject_code} ({n.batch_id}).
+                <div className="flex justify-between space-y-1">
+                  <div>
+                    {n.body && (
+                      <div className="text-sm pt-1 pl-2 text-gray-700">
+                        {n.body}
+                      </div>
+                    )}
                   </div>
-                  {n.expires_at && (
-                    <div className="text-xs text-gray-500">
-                      Expires at: {new Date(n.expires_at).toLocaleTimeString()}
-                    </div>
-                  )}
-                  {n.token && (
-                    <div className="text-xs text-gray-600">
-                      Token: <span className="font-mono">{n.token}</span>
-                    </div>
-                  )}
-                  <button
-                    className="mt-1 inline-flex items-center px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
-                    onClick={() => {
-                      const searchParams = new URLSearchParams();
-                      if (n.session_id) searchParams.set('session_id', n.session_id);
-                      if (n.token) searchParams.set('token', n.token);
 
-                      router.push(`/cr/attendance?${searchParams.toString()}`);
-                    }}
-                  >
-                    Open attendance
-                  </button>
+                  <div>
+                    <button
+                      className="inline-flex items-center px-2 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 font-normal"
+                      onClick={() => {
+                        if (!n.token) {
+                          // optional: handle missing token
+                          return;
+                        }
+                        // Example desired path: /student/<token>/take-attendance
+                        router.push(`/student/cr/${encodeURIComponent(n.token)}/take-attendance`);
+                      }}
+                      >
+                      Open attendance
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
