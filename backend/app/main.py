@@ -8,9 +8,11 @@ from backend.app.routers.student_routers import router as student_router
 from backend.app.routers.faculty_routers import router as faculty_router
 from backend.app.routers.auth.reset_password import router as reset_password
 from backend.app.routers.attendance_routers import router as attendance_router
-from backend.app.routers.notification_router import router as notification_router
+from backend.app.routers.notification.notification_router import router as notification_router
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.curriculum.curriculum_routers import router as curriculum_router
+from backend.app.routers.notification.notification_router import router as notification_router
+from backend.app.routers.notification.ws_routers import router as ws_router
 from backend.app.utils.cache_files_checker import cache_files_checker
 
 fastapi_app = FastAPI()
@@ -92,4 +94,5 @@ fastapi_app.include_router(faculty_router)
 fastapi_app.include_router(attendance_router)
 fastapi_app.include_router(notification_router)
 fastapi_app.include_router(curriculum_router)
-
+fastapi_app.include_router(notification_router)
+fastapi_app.include_router(ws_router)

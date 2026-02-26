@@ -131,6 +131,7 @@ export default function FacultyAttendancePage() {
     };
   }, [department, sem, subjectCode]); // re-fetch on changes [1]
 
+  // Fetch subjects whenever filters change
   React.useEffect(() => {
     let ignore = false;
 
@@ -142,7 +143,7 @@ export default function FacultyAttendancePage() {
     try {
       const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
       const params = qs({ department, semester: sem });
-      const res = await fetch(`${api}/curriculum?${params}`, {
+      const res = await apiFetch(`${api}/curriculum?${params}`, {
         method: "GET",
         credentials: "include",
         cache: "no-store",
@@ -250,6 +251,7 @@ export default function FacultyAttendancePage() {
       setError(err instanceof Error ? err.message : "Error saving attendance");
     } finally {
       setSaving(false);
+      router.push("/faculty/dashboard"); // refresh page to reset state and show updated attendance if needed
     }
   }
 

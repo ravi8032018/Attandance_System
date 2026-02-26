@@ -355,8 +355,9 @@ export default function FacultyAttendancePage() {
             <input
               value={department}
               onChange={(e) => setDepartment(e.target.value?.toUpperCase())}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="CSE"
+              className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+              placeholder="CS"
+              disabled
             />
           </div>
 
@@ -365,8 +366,9 @@ export default function FacultyAttendancePage() {
             <input
               value={sem}
               onChange={(e) => setSem(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="3"
+              className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+              placeholder="4"
+              disabled
             />
           </div>
         </div>
@@ -377,7 +379,8 @@ export default function FacultyAttendancePage() {
           <select
             value={subjectCode}
             onChange={(e) => setSubjectCode(e.target.value)}
-            className="w-full h-9.5 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full h-9.5 rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+            disabled
           >
             <option value="">Select subject</option>
             {subjects.map((subj) => (
@@ -395,7 +398,8 @@ export default function FacultyAttendancePage() {
             type="datetime-local"
             value={classDate}
             onChange={(e) => setClassDate(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+            disabled
           />
         </div>
       </section>

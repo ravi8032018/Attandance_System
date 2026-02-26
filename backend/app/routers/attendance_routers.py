@@ -13,6 +13,7 @@ from backend.app.schemas.attendence_schema import AttendanceSessionResponse, Att
     ApprovalsFilterParamsRequest, compute_period_range
 from backend.app.utils.connection_manager import manager
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
+from backend.app.utils.notifications import save_notification
 from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
 
@@ -388,16 +389,19 @@ async def initiate_attendance_for_cr(
     base_url = "http://localhost:8000/student/cr/"
     magic_link = f"{base_url}/{token}/take-attendance"
 
-    # 4. Send the real-time notification to the CR via WebSocket
-    notification_message = {
-        "type": "cr_attendance_session_started",
-        "title": f"Attendance Request for {initiate_request.subject_code} - {cr_user['subjects'][initiate_request.subject_code]}",
-        "body": "Please take attendance. You have 15 minutes.",
-        "token": token,
-    }
-    print("--> Sending notification to CR (user_id: {}): {}".format(cr_user['registration_no'], notification_message))
-    await manager.send_personal_message(notification_message, cr_user_id)
-
+    # 4. Save notification to db and Send the real-time notification to the CR
+    print("--> Sending notification to CR (user_id: {})".format(cr_user['registration_no']))
+    
+    notif_id= await save_notification(
+        user_id=cr_user_id,
+        type="cr_attendance_session_started",
+        title=f"Attendance Request for {initiate_request.subject_code} - {cr_user['subjects'][initiate_request.subject_code]}",
+        body="Please take attendance. You have 15 minutes.",
+        data={"token": token},
+        audience_role= ["cr"],
+        ttl_minutes=15,
+        send_ws=True,
+    )
     return {"message": "Attendance initiated. CR has been notified."}
 
 @router.post("/submit-by-cr", status_code=status.HTTP_202_ACCEPTED)
@@ -725,7 +729,7 @@ async def list_approvals(
         start_utc, end_utc = compute_period_range(period, tz="Asia/Kolkata")
         filters["date"] = {"$gte": start_utc, "$lt": end_utc}  # half-open [start, end) [2]
 
-    # print("--> filters:", filters)
+    print("--> filters:", filters)
     sort_field = sort.lstrip("-")
     sort_dir = -1 if sort.startswith("-") else 1
     # print("--> filters:", filters)
@@ -751,6 +755,8 @@ async def list_approvals(
 
     items = [doc async for doc in cursor]
     aggregates= _compute_aggregates(items)
+    
+    print(f"--> Returning page {page} with {len(items)} items out of total {total}. \n\nAggregates:  {aggregates}")
 
     return {
         "page": page,
@@ -786,4 +792,28 @@ async def get_attendance_session_details(
         "semester": token_doc["semester"],
         "class_date": token_doc["date"],
     }
+
+@router.get("/cr/pending")
+async def list_pending_cr_sessions(current_user = Depends(cr_required)):
+    sessions = await db.Notifications.find(
+        {
+            "cr_id": current_user["id"],
+            "is_used": False,
+            "expires_at": {"$gt": datetime.now(timezone.utc)},
+        }
+    ).to_list(None)
+
+    return [
+        {
+            "attendance_token": s["attendance_token"],
+            "subject_code": s["subject_code"],
+            "department": s["department"],
+            "semester": s["semester"],
+            "date": s["date"],
+            "expires_at": s["expires_at"],
+        }
+        for s in sessions
+    ]
+
+
 

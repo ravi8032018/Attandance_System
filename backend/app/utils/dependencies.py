@@ -48,18 +48,23 @@ async def get_current_user(request: Request):
         if not user_id or not token_role:
             raise credentials_exception
         user= None
+        unique_id = None
         if token_role == 'admin':
             user = await db.Admins.find_one({"_id": ObjectId(user_id)})
         if token_role == 'faculty' or token_role == 'hod':
             user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
+            unique_id = user["faculty_id"] if user else None
         if token_role == 'student' or token_role == 'cr':
             user = await db.Students.find_one({"_id": ObjectId(user_id)})
-        # print("--> user: ", user)
+            unique_id = user["registration_no"] if user else None
+            
+        print("--> user from get curr user : ", user)
         if not user:
             raise credentials_exception
 
         return {
             "id": str(user["_id"]),
+            "unique_id": unique_id or None, 
             "name": user.get("first_name"),
             "email": user.get("email"),
             "role": user.get("role", []),     # actual roles in DB

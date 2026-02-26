@@ -1,13 +1,17 @@
-# routers/notifications_router.py
+# routers/notification/ws_router.py
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from websockets import WebSocketException
 from backend.app.utils.connection_manager import manager
 from backend.app.utils.ws_dependancies import get_current_user_from_ws
+from fastapi import APIRouter
+from backend.app.utils.connection_manager import manager 
+from backend.app.db import db  
 
 router = APIRouter(prefix="/ws")
 
 @router.websocket("/notify")
 async def websocket_endpoint(websocket: WebSocket):
+    '''WebSocket endpoint for real-time notifications. Clients connect here to receive notifications.'''
     print("In websocket endpoint")
 
     # 1) Authenticate user from JWT in query param
@@ -29,24 +33,3 @@ async def websocket_endpoint(websocket: WebSocket):
             # Optionally parse/handle client messages here
     except WebSocketDisconnect:
         manager.disconnect(user_id)
-
-
-from fastapi import APIRouter, Depends
-from datetime import datetime, timezone
-from backend.app.utils.connection_manager import manager
-from backend.app.utils.dependencies import get_current_user  # your existing auth dependency
-
-
-@router.post("/test")
-async def send_test_notification(current_user = Depends(get_current_user)):
-    user_id = str(current_user["id"])  # or registration_no, same as you used in manager
-    await manager.send_personal_message(
-        {
-            "type": "test_notification",
-            "title": "Test notification",
-            "body": "If you can see this in the panel, WS is working.",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        },
-        user_id=user_id,
-    )
-    return {"ok": True}

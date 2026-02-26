@@ -9,7 +9,8 @@ import LogoutButton from "@/src/logout";
 const links = [
   { href: "/faculty/dashboard", label: "My Dashboard", icon: "👩‍🏫" },
   { href: "/faculty/list_students", label: "Students", icon: "🎓" },
-  { href: "/faculty/take-attendance", label: "Take Attendance", icon: "🛠️" },
+  { href: "/faculty/attendance/take", label: "Take Attendance", icon: "🛠️" },
+  { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: "✅" },
 ];
 
 export default function FacultySideNav() {
