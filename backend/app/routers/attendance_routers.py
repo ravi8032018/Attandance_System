@@ -409,6 +409,7 @@ async def submit_attendance_by_cr(
         request_data: MarkAttendanceByCRRequest,
         current_user: dict = Depends(cr_required)
 ):
+    '''CR submits attendance using the token link. The system validates the token, checks for expiry, and if valid, processes the attendance data. It then creates a new attendance session with status 'pending' for faculty approval and deactivates the token to prevent reuse.'''
     # print(current_user)
     # print("\n--> request_data: {}".format(request_data))
     # 1. Find and validate the token from the database
@@ -551,6 +552,7 @@ async def get_session_for_approval(
     session_id: str,
     current_user: dict = Depends(faculty_required),
 ):
+    '''Faculty can view details of a CR-submitted session that is pending for their approval. This includes the attendance records and any aggregates or anomalies to help them make an informed decision.'''
     # print("--> session_id: ",session_id)
     # print("--> current_user_id: ",session_id)
     # Fetch session owned by this faculty
@@ -563,7 +565,7 @@ async def get_session_for_approval(
         raise HTTPException(status_code=404, detail="Session not found or not accessible.")
     # Ensure it's CR-submitted and pending
     if session.get("status") == "marked_by_faculty":
-        raise HTTPException(status_code=409, detail="Session is already approval, since it was marked by faculty.")
+        raise HTTPException(status_code=409, detail="Session is already approved, since it was marked by faculty.")
     if session.get("status") != "pending":
             raise HTTPException(status_code=409, detail="Session is not pending for approval.")
 
@@ -592,17 +594,23 @@ async def get_session_for_approval(
         "attendance_records": records,
         "aggregates": aggregates,
         "anomalies": {
-            "duplicates": list(set(duplicates))
+        "duplicates": list(set(duplicates))
         }
     }
 
 @router.patch("/approvals/{session_id}", status_code=status.HTTP_200_OK)
-async def finalize_session_approval(
+async def approve_attendance_session(
     session_id: str,
     body: ApprovalUpdateRequest,
     current_user: dict = Depends(faculty_required),
 ):
+    '''Faculty can approve or reject a pending session. Once approved, the session becomes read-only. If rejected, faculty must provide a reason and can then edit the session before resubmitting.'''
+    
+    print("-->session id: ", session_id)
+    print("-->update body: ", body)
+     
     target = body.status.strip().lower()
+    print("--> Target status after normalization: {}".format(target))
     if target not in {"approved", "rejected"}:
         raise HTTPException(status_code=422, detail="Status must be updated to 'approved' or 'rejected'.")
     # 1) Ensure session is pending and owned by faculty
@@ -611,19 +619,29 @@ async def finalize_session_approval(
         "faculty_id": current_user["id"],
         "status": "pending"
     }
+    
+    if target == "approved":
+        setDoc= {
+                "status": target,
+                "approved_by": current_user["id"],
+                "approved_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+        }
+    else:  # rejected
+        setDoc= {
+                "status": target,
+                "rejection_reason": body.reason if body.reason else "",
+                "rejected_by": current_user["id"],
+                "rejected_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+        }
     update_doc = {
-        "$set": {
-            "status": target,
-            "decision_reason": body.reason,
-            "approved_by": current_user["id"],
-            "approved_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        },
+        "$set": setDoc,
         "$push": {
             "audit": {
                 "action": "finalize_session",
                 "to_status": target,
-                "reason": body.reason,
+                "reason": body.reason if body.reason else "",
                 "by": current_user["id"],
                 "at": datetime.utcnow()
             }
@@ -651,6 +669,7 @@ async def update_attendance_session_in_pending(
     body: StudentStatusUpdateRequest,
     current_user: dict = Depends(faculty_required),
 ):
+    '''Faculty can update the attendance status of individual students within a pending session before approving it. This allows them to correct any errors or accommodate valid exceptions before finalizing the session. Works only if session is still pending. Once approved, the session becomes read-only.'''
     new_status = body.status.strip().lower()
     if new_status not in {"present", "absent", "leave"}:
         raise HTTPException(status_code=422, detail="Status must be 'present', 'absent', or 'leave'.")
@@ -713,6 +732,7 @@ async def list_approvals(
     sort: str = Query("-created_at", description="Sort field, prefix with '-' for desc"),
     current_user: dict = Depends(faculty_required),
 ):
+    '''Faculty can view a paginated list of all sessions that are pending their approval. They can filter by subject, date range (e.g., last week, last month), and submission status (e.g., pending, marked_by_cr). Sorting options allow them to prioritize recent submissions or specific subjects. This helps them manage their approval workload effectively.'''
     status = status.strip().lower()
     status_filters= ["pending", "marked_by_faculty"]
 
@@ -771,6 +791,7 @@ async def get_attendance_session_details(
     token: str,
     current_user: dict = Depends(cr_required),
 ):
+    '''When a CR clicks the attendance link, the system validates the token and retrieves the session details (like subject code, department, semester, class date) to display on the attendance marking page. This endpoint ensures that only the intended CR can access the session details and proceed with marking attendance.'''
     try:
         token_doc = await db.AttendanceTokens.find_one({
             "attendance_token": token,
@@ -794,7 +815,10 @@ async def get_attendance_session_details(
     }
 
 @router.get("/cr/pending")
-async def list_pending_cr_sessions(current_user = Depends(cr_required)):
+async def list_pending_cr_sessions(
+    current_user = Depends(cr_required)
+):
+    '''CR can view a list of all pending attendance sessions that they need to mark. This includes details like subject code, department, semester, class date, and the expiration time of the marking link. This helps CRs manage their pending tasks and ensures timely marking of attendance.'''
     sessions = await db.Notifications.find(
         {
             "cr_id": current_user["id"],

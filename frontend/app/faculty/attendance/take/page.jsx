@@ -56,6 +56,22 @@ export default function FacultyAttendancePage() {
     return p.toString();
   }
 
+  // Auto-dismiss error after 7 seconds
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Auto-dismiss info after 7 seconds
+  React.useEffect(() => {
+    if (info) {
+      const timer = setTimeout(() => setInfo(''), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [info]);
+
   // Fetch roster whenever filters change (requires all four fields)
   React.useEffect(() => {
     let ignore = false;
@@ -310,6 +326,7 @@ export default function FacultyAttendancePage() {
       setLoading(false);
     }
   };
+
   return (
     <button
       type="button"

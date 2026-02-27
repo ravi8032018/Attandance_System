@@ -12,6 +12,7 @@ type NotificationMessage = {
   body?: string;
   data?: any;
   timestamp?: string;
+  read?: boolean;
 };
 
 const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000';
@@ -23,42 +24,77 @@ export function NotificationCenter() {
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
+  // websocket connection with auto-reconnect
   useEffect(() => {
-    const socket = new WebSocket(`${WS_BASE_URL}/ws/notify`);
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
 
-    socket.addEventListener('open', () => {
-      setConnected(true);
-      setError(null);
-    });
-
-    socket.addEventListener('message', (event) => {
+    const connectWebSocket = () => {
       try {
-        const data: NotificationMessage = JSON.parse(event.data);
+        socket = new WebSocket(`${WS_BASE_URL}/ws/notify`);
 
-        setNotifications((prev) => [data, ...prev]);
+        socket.addEventListener('open', () => {
+          setConnected(true);
+          setError(null);
+          reconnectAttempts = 0;
+        });
 
-        // Optional toast popup
-        if (Notification && Notification.permission === 'granted') {
-          new Notification(data.title ?? 'New notification', {
-            body: data.body,
-          });
-        }
+        socket.addEventListener('message', (event) => {
+          try {
+            const data: NotificationMessage = JSON.parse(event.data);
+
+            setNotifications((prev) => [data, ...prev]);
+
+            // Optional toast popup
+            if (Notification && Notification.permission === 'granted') {
+              new Notification(data.title ?? 'New notification', {
+                body: data.body,
+              });
+            }
+          } catch (e) {
+            console.error('Invalid WS message', e, event.data);
+          }
+        });
+
+        socket.addEventListener('close', () => {
+          setConnected(false);
+          attemptReconnect();
+        });
+
+        socket.addEventListener('error', (event) => {
+          console.error('WebSocket error', event);
+          setConnected(false);
+          setError('Notification service unavailable - reconnecting...');
+          attemptReconnect();
+        });
       } catch (e) {
-        console.error('Invalid WS message', e, event.data);
+        console.error('Failed to create WebSocket', e);
+        attemptReconnect();
       }
-    });
+    };
 
-    socket.addEventListener('close', () => {
-      setConnected(false);
-    });
+    const attemptReconnect = () => {
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        setError('Notification service not available');
+        return;
+      }
 
-    socket.addEventListener('error', (event) => {
-      // console.error('WebSocket error', event);
-      setError('Notification service not available');
-    });
+      const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      reconnectAttempts++;
+
+      reconnectTimeout = setTimeout(() => {
+        console.log(`Reconnecting WebSocket (attempt ${reconnectAttempts})...`);
+        connectWebSocket();
+      }, backoffDelay);
+    };
+
+    connectWebSocket();
 
     return () => {
-      socket.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket) socket.close();
     };
   }, []);
 
@@ -67,7 +103,7 @@ export function NotificationCenter() {
     async function loadFromDb() {
       try {
         const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const res = await fetch(`${api}/notifications`, {
+        const res = await apiFetch(`${api}/notifications`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -82,12 +118,61 @@ export function NotificationCenter() {
     loadFromDb();
   }, []);
 
+  // mark as read, delete, clear all functions
+  async function markAsRead(n: NotificationMessage) {
+    if (!n.id) return;
+    try {
+      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      await apiFetch(`${api}/notifications/${n.id}/mark-read`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.id === n.id ? { ...notif, read: true } : notif
+        )
+      );
+      console.log('Marked notification as read:', n.id);
+    } catch (e) {
+      console.error('Failed to mark notification as read', e);
+    }
+  }
+
+  async function deleteNotification(n: NotificationMessage) {
+    const id = n.id;
+    if (!id) return;
+    try {
+      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      await apiFetch(`${api}/notifications/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (e) {
+      console.error('Failed to delete notification', e);
+    }
+  }
+
+  async function clearAllNotifications() {
+    try {
+      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      await apiFetch(`${api}/notifications`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      setNotifications([]);
+    } catch (e) {
+      console.error('Failed to clear notifications', e);
+    }
+  }
+
   function handleNotificationClick(n: NotificationMessage) {
     if (n.type === 'cr_attendance_session_started') {
       const token = n?.data?.attendance_token || n?.data?.token;
       if (!token) return;
       router.push(`/student/cr/${encodeURIComponent(token)}/take-attendance`);
       setShowDropdown(false);
+      markAsRead(n);
       return;
     }
     // other types...
@@ -127,7 +212,21 @@ export function NotificationCenter() {
         <div className="absolute right-6 mt-1 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg bg-white border-gray-300 border-1">
           <div className="flex items-center justify-between px-3 py-2 border-b">
             <span className="text-sm font-semibold">Notifications</span>
-            {error && <span className="text-xs text-red-500">{error}</span>}
+            <div className="flex items-center gap-2">
+              {error && <span className="text-xs text-red-500">{error}</span>}
+              {notifications.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearAllNotifications();
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  title="Clear all notifications"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
           </div>
           {notifications.length === 0 ? (
             <div className="px-3 py-4 text-sm text-slate-500">No notifications.</div>
@@ -136,20 +235,36 @@ export function NotificationCenter() {
               {notifications.map((n, idx) => (
                 <li
                   key={n.id ?? idx}
-                  className="px-3 py-2 font-medium text-sm hover:bg-[#f8fafb] cursor-pointer"
+                  className={`px-3 py-2 font-medium text-sm hover:bg-[#f8fafb] cursor-pointer flex items-start justify-between group ${
+                    n.read ? 'bg-slate-50' : 'bg-white'
+                  }`}
                   onClick={() => handleNotificationClick(n)}
                 >
-                  <div className="font-medium text-slate-900">
-                    {n.title ?? n.type}
-                  </div>
-                  {n.body && (
-                    <div className="text-xs text-slate-600 mt-0.5">{n.body}</div>
-                  )}
-                  {n.timestamp && (
-                    <div className="text-[10px] text-slate-400 mt-0.5">
-                      {new Date(n.timestamp).toLocaleTimeString()}
+                  <div className="flex-1">
+                    <div className={`font-medium ${
+                      n.read ? 'text-slate-600' : 'text-slate-900'
+                    }`}>
+                      {n.title ?? n.type}
                     </div>
-                  )}
+                    {n.body && (
+                      <div className="text-xs text-slate-600 mt-0.5">{n.body}</div>
+                    )}
+                    {n.timestamp && (
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {new Date(n.timestamp).toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNotification(n);
+                    }}
+                    className="ml-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete notification"
+                  >
+                    ✕
+                  </button>
                 </li>
               ))}
             </ul>

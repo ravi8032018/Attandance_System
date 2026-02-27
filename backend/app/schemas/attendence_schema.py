@@ -104,8 +104,12 @@ class FacultyToCRRequest(BaseModel):
 
 class ApprovalUpdateRequest(BaseModel):
     status: str = Field(..., description="approved | rejected")
-    reason: str | None = Field(None, description="Optional reason for rejection/notes")
+    reason: Optional[str] = Field(None, description="Optional reason for rejection/notes")
 
+    @validator('reason', pre=True)
+    def reason_validator(cls, value):
+        return value.strip() if value else None
+    
 class StudentStatusUpdateRequest(BaseModel):
     status: str = Field(..., description="present | absent | leave")
 

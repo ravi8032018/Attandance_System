@@ -60,6 +60,22 @@ export default function FacultyAttendancePage() {
     return p.toString();
   }
 
+  // Auto-dismiss error after 7 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Auto-dismiss info after 7 seconds
+  useEffect(() => {
+    if (info) {
+      const timer = setTimeout(() => setInfo(''), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [info]);
+
   // Fetch roster whenever filters change (requires all four fields)
   React.useEffect(() => {
     if (!token) return;
@@ -150,7 +166,7 @@ export default function FacultyAttendancePage() {
     try {
       const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
       const params = qs({ department, semester: sem });
-      const res = await fetch(`${api}/curriculum?${params}`, {
+      const res = await apiFetch(`${api}/curriculum?${params}`, {
         method: "GET",
         credentials: "include",
         cache: "no-store",
@@ -277,7 +293,7 @@ export default function FacultyAttendancePage() {
         setLoadingMeta(true);
         setError(null);
         const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const res = await fetch(
+        const res = await apiFetch(
           `${api}/attendance/session-details/${encodeURIComponent(
             token
           )}`,
