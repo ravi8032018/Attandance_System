@@ -8,6 +8,7 @@ import LogoutButton from "@/src/logout";
 
 const links = [
   { href: "/faculty/dashboard", label: "My Dashboard", icon: "👩‍🏫" },
+  { href: "/faculty/profile", label: "My Profile", icon: "👩‍🏫" },
   { href: "/faculty/list_students", label: "Students", icon: "🎓" },
   { href: "/faculty/attendance/take", label: "Take Attendance", icon: "🛠️" },
   { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: "✅" },

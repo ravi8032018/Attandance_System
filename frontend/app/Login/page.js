@@ -9,7 +9,7 @@ import {PasswordStrengthBar} from "@/src/_hooks/password_strength"
 export default function LoginPage() {
   const router = useRouter();
   const [values, setValues] = useState({
-    role: "Student",       // 'Student' | 'faculty' | 'admin'
+    role: "student",       // 'student' | 'faculty' | 'admin'
     email: "",
     password: "",
   });

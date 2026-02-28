@@ -52,7 +52,7 @@ async def list_curriculum(
                 ],
             )
         )
-
+    print("--> subject list returned from /curriculum : ",items)
     return CurriculumListResponse(data=items)
 
 @router.get("/update_curriculum_db")

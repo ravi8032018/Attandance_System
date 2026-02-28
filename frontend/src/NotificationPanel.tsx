@@ -1,7 +1,7 @@
 // app/_components/NotificationCenter.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from './api_fetch';
 
@@ -22,7 +22,25 @@ export function NotificationCenter() {
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  // close when clicking outside
+  useEffect(() => {
+    if (!showDropdown) return; // only listen when open
+
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (wrapperRef.current && target && !wrapperRef.current.contains(target)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
 
   // websocket connection with auto-reconnect
   useEffect(() => {
@@ -48,7 +66,7 @@ export function NotificationCenter() {
             setNotifications((prev) => [data, ...prev]);
 
             // Optional toast popup
-            if (Notification && Notification.permission === 'granted') {
+            if (Notification && Notification.permission === 'default') {
               new Notification(data.title ?? 'New notification', {
                 body: data.body,
               });
@@ -103,7 +121,7 @@ export function NotificationCenter() {
     async function loadFromDb() {
       try {
         const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const res = await apiFetch(`${api}/notifications`, {
+        const res = await fetch(`${api}/notifications`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -179,11 +197,11 @@ export function NotificationCenter() {
   }
 
   return (
-    <div className="">
+    <div ref={wrapperRef} className="">
       {/* Bell icon with badge */}
       <button
         type="button"
-        onClick={() => (setShowDropdown((v) => !v))}
+        onClick={() => setShowDropdown((s) => !s)}
         className="relative inline-flex items-center justify-center p-2 rounded-full hover:bg-slate-100"
         aria-label="Notifications"
       >

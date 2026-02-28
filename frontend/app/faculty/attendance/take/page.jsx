@@ -53,6 +53,7 @@ export default function FacultyAttendancePage() {
     for (const [k, v] of Object.entries(obj)) {
       if (v !== undefined && v !== null && String(v).length > 0) p.set(k, String(v));
     }
+    console.log("query string : ", p.toString());
     return p.toString();
   }
 
@@ -158,7 +159,7 @@ export default function FacultyAttendancePage() {
     }
     try {
       const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-      const params = qs({ department, semester: sem });
+      const params = qs({ department: department, semester: sem });
       const res = await apiFetch(`${api}/curriculum?${params}`, {
         method: "GET",
         credentials: "include",
@@ -420,9 +421,9 @@ export default function FacultyAttendancePage() {
             onChange={(e) => setSubjectCode(e.target.value)}
             className="w-full h-9.5 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
           >
-            <option value="">Select subject</option>
+            <option value={""}>Select subject</option>
             {subjects.map((subj) => (
-              <option key={subj.subject_code} value={subj.subject_code}>
+              <option value={subj.subject_code}>
                 {`${subj.subject_code} - ${subj.subject_name}`}
               </option>
             ))}
