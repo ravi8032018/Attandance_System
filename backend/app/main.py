@@ -17,9 +17,14 @@ from backend.app.utils.cache_files_checker import cache_files_checker
 
 fastapi_app = FastAPI()
 
+origins = [
+    "http://localhost:3000",  # keep for local dev
+    "https://attandance-system-frontend.onrender.com",  # your real frontend URL
+]
+
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000'],  # or ["*"] for wide-open in dev
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
