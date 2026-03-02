@@ -19,7 +19,7 @@ fastapi_app = FastAPI()
 
 origins = [
     "http://localhost:3000",  # keep for local dev
-    "https://attandance-system-soe7.onrender.com",  # render frontend url
+    "https://attandance-system-kqy4.onrender.com",  # render frontend url
     "https://attandance-system-mu.vercel.app", # vercel frontend url
 ]
 
