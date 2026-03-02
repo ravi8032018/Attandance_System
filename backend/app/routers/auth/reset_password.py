@@ -184,7 +184,7 @@ async def logout():
         value="",
         httponly=True,
         secure=False,         # set True in production (HTTPS)
-        samesite="lax",       # mirror original samesite
+        samesite="none",       # mirror original samesite
         max_age=0,
         expires=0,
         path="/",

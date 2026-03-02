@@ -11,7 +11,7 @@ import pymongo
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 
-# '''
+'''
 @router.post("/signup", response_model=SignInResponse)
 async def admin_signup(admin: UserSignUpRequest):
     existing_user = await db.Admins.find_one({"email": admin.email})
@@ -71,7 +71,7 @@ async def admin_signup(admin: UserSignUpRequest):
     log_event("Admin signup", user_email=new_admin["email"], user_name=new_admin["name"], user_id=user_id, user_role="admin")
 
     return resp
-# '''
+'''
 
 @router.post("/signin", response_model=SignInResponse)
 async def admin_login(admin: UserSignInRequest):
@@ -92,7 +92,7 @@ async def admin_login(admin: UserSignInRequest):
         status_code=200,
         content={
             "message": "Admin Login successful",
-            "access_token": access_token,
+            # "access_token": access_token,
             "token_type": "bearer",
             "token_role": "admin"
         }
@@ -101,8 +101,9 @@ async def admin_login(admin: UserSignInRequest):
         key="dept_user_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Set True if using HTTPS in production
-        samesite="lax",  # or "strict"
+        secure=True,  # Set True if using HTTPS in production
+        samesite="none",  # or "strict"
+        path="/",
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 
