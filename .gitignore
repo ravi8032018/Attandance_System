@@ -2,13 +2,6 @@
 # FRONTEND: Next.js (React)
 # -------------------------
 /frontend/public/
-/frontend/.gitignore
-/frontend/eslint.config.mjs
-/frontend/jsconfig.json
-/frontend/next.config.mjs
-/frontend/package-lock.json
-/frontend/package.jsona
-/frontend/postcss.config.mjs
 /frontend/README.md
 
 
