@@ -23,6 +23,7 @@ export default function LoginPage() {
     try {
       // Choose endpoint by selected role
       const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      console.log("--> base url : ",base);
       const endpoint =
         values.role === ("admin")
           ? "/admin/signin"
@@ -58,15 +59,28 @@ export default function LoginPage() {
       const token_role = data?.token_role || values.role;
 
       // Optional: alert success
-      // if (typeof data?.message === "string") alert(data.message);
+      if (typeof data?.message === "string") alert(data.message);
 
       // Route by token role
-      if (token_role === "admin") router.replace("/admin/dashboard");
-      else if (token_role === "faculty" || token_role === "hod") router.replace("/faculty/dashboard");
-      else router.replace("/student/dashboard");
+      if (token_role === "admin"){
+        console.log("--> token tole : ",token_role);
+        console.log("--> routing to /admin/dashboard");
+        router.replace("/admin/dashboard");
+      }
+      else if {
+        console.log("--> token tole : ",token_role);
+        console.log("--> routing to /faculty/dashboard");
+        (token_role === "faculty" || token_role === "hod") router.replace("/faculty/dashboard");
+      }
+      else {
+        console.log("--> token tole : ",token_role);
+        console.log("--> routing to /student/dashboard");
+        router.replace("/student/dashboard");
+      }
     } catch (e) {
       setErr(e?.message || "Network error");
     } finally {
+      console.log("--> exiting login page ");
       setLoading(false);
     }
   }
