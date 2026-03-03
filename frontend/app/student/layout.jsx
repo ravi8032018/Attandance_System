@@ -6,8 +6,11 @@ import { StudentSideNav } from "@/src/Student_Sidenav"
 export default async function StudentLayout({
   children,
 }) { 
+    console.log("--> in student layout : ");
     const session = await validateSession("student");
-    if (!session) redirect("/login");
+    if (!session) {
+        console.log("--> invalid session. redirecting to /login ");
+        redirect("/login");}
 
     return (
     <>

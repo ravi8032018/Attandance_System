@@ -66,11 +66,10 @@ export default function LoginPage() {
         console.log("--> token tole : ",token_role);
         console.log("--> routing to /admin/dashboard");
         router.replace("/admin/dashboard");
-      }
-      else if {
+      } else if (token_role === "faculty" || token_role === "hod"){
         console.log("--> token tole : ",token_role);
         console.log("--> routing to /faculty/dashboard");
-        (token_role === "faculty" || token_role === "hod") router.replace("/faculty/dashboard");
+        router.replace("/faculty/dashboard");
       }
       else {
         console.log("--> token tole : ",token_role);

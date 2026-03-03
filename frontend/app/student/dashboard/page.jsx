@@ -24,11 +24,13 @@ export default function StudentDashboardClient() {
         });
 
         if (res.status === 401) {
+          console.log("--> response status 401 from get /student/me in Student dashboard : ");
           if (typeof window !== "undefined") window.location.href = "/login";
           return;
         }
 
         const data = await res.json().catch(() => ({}));
+        console.log("--> data from get /student/me : ",data);
         if (!res.ok) {
           const msg =
             typeof data?.detail === "string"
