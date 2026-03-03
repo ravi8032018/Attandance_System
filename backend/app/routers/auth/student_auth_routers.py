@@ -105,9 +105,9 @@ async def students_login(student: StudentSignInRequest):
         key="dept_user_token",
         value=access_token,
         httponly=True,
-        path="/",
         secure=True,  # Set True if using HTTPS in production
         samesite="none",  # or "strict"
+        path="/",
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )
 

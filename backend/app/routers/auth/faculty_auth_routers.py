@@ -108,8 +108,8 @@ async def faculty_login(faculty: FacultySignInRequest):
         key="dept_user_token",
         value=access_token,
         httponly=True,
-        samesite="none",  # enables cross-site sending
         secure=True,  # required with SameSite=None
+        samesite="none",  # enables cross-site sending
         path="/",
         max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
     )

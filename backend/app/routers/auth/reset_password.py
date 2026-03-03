@@ -183,11 +183,11 @@ async def logout():
         key="dept_user_token",
         value="",
         httponly=True,
-        secure=False,         # set True in production (HTTPS)
+        secure=True,         # set True in production (HTTPS)
         samesite="none",       # mirror original samesite
+        path="/",
         max_age=0,
         expires=0,
-        path="/",
         # domain="your.domain", # mirror if used
     )
     # print("\n after set")
