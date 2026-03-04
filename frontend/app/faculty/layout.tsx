@@ -1,20 +1,14 @@
-// app/admin/layout.jsx
-import AdminSideNav from "@/src/AdminSidenav";
+// app/dashboard/layout.jsx
+import FacultySideNav from "../../src/FacultySidenav";
 import { redirect } from "next/navigation";
-import { validateSession } from "@/src/validate_session";
 
-export default async function AdminLayout({ children }) {
-  const session = await validateSession("admin");
-  // console.log("--> inside dashboard session",session);
-
-  if (!session) redirect("/login");
-
+export default async function FacultyLayout({ children }) {
   return (
     <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden ">
       {/* Sidebar */}
 
       <aside className="bg-slate-50 border-r-2 border-[#d2d9d8]">
-        <AdminSideNav />
+        <FacultySideNav />
       </aside>
 
 

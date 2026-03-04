@@ -1,18 +1,10 @@
 // app/student/layout.tsx
 import { redirect } from "next/navigation";
-import { validateSession } from "@/src/validate_session";
 import { StudentSideNav } from "@/src/Student_Sidenav"
 
 export default async function StudentLayout({
   children,
-}) { 
-    console.log("--> in student layout : ");
-    const session = await validateSession("student");
-    if (!session) {
-        console.log("--> invalid session. redirecting to /login ");
-        redirect("/login");}
-    console.log("--> in student layout, before return: ");
-
+}) {
     return (
     <>
         <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden ">

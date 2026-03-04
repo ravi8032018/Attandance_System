@@ -1,4 +1,4 @@
-import AdminClient from "@/app/admin/dashboard/AdminClient";
+import AdminClient from "@/app/admin/(protected)/dashboard/AdminClient";
 
 export default function AdminDashboardPage() {
   return <AdminClient />;
