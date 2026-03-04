@@ -85,6 +85,7 @@ async def students_login(student: StudentSignInRequest):
 
     token_data = {"sub": str(existing_student["_id"]), "token_role": "student"}
     access_token = create_access_token(token_data)
+    print("--> access_token from /student/signin: ",access_token)
 
     # --- NEW CODE: Set token as a secure HTTP-only cookie --- #
     resp = JSONResponse(
