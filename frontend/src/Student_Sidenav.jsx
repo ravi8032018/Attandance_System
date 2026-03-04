@@ -15,6 +15,8 @@ export function StudentSideNav() {
   const pathname = usePathname();
   const [expanded, setExpanded] = React.useState(true);
 
+  console.log("--> in student sidenav: ");
+
   React.useEffect(() => {
     const saved = localStorage.getItem("sidenav-expanded");
     if (saved !== null) setExpanded(saved === "true");

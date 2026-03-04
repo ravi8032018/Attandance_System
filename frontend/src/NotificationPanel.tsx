@@ -15,7 +15,8 @@ type NotificationMessage = {
   read?: boolean;
 };
 
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000';
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL;
+console.log("--> Web socket URL: ", WS_BASE_URL);
 
 export function NotificationCenter() {
   const [connected, setConnected] = useState(false);
@@ -120,7 +121,7 @@ export function NotificationCenter() {
   useEffect(() => {
     async function loadFromDb() {
       try {
-        const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        const api = process.env.NEXT_PUBLIC_API_BASE;
         const res = await fetch(`${api}/notifications`, {
           method: 'GET',
           credentials: 'include',
@@ -140,7 +141,7 @@ export function NotificationCenter() {
   async function markAsRead(n: NotificationMessage) {
     if (!n.id) return;
     try {
-      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      const api = process.env.NEXT_PUBLIC_API_BASE;
       await apiFetch(`${api}/notifications/${n.id}/mark-read`, {
         method: 'PATCH',
         credentials: 'include',
@@ -160,7 +161,7 @@ export function NotificationCenter() {
     const id = n.id;
     if (!id) return;
     try {
-      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      const api = process.env.NEXT_PUBLIC_API_BASE;
       await apiFetch(`${api}/notifications/${id}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -173,7 +174,7 @@ export function NotificationCenter() {
 
   async function clearAllNotifications() {
     try {
-      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      const api = process.env.NEXT_PUBLIC_API_BASE;
       await apiFetch(`${api}/notifications`, {
         method: 'DELETE',
         credentials: 'include',

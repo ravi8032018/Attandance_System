@@ -19,6 +19,7 @@ async def verify_cookie(request: Request, dept_user_token: str | None = Cookie(d
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid subject")
 
     token_role = payload.get("token_role")
+    
     if not token_role or token_role == '':
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid subject")
     user = None

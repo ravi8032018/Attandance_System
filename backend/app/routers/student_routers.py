@@ -21,6 +21,8 @@ from pymongo.errors import DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
 from pymongo.collation import Collation
 
+BACKEND_HOST= os.getenv("BACKEND_HOST")
+
 router = APIRouter(prefix="/student", tags=["Student"])
 
 @router.post("/create", response_model=StudentOutResponse)
@@ -86,7 +88,7 @@ async def student_create(
     })
 
     # 3. Email the Student with a link to set/reset password
-    link = f"http://localhost:8000/reset-password?token={token}"
+    link = f"{BACKEND_HOST}/reset-password?token={token}"
 
     email_data = {
         "email_to": student.email,
@@ -201,7 +203,7 @@ async def bulk_students_create(
         })
 
         # 3. Email the Student with a link to set/reset password
-        link = f"http://localhost:8000/reset-password?token={token}"
+        link = f"{BACKEND_HOST}/reset-password?token={token}"
 
         email_data = {
             "email_to": stu_mail,

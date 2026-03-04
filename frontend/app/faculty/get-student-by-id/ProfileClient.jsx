@@ -29,7 +29,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
       setLoading(true);
       setErr("");
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const base = process.env.NEXT_PUBLIC_API_BASE  ;
 
         // Try direct profile endpoint if you have it: /student/{registration_no}
         let url = `${base}/student/registration-no/${encodeURIComponent(registrationNo)}`;
@@ -85,7 +85,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
       }
 
       try {
-        const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const api = process.env.NEXT_PUBLIC_API_BASE  ;
         const params = new URLSearchParams({
           department: s.department,
           semester: s.semester,
@@ -154,7 +154,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
       setAttendanceError("");
 
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const base = process.env.NEXT_PUBLIC_API_BASE  ;
         // Build URL based on whether we want single or all
         let url = `${base}/attendance/report/student-subject?registration_no=${encodeURIComponent(
           registrationNo

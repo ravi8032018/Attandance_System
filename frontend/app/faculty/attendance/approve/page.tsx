@@ -30,7 +30,7 @@ export default function FacultyCRApprovalsPage() {
       try {
         setLoading(true);
         setError('');
-        const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        const api = process.env.NEXT_PUBLIC_API_BASE ;
         const res = await apiFetch(`${api}/attendance/approvals`, {
           method: 'GET',
           credentials: 'include',
@@ -76,7 +76,7 @@ export default function FacultyCRApprovalsPage() {
   async function loadSubjectsNames() {
     if (sessions.length === 0) return;
 
-    const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+    const api = process.env.NEXT_PUBLIC_API_BASE;
 
     // Collect unique (department, semester) pairs
     const seen = new Set<string>();
@@ -157,7 +157,7 @@ export default function FacultyCRApprovalsPage() {
   async function handleApprove(session_id: string) {
     try {
       setActionLoadingId(session_id);
-      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      const api = process.env.NEXT_PUBLIC_API_BASE;
       const res = await apiFetch(`${api}/attendance/approvals/${encodeURIComponent(session_id)}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -184,7 +184,7 @@ export default function FacultyCRApprovalsPage() {
     const reason = window.prompt('Reason for rejection (optional):') ?? '';
     try {
       setActionLoadingId(session_id);
-      const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+      const api = process.env.NEXT_PUBLIC_API_BASE;
       const res = await fetch(`${api}/attendance/approvals/${encodeURIComponent(session_id)}`, {
         method: 'PATCH',
         credentials: 'include',

@@ -1,7 +1,7 @@
 # Centralizes DB connection logic,, import db wherever we need it later.
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from backend.app.config import MONGODB_URI, db_name
+from backend.app.config import MONGODB_URI
 from pymongo.mongo_client import MongoClient
 
 client = AsyncIOMotorClient(MONGODB_URI)

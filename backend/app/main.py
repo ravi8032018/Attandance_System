@@ -14,6 +14,13 @@ from backend.app.routers.curriculum.curriculum_routers import router as curricul
 from backend.app.routers.notification.notification_router import router as notification_router
 from backend.app.routers.notification.ws_routers import router as ws_router
 from backend.app.utils.cache_files_checker import cache_files_checker
+import os
+
+ENV = os.getenv("ENV", "development")
+IS_PROD = ENV == "production"
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
+
+
 
 fastapi_app = FastAPI()
 
@@ -25,7 +32,7 @@ origins = [
 
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[FRONTEND_ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

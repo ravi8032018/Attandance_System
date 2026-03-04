@@ -11,6 +11,7 @@ export default async function StudentLayout({
     if (!session) {
         console.log("--> invalid session. redirecting to /login ");
         redirect("/login");}
+    console.log("--> in student layout, before return: ");
 
     return (
     <>

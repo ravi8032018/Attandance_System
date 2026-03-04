@@ -1,6 +1,6 @@
 # In app/routers/attendance_router.py
 from enum import Enum
-import secrets
+import secrets, os
 from time import process_time_ns
 from typing import Optional, Annotated, List
 from bson import ObjectId
@@ -16,6 +16,8 @@ from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_m
 from backend.app.utils.notifications import save_notification
 from backend.app.utils.session_aggregator import _compute_aggregates
 from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required, cr_required
+
+BACKEND_HOST= os.getenv("BACKEND_HOST")
 
 # some required helpers for handling
 async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
@@ -386,7 +388,7 @@ async def initiate_attendance_for_cr(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Cannot request CR at the moment, Please try again") from e
     # 3. Construct the "Magic Link"
-    base_url = "http://localhost:8000/student/cr/"
+    base_url = f"{BACKEND_HOST}/student/cr/"
     magic_link = f"{base_url}/{token}/take-attendance"
 
     # 4. Save notification to db and Send the real-time notification to the CR

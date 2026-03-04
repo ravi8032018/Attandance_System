@@ -52,7 +52,7 @@ export default function StudentsClient({ initialQuery }) {
       setErr("");
 
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const base = process.env.NEXT_PUBLIC_API_BASE;
         const params = {
           skip: (query.page - 1) * query.limit,
           limit: query.limit,

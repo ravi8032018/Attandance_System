@@ -39,7 +39,7 @@ export default function FacultyProfilePage() {
       setLoading(true);
       setErr("");
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const base = process.env.NEXT_PUBLIC_API_BASE  ;
         const url = `${base}/faculty/me`;
 
         const res = await apiFetch(url, {

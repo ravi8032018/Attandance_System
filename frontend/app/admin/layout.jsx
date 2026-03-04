@@ -1,5 +1,5 @@
-// app/dashboard/layout.jsx
-import AdminSideNav from "../../src/AdminSidenav";
+// app/admin/layout.jsx
+import AdminSideNav from "@/src/AdminSidenav";
 import { redirect } from "next/navigation";
 import { validateSession } from "@/src/validate_session";
 

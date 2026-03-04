@@ -159,12 +159,10 @@ async def verify_password_otp(
     return {"message": "Password has been reset."}
 
 
-
-
-
-
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from backend.app.utils.set_cookies import clear_auth_cookie
+
 
 @router.post("/logout")
 async def logout():
@@ -175,21 +173,13 @@ async def logout():
     res.delete_cookie(
         key="dept_user_token",
         path="/",             # match your original path; default is "/"
-        # domain="localhost", # uncomment if you set a domain on login
+        domain="localhost", # uncomment if you set a domain on login
     )
     # print("\n after delete")
     # Belt-and-suspenders overwrite with expired cookie
-    res.set_cookie(
-        key="dept_user_token",
-        value="",
-        httponly=True,
-        secure=True,         # set True in production (HTTPS)
-        samesite="none",       # mirror original samesite
-        path="/",
-        max_age=0,
-        expires=0,
-        # domain="your.domain", # mirror if used
-    )
+
+    clear_auth_cookie(res)
+
     # print("\n after set")
     return res
 

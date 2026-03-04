@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // Choose endpoint by selected role
-      const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const base = process.env.NEXT_PUBLIC_API_BASE  ;
       console.log("--> base url : ",base);
       const endpoint =
         values.role === ("admin")

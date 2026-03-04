@@ -87,7 +87,7 @@ export default function FacultyAttendancePage() {
         setError("");
 
         console.log("--> loading roster with token:", token, "dept:", department, "sem:", sem, "subject:", subjectCode);
-        const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const api = process.env.NEXT_PUBLIC_API_BASE;
         // Adjust the path and param keys to match your backend
         const params = qs({
           token: token,
@@ -164,7 +164,7 @@ export default function FacultyAttendancePage() {
       return;
     }
     try {
-      const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const api = process.env.NEXT_PUBLIC_API_BASE  ;
       const params = qs({ department, semester: sem });
       const res = await apiFetch(`${api}/curriculum?${params}`, {
         method: "GET",
@@ -251,7 +251,7 @@ export default function FacultyAttendancePage() {
         })),
       };
 
-      const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const api = process.env.NEXT_PUBLIC_API_BASE  ;
       const res = await apiFetch(`${api}/attendance/submit-by-cr`, {
         method: "POST",
         credentials: "include",
@@ -292,7 +292,7 @@ export default function FacultyAttendancePage() {
       try {
         setLoadingMeta(true);
         setError(null);
-        const api = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        const api = process.env.NEXT_PUBLIC_API_BASE;
         const res = await apiFetch(
           `${api}/attendance/session-details/${encodeURIComponent(
             token

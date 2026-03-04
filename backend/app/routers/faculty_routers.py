@@ -18,6 +18,8 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.collation import Collation
 import json, os
 
+BACKEND_HOST= os.getenv("BACKEND_HOST")
+
 router = APIRouter(prefix="/faculty", tags=["Faculty"])
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
@@ -57,7 +59,7 @@ async def faculty_create(
         "is_used": False
     })
     # 3. Email the Student with a link to set/reset password
-    link = f"http://localhost:8000/reset-fac-password?token={token}"
+    link = f"{BACKEND_HOST}/reset-fac-password?token={token}"
 
     email_data = {
         "email_to": faculty.email,

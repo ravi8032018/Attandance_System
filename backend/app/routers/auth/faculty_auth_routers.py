@@ -8,6 +8,8 @@ from backend.app.utils.roles import has_role
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from backend.my_logger import log_event
+from backend.app.utils.set_cookies import set_auth_cookie
+
 
 router = APIRouter(prefix="/faculty", tags=["faculty-auth"])
 
@@ -62,14 +64,7 @@ async def faculty_signup(faculty: FacultySignUpRequest):
             "token_role": "faculty"
     }
     )
-    resp.set_cookie(
-        key="dept_faculty_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # Set True if using HTTPS in production
-        samesite="lax",  # or "strict"
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+    set_auth_cookie(resp, access_token)
 
     log_event("Faculty signup", user_email=new_faculty["email"], user_name=new_faculty["name"], user_id=user_id, user_role="faculty")
 
@@ -104,15 +99,9 @@ async def faculty_login(faculty: FacultySignInRequest):
             "token_role": "faculty"
         }
     )
-    resp.set_cookie(
-        key="dept_user_token",
-        value=access_token,
-        httponly=True,
-        secure=True,  # required with SameSite=None
-        samesite="none",  # enables cross-site sending
-        path="/",
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+
+    set_auth_cookie(resp, access_token)
+
 
     log_event("Faculty Login", user_email=existing_faculty["email"], user_name=existing_faculty["name"] if 'name' in existing_faculty else None, user_id=str(existing_faculty["_id"]), user_role="faculty")
 

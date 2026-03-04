@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 from backend.my_logger import log_event
 import pymongo
+from backend.app.utils.set_cookies import set_auth_cookie
+
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 
@@ -59,14 +61,8 @@ async def admin_signup(admin: UserSignUpRequest):
             "token_role": "admin"
     }
     )
-    resp.set_cookie(
-        key="dept_admin_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # Set True if using HTTPS in production
-        samesite="lax",  # or "strict"
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+
+    set_auth_cookie(resp, access_token)
 
     log_event("Admin signup", user_email=new_admin["email"], user_name=new_admin["name"], user_id=user_id, user_role="admin")
 
@@ -97,15 +93,8 @@ async def admin_login(admin: UserSignInRequest):
             "token_role": "admin"
         }
     )
-    resp.set_cookie(
-        key="dept_user_token",
-        value=access_token,
-        httponly=True,
-        secure=True,  # Set True if using HTTPS in production
-        samesite="none",  # or "strict"
-        path="/",
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+    
+    set_auth_cookie(resp, access_token)
 
     log_event("Admin Login", user_email=existing_user["email"], user_name=existing_user["name"], user_id=str(existing_user["_id"]), user_role="admin")
 

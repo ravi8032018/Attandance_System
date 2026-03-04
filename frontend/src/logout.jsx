@@ -11,7 +11,7 @@ export default function LogoutButton({ to = "/login", className = "" }) {
     if (loading) return;
     setLoading(true);
     try {
-      await fetch((process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000") + "/logout", {
+      await fetch((process.env.NEXT_PUBLIC_API_BASE ) + "/logout", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -16,7 +16,7 @@ export default function StudentDashboardClient() {
       setLoading(true);
       setErr("");
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const base = process.env.NEXT_PUBLIC_API_BASE  ;
         const res = await apiFetch(`${base}/student/me`, {
           method: "GET",
           credentials: "include",

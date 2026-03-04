@@ -12,6 +12,8 @@ from backend.app.utils.roles import has_role
 from fastapi.responses import JSONResponse
 from datetime import datetime, timedelta, timezone
 from backend.my_logger import log_event
+from backend.app.utils.set_cookies import set_auth_cookie
+
 
 router = APIRouter(prefix="/student", tags=["Student-auth"])
 
@@ -63,14 +65,7 @@ async def students_signup(Student: StudentSignUpRequest):
             "token_role": "Student"
     }
     )
-    resp.set_cookie(
-        key="dept_student_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # Set True if using HTTPS in production
-        samesite="lax",  # or "strict"
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+    set_auth_cookie(resp, access_token)
 
     log_event("Student signup", user_email=new_student["email"], user_name=new_student["name"], user_id=user_id, user_role="Student")
 
@@ -101,15 +96,9 @@ async def students_login(student: StudentSignInRequest):
             "token_role": "student"
         }
     )
-    resp.set_cookie(
-        key="dept_user_token",
-        value=access_token,
-        httponly=True,
-        secure=True,  # Set True if using HTTPS in production
-        samesite="none",  # or "strict"
-        path="/",
-        max_age=60 * 60 * 24 * 7  # 1 week, set as per your needs
-    )
+
+    set_auth_cookie(resp, access_token)
+
 
     log_event("Student Login", user_email=existing_student["email"] , user_id=str(existing_student["_id"]), user_role="Student")
 

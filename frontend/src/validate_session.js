@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { apiFetch } from "./api_fetch";
 
 export async function validateSession( req_role ) {
-  console.log("--> inside validate session", token);
+  console.log("--> inside validate session");
   const jar = await cookies(); // Next 15: async
   const token = jar.get("dept_user_token")?.value;
 
@@ -12,7 +12,8 @@ export async function validateSession( req_role ) {
     return null;
   }
 
-  const api = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+  // const api = process.env.NEXT_PUBLIC_API_BASE  ;
+  const api = "http://localhost:8000";
 
   const res = await apiFetch(`${api}/verify-me`, {
     method: "GET",
