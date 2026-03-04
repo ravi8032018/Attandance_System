@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {error} from "next/dist/build/output/log";
 import {PasswordStrengthBar} from "@/src/_hooks/password_strength"
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center p-6 bg-slate-500">
+    <main className="grid min-h-dvh place-items-center p-6 bg-purple-200">
       <div className="w-full max-w-sm rounded-lg border bg-slate-100 p-4 pt-3 pb-3 shadow-sm text-black text-md font-mono">
         <h1 className="mb-2 text-3xl font-semibold text-center">Sign in</h1>
         <p className="mb-2 text-md text-slate-800 text-center">Choose role and enter credentials.</p>

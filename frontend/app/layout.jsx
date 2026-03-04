@@ -1,13 +1,26 @@
-// app/layout.jsx (Server Component)
-import Top_Header from "@/src/top_header";
+// app/layout.jsx
 import "./globals.css";
+import Top_Header from "@/src/top_header";
 
-export default async function RootLayout({ children }) {
+export const metadata = {
+  title: "UNIkart Attendance",
+  description:
+    "Modern faculty–student attendance and notification system for universities.",
+};
+
+export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="min-h-dvh">
+      <body className="z-10 min-h-dvh  antialiased">
+        {/* Global top header (logo, nav, etc.) */}
         <Top_Header />
-        {children}
+
+        {/* Page container */}
+        <div className="z-5 bg-white/60">
+          <div>
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );

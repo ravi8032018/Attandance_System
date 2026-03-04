@@ -32,6 +32,6 @@
     "**/*.tsx",
     "**/*.js",
     "**/*.jsx"
-  ],
+, "app/login/page.tsx"  ],
   "exclude": ["node_modules"]
 }

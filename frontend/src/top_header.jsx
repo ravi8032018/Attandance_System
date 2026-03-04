@@ -20,7 +20,7 @@ export default function Top_Header() {
   // console.log(hideDept);
   return (
     <header
-      className={`ease-in-out sticky top-0 z-0 bg-white border-transparent transition-all ${
+      className={`ease-in-out sticky top-0 z-10 bg-white border-transparent transition-all ${
         hideDept ? "border-slate-300" : "border-white"}
       }`}
     >
