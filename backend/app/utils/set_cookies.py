@@ -14,7 +14,7 @@ def set_auth_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         secure=IS_PROD,                           # only secure in production
-        samesite="None" if IS_PROD else "Lax",    # cross-site in prod, easier in dev
+        samesite="none" if IS_PROD else "lax",    # cross-site in prod, easier in dev
         domain=COOKIE_DOMAIN if IS_PROD else None,
         path="/",
         max_age=60 * 60 * 24 * 7,                 # 7 days, adjust as you like

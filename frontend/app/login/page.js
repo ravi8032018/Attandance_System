@@ -31,6 +31,7 @@ export default function LoginPage() {
           ? "/faculty/signin"
           : "/student/signin";
 
+      // ---------do not use apiFetch here
       const res = await fetch(base + endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
