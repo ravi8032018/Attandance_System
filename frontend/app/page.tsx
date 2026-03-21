@@ -1,5 +1,6 @@
 // app/page.js
 import Link from "next/link";
+import { CopyButton} from "@/src/_hooks/basic_fn";
 
 export default function Home() {
   return (
@@ -10,7 +11,7 @@ export default function Home() {
         <div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             Smart attendance for{" "}
-            <span className="text-emerald-600">faculty, CRs, and students</span>.
+            <span className="text-emerald-600">faculty, CRs, and students</span>
           </h1>
 
           <p className="mt-4 text-sm sm:text-base text-slate-600 max-w-xl">
@@ -161,7 +162,7 @@ export default function Home() {
       {/* Demo credentials section */}
       <section className="mt-10 grid gap-6 lg:grid-cols-[1.3fr,1fr]">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-xl   font-semibold text-slate-900">
             Instant demo access
           </h2>
           <p className="mt-2 text-sm text-slate-600">
@@ -170,21 +171,22 @@ export default function Home() {
             to real users, but writes may be disabled for safety.
           </p>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 text-md">
             {/* Student demo */}
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[13px] font-semibold uppercase tracking-wide text-emerald-700">
+              <p className="text-[14px] font-semibold uppercase tracking-wide text-emerald-700">
                 Student demo
               </p>
-              <p className="mt-1 text-[11px] text-slate-600">
-                View your profile, subject‑wise attendance, and combined reports.
+              <p className="mt-1 text-[13px] text-slate-600">
+                View your profile, subject wise attendance, and combined reports.
               </p>
 
               <dl className="mt-3 space-y-1">
                 <div>
-                  <dt className="text-[11px] text-slate-500">Email</dt>
-                  <dd className="font-mono text-[11px] text-slate-900">
-                    demo_student@unikart.app
+                  <dt className="text-[12px] text-slate-500">Email</dt>
+                  <dd className="font-mono text-[12px] text-slate-900">
+                    Demo@User.com 
+                    <CopyButton value={"Demo@User.com"} className={`size-6`}/>
                   </dd>
                 </div>
                 <div>
