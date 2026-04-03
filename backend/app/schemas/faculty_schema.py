@@ -131,6 +131,9 @@ class FacultyAdminResponse(BaseModel):
     batch_name: Optional[str] = Field(None)
     status: Optional[str]
     photo_url: Optional[str]= Field(None)
+    department: Optional[str]= Field(None)
+    designation: Optional[str]= Field(None)
+    joining_date: Optional[date]= Field(None)
 
 
 

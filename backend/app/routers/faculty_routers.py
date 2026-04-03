@@ -9,7 +9,7 @@ from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_m
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
-from backend.app.utils.dependencies import admin_required, get_current_user, faculty_required
+from backend.app.utils.dependencies import admin_or_hod_required, admin_required, get_current_user, faculty_required
 from backend.app.utils.unique_faculty_id import generate_unique_faculty_id
 from backend.my_logger import log_event
 from bson import ObjectId
@@ -99,7 +99,7 @@ async def faculty_create(
 @router.get("/faculty-id/{faculty_id}", response_model=FacultyAdminResponse)
 async def get_faculty_by_id(
         faculty_id: str = Path(..., description="The unique ID of the faculty member"),
-        current_user: dict = Depends(admin_required)
+        current_user: dict = Depends(admin_or_hod_required)
 ):
     faculty = await db['Faculty'].find_one({"faculty_id": faculty_id})
     if not faculty:
@@ -280,7 +280,7 @@ async def change_faculty_password(
 @router.get("/", response_model=FacultyPaginatedResponse)
 async def list_faculty(
         params: FacultyFilterParamsRequest = Depends(),
-        current_admin: dict = Depends(admin_required)
+        current_admin: dict = Depends(admin_or_hod_required)
 ):
     if params.limit < 1:
         raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")

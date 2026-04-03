@@ -19,5 +19,5 @@ def cache_files_checker():
         file_path = os.path.join(cache_folder, filename)
         if not os.path.exists(file_path):
             with open(file_path, "w") as f:
-                json.dump({}, f)
+                json.dump([], f)
                 print(f"Created missing cache file: {filename}")

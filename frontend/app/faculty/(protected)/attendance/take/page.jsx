@@ -39,7 +39,7 @@ export default function FacultyAttendancePage() {
   // Metadata required by backend
   const [subjectCode, setSubjectCode] = React.useState("");
   const [subjects, setSubjects] = React.useState([]);
-  const [department, setDepartment] = React.useState("");
+  const [department, setDepartment] = React.useState("CS");
   const [sem, setSem] = React.useState("");
   const [classDate, setClassDate] = React.useState(() => new Date().toISOString().slice(0, 16));
 
@@ -76,6 +76,15 @@ export default function FacultyAttendancePage() {
   // Fetch roster whenever filters change (requires all four fields)
   React.useEffect(() => {
     let ignore = false;
+    const semNumber = Number(sem);
+
+    if (!department || !subjectCode || Number.isNaN(semNumber) || sem === "") {
+      setSubjects([]);
+      console.log("--> Semester not set, skipping roster load");
+      return;
+    }
+
+    console.log("--> Semester set to", semNumber);
 
     async function loadRoster() {
       try {
@@ -153,14 +162,20 @@ export default function FacultyAttendancePage() {
     let ignore = false;
 
   async function loadSubjects() {
-    if (!department && !sem) {
+    const semNumber = Number(sem);
+
+    if (!department || Number.isNaN(semNumber) || sem === "") {
       setSubjects([]);
+      console.log("--> Semester not set, skipping subjects load");
       return;
     }
+
+    console.log("--> Semester set to", semNumber);
+
     try {
       const api = process.env.NEXT_PUBLIC_API_BASE  ;
       const params = qs({ department: department, semester: sem });
-      const res = await apiFetch(`${api}/curriculum?${params}`, {
+      const res = await apiFetch(`${api}/curriculum/my-subjects-for-sem?${params}`, {
         method: "GET",
         credentials: "include",
         cache: "no-store",
@@ -268,7 +283,7 @@ export default function FacultyAttendancePage() {
       setError(err instanceof Error ? err.message : "Error saving attendance");
     } finally {
       setSaving(false);
-      router.push("/faculty/dashboard"); // refresh page to reset state and show updated attendance if needed
+      // router.push("/faculty/dashboard"); // refresh page to reset state and show updated attendance if needed
     }
   }
 
@@ -325,6 +340,7 @@ export default function FacultyAttendancePage() {
       setError(e.message ?? "Error initiating CR attendance");
     } finally {
       setLoading(false);
+      router.replace("/faculty/dashboard"); // refresh to update any CR-related state
     }
   };
 
@@ -397,8 +413,9 @@ export default function FacultyAttendancePage() {
             <input
               value={department}
               onChange={(e) => setDepartment(e.target.value?.toUpperCase())}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="CSE"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff69]"
+              // placeholder="CS"
+              disabled
             />
           </div>
 
@@ -408,7 +425,8 @@ export default function FacultyAttendancePage() {
               value={sem}
               onChange={(e) => setSem(e.target.value)}
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
-              placeholder="3"
+              placeholder="4"
+              autoFocus
             />
           </div>
         </div>

@@ -90,7 +90,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
           department: s.department,
           semester: s.semester,
         });
-        const url = `${api}/curriculum?${params.toString()}`;
+        const url = `${api}/curriculum/my-subjects-for-sem?${params.toString()}`;
         console.log("Fetching curriculum from:", url);
 
         const res = await apiFetch(url, {

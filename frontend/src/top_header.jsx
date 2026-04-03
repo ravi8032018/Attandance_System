@@ -58,13 +58,15 @@ export default function Top_Header() {
 
           {/* Nav & Notification */}
           <nav className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-0" : "text-md gap-8"}`}>
-            <div className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-0" : "text-md gap-8"}`}>  
+            <div className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? " text-xs font-semibold gap-0" : "text-md gap-8"}`}>  
             </div>
               <NotificationCenter />
 
-            <div className={`overflow-hidden ease-in-out flex font-mono justify-items-center-safe transition-all duration-0 ${hideDept ? "gap-2 max-h-4 opacity-100" : "text-md gap-4 max-h-8 opacity-100"}`}>
+            {/* Logout button  */}
+            {/* <div className={`overflow-hidden ease-in-out flex font-mono justify-items-center-safe transition-all duration-0 ${hideDept ? "gap-2 max-h-4 opacity-100" : "text-md gap-4 max-h-8 opacity-100"}`}>
               <LogoutButton />
-            </div>
+            </div> */}
+
           </nav>
 
 

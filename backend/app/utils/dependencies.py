@@ -104,6 +104,21 @@ async def admin_required(current_user: dict = Depends(get_current_user)):
         )
     return current_user
 
+async def admin_or_hod_required(current_user: dict = Depends(get_current_user)):
+    roles = current_user.get("role", [])
+    if isinstance(roles, str):
+        roles = [roles]
+
+    allowed_roles = {"admin", "hod"}
+    
+    if not allowed_roles.intersection(set(roles)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Token role does not match roles assigned to user.",
+        )
+
+    return current_user
+
 async def hod_required(current_user: dict = Depends(get_current_user)):
     if 'hod' not in current_user["role"]:
         raise HTTPException(

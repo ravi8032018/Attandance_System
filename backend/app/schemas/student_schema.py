@@ -19,7 +19,7 @@ class SortOrder(str, Enum):
 class StudentBase(BaseModel):
     email: EmailStr = Field(..., example="Student@email.com")
     course: str = Field(..., example="BSc")
-    sem: str = Field(..., example="1")
+    semester: str = Field(..., example="1")
     registration_year: str= Field(...,example="2025")
     department: str= Field(...,example='CS')
     @validator('course', pre=True)
@@ -37,7 +37,7 @@ class StudentCreateRequest(StudentBase):
 
 class StudentBulkCreateRequest(BaseModel):
     course: str = Field(..., example="BSc")
-    sem: str = Field(..., example="1")
+    semester: str = Field(..., example="1")
     registration_year: str= Field(...,example="2025")
     department: str= Field(...,example='CS')
     student_emails: List[EmailStr]

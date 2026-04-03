@@ -12,8 +12,8 @@ async def list_curriculum(
     semester: Optional[str] = Query(None, description="Filter by semester, e.g. 1"),
     current_user: dict = Depends(get_current_user),
 ):
-    # Optional: restrict to admin/faculty only
     # print("--> Curriculum request by user:", current_user)
+    # Optional: restrict to admin/faculty only
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             if "student" in current_user.get("role", []):
@@ -29,14 +29,14 @@ async def list_curriculum(
                 if (department and department != student_dept) or (semester and semester != student_sem):
                     raise HTTPException(status_code=403, detail="Access denied.")
 
-    # Build optional Mongo filter
+    # Build Mongo filter
     query_filter: dict = {}
     if department:
         query_filter["department"] = department
     if semester:
         query_filter["semester"] = semester
 
-    # If no params are provided, query_filter stays {}, so Mongo returns all docs.[web:17]
+    # If no params are provided, query_filter stays {}, so Mongo returns all docs.
     cursor = db["Curriculum"].find(query_filter)
 
     items = []
@@ -53,6 +53,67 @@ async def list_curriculum(
             )
         )
     print("--> subject list returned from /curriculum : ",items)
+    return CurriculumListResponse(data=items)
+
+@router.get("/my-subjects-for-sem", response_model=CurriculumListResponse)
+async def faculty_subjects_for_sem(
+    department = Query(None, description="Filter by department, e.g. CS"),
+    semester = Query(None, description="Filter by semester, e.g. 1"),
+    Faculty_id = Query(None, description="only use this arg if hod or admin need the faculty's subjects, e.g. CSFAC01"),
+    current_user: dict = Depends(get_current_user),
+):
+    # print("--> Curriculum request by user:", current_user)
+    # Optional: restrict to admin/faculty only
+    if "admin" not in current_user["role"]:
+        if "hod" not in current_user.get("role", []):
+            if "faculty" not in current_user.get("role", []):
+                if "student" in current_user.get("role", []):
+                    raise HTTPException(status_code=403, detail="Access denied.")
+
+    # if not department or not semester:
+    #     raise HTTPException(status_code=400, detail="Department and semester are required.")
+    
+    faculty_id = str(current_user.get("unique_id")).upper()
+    if Faculty_id:
+        if "admin" not in current_user["role"] and "hod" not in current_user["role"]:
+            pass  # faculty can provide their own id or leave blank to get their subjects
+        else:
+            # admin and hod can provide any faculty id, but validate it exists
+            faculty_id = ""  # reset to empty, will validate below
+            faculty_id = Faculty_id.upper()
+              
+    # Build Mongo filter
+  
+    query_filter: dict = {}
+    if department:
+        query_filter["department"] = str(department)
+    if semester:
+        query_filter["semester"] = str(semester)
+    if faculty_id:
+        query_filter["subjects.faculty_id"] = faculty_id
+
+    # If no params are provided, query_filter stays {}, so Mongo returns all docs.
+    cursor = db["Curriculum"].find(query_filter)
+
+    items: list[CurriculumItem] = []
+    async for doc in cursor:
+        # Optionally filter subjects in Python to only return the ones for this faculty
+        faculty_subjects = [
+            s for s in doc.get("subjects", [])
+            if s.get("faculty_id") == faculty_id
+        ]
+        items.append(
+            CurriculumItem(
+                subjects=[
+                    SubjectItem(
+                        subject_code=s["subject_code"],
+                        subject_name=s["subject_name"],
+                    )
+                    for s in faculty_subjects
+                ]
+            )
+        )
+
     return CurriculumListResponse(data=items)
 
 @router.get("/update_curriculum_db")

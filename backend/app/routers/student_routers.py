@@ -8,6 +8,7 @@ from backend.app.schemas.student_schema import  StudentOutResponse, StudentAdmin
 from secrets import token_urlsafe
 from datetime import datetime, timedelta, timezone
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
+from backend.app.utils.get_subjects_for_faculty import get_faculty_subject_codes_for_dept_sem
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
@@ -35,7 +36,7 @@ async def student_create(
     # this gets the subjects from Curriculam DB
     payload = {
         'department': student_dict['department'],
-        'semester': student_dict['sem'],
+        'semester': student_dict['semester'],
         'course': student_dict['course'],
     }
     docs = await db.Curriculum.find_one(payload)
@@ -141,7 +142,7 @@ async def bulk_students_create(
     # this gets the subjects from Curriculum DB
     pay = {
         'department': payload.department,
-        'sem': payload.sem,
+        'semester': payload.sem,
         'course': payload.course,
     }
     # subjects_doc = await db.Curriculum.find_one(pay)
@@ -538,6 +539,151 @@ async def list_students(
         page=params.skip // params.limit + 1,
         limit=params.limit
     )
+
+@router.get("/my", response_model=StudentPaginatedResponse)
+async def list_students(
+    params: StudentFilterParamsRequest= Depends(),
+    current_user: dict = Depends(get_current_user)
+):
+    print("--> testing frontend : entering list_students")
+    if "admin" not in current_user["role"]:
+        if "faculty" not in current_user.get("role", []):
+            raise HTTPException(status_code=403, detail="Access denied. Only admins and faculty can view all students.")
+
+    # This check is redundant if `ge=1` is working, but serves as a manual safeguard
+    if params.limit < 1:
+        raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")
+    # print(f"DEBUG: Received sort_by = '{params.sort_by}' (type: {type(params.sort_by)})")
+    # print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
+
+    query_filter = {}
+    expr_conditions = []
+
+     # If faculty has subjects assigned for the given dept/sem, restrict to only those students
+    if params.registration_no:
+        query_filter["registration_no"] = {"$regex": params.registration_no, "$options": "i"}
+
+    if params.email:
+        query_filter["email"] = {"$regex": params.email, "$options": "i"}
+
+    if params.first_name:
+        query_filter["first_name"] = {"$regex": params.first_name, "$options": "i"}
+
+    if params.last_name:
+        query_filter["last_name"] = {"$regex": params.last_name, "$options": "i"}
+
+    if params.status:
+        query_filter["status"] = params.status.lower()
+
+    if params.semester:
+        query_filter["semester"] = params.semester.lower()
+
+    if params.department:
+        query_filter["department"] = {"$regex": params.department, "$options": "i"}
+
+    if params.subject_code:
+        expr_conditions.append({
+            "$gt": [
+                {
+                    "$size": {
+                        "$filter": {
+                            "input": {"$objectToArray": "$subjects"},
+                            "as": "subj",
+                            "cond": {
+                                "$regexMatch": {
+                                    "input": "$$subj.k",
+                                    "regex": params.subject_code,
+                                    "options": "i"
+                                }
+                            }
+                        }
+                    }
+                },
+                0
+            ]
+        })
+        
+    # --- FACULTY SCOPING ---
+    if "faculty" in current_user['role'] and "admin" not in current_user['role']:
+        # This is a faculty (or HOD-as-faculty) view: restrict to their subjects
+        faculty_id = current_user.get("unique_id")
+        if not faculty_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Faculty unique_id is missing on user.",
+            )
+        
+        # Optionally you can pass params.department/params.semester to restrict
+        faculty_subject_codes = await get_faculty_subject_codes_for_dept_sem(
+            unique_faculty_id=faculty_id,
+            department=params.department,
+            semester=params.semester,
+        )
+        print(f"DEBUG: Faculty subject codes: {faculty_subject_codes}")
+        
+        if not faculty_subject_codes:
+            # Faculty has no assigned subjects → no students
+            return StudentPaginatedResponse(
+                data=[],
+                total_count=0,
+                page=params.skip // params.limit + 1,
+                limit=params.limit,
+            )
+            
+        expr_conditions.append(
+            {
+                "$gt": [
+                    {
+                        "$size": {
+                            "$filter": {
+                                "input": {"$objectToArray": "$subjects"},
+                                "as": "subj",
+                                "cond": {
+                                    "$in": ["$$subj.k", faculty_subject_codes]
+                                },
+                            }
+                        }
+                    },
+                    0,
+                ]
+            }
+        )
+
+    if expr_conditions:
+        query_filter["$expr"] = {"$and": expr_conditions}
+
+    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+
+    mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
+    ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
+    if params.sort_by not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sort_by field. Allowed fields are: {', '.join(sorted(ALLOWED_SORT_FIELDS))}"
+        )
+    # Define collation for case-insensitive sorting on string fields
+    collation = Collation(locale='en', strength=2)
+    total_count = await db["Students"].count_documents(query_filter)
+
+    students_cursor = db["Students"].find(query_filter).collation(collation).sort(params.sort_by, mongo_sort_order).skip(params.skip).limit(params.limit)
+
+    students_data = [StudentListResponse(**student) async for student in students_cursor]
+
+    log_event(
+        "list students",
+        user_email=current_user["email"],
+        user_id=current_user["id"],
+        user_role=current_user["role"],
+        details=f"Fetched {len(students_data)} students. Filters: {query_filter}"
+    )
+
+    return StudentPaginatedResponse(
+        data=students_data,
+        total_count=  total_count,
+        page=params.skip // params.limit + 1,
+        limit=params.limit
+    )
+
 
 @router.delete("/delete/{registration_no}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_student(

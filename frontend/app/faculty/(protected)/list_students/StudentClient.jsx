@@ -58,14 +58,14 @@ export default function StudentsClient({ initialQuery }) {
           limit: query.limit,
           registration_no: query.registration_no,
           email: query.email,
-          sem: query.sem,
+          semester: query.sem,
           first_name: query.first_name,
           last_name: query.last_name,
           status: query.status,
           sort_by: query.sort_by,
           sort_order: query.sort_order,
         };
-        const url = `${base}/student/?${qs(params)}`;
+        const url = `${base}/student/my/?${qs(params)}`;
         console.log("URL: ",url);
 
         const res = await apiFetch(url, {

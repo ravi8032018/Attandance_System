@@ -61,7 +61,7 @@ export default function LoginPage() {
       const token_role = data?.token_role || values.role;
 
       // Optional: alert success
-      if (typeof data?.message === "string") alert(data.message);
+      // if (typeof data?.message === "string") alert(data.message);
 
       // Route by token role
       if (token_role === "admin"){
