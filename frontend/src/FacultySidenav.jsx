@@ -48,13 +48,13 @@ function NavLinkItem({ link, pathname, expanded }) {
       <Link
         href={link.href}
         className={
-          "flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-slate-900 transition-colors " +
+          "flex items-center gap-3 rounded-md p-1 text-sm font-medium text-slate-900 transition-colors " +
           (active ? "bg-indigo-200" : "hover:bg-indigo-100")
         }
         aria-current={active ? "page" : undefined}
         title={!expanded ? link.label : undefined}
       >
-        <span aria-hidden="true" className="shrink-0 text-lg">
+        <span aria-hidden="true" className="shrink-0 text-lg pl-1">
           {link.icon}
         </span>
 
@@ -76,12 +76,13 @@ function SidebarSection({
   onToggle,
 }) {
   return (
-    <div className="rounded-lg">
+    <div className="">
+      {/* section header when sidenav is expanded */}
       {expanded && (
         <button
           type="button"
           onClick={onToggle}
-          className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:bg-slate-100"
+          className="flex w-full items-center justify-between rounded-md p-2 text-left text-xs font-semibold uppercase tracking-wide bg-gray-200 text-slate-500 hover:bg-slate-200"
           aria-expanded={isOpen}
           aria-controls={`section-${section.key}`}
         >
@@ -99,6 +100,7 @@ function SidebarSection({
         </button>
       )}
 
+      {/* items in each section */}
       {expanded ? (
         <div
           id={`section-${section.key}`}
@@ -117,9 +119,11 @@ function SidebarSection({
               />
             ))}
           </ul>
+          <div className="h-[1.5px] mb-2 bg-slate-300" aria-hidden="true" />
         </div>
       ) : (
-        <ul className="space-y-0">
+        // item in section when closed
+        <ul className="space-y-1">
           {section.links.map((link) => (
             <NavLinkItem
               key={link.href}
@@ -128,6 +132,8 @@ function SidebarSection({
               expanded={expanded}
             />
           ))}
+        <div className="h-[1.5px] mb-2 bg-slate-300" aria-hidden="true" />
+
         </ul>
       )}
     </div>
@@ -169,41 +175,48 @@ export default function FacultySideNav() {
       id="app-sidenav"
       className={
         "border-r border-slate-300 bg-[#f8fafb] transition-all duration-300 ease-in-out " +
-        (expanded ? "w-64" : "w-16")
+        (expanded ? "w-64" : "w-14")
       }
       aria-label="Primary"
     >
       <div className="flex min-h-screen flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between p-3">
+          {/* menu part */}
+          <div className="flex items-center justify-between">
+            {/* expanded menu> */}
             {expanded ? (
-              <div className="text-md font-semibold text-slate-900">Menu</div>
+              <div className="flex gap-40 items-baseline text-md font-semibold text-slate-900 mx-4 my-1 ">
+                <span>Menu</span>
+                <button
+                  type="button"
+                  className="px-1.5 rounded-sm text-black font-semibold hover:bg-slate-200 focus:outline-none"
+                  aria-label="Toggle sidebar"
+                  aria-expanded={expanded}
+                  aria-controls="sidenav-list"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+                  >
+                    ☰
+                </button>
+              </div>
             ) : (
-              <div />
+              <div className="pt-1 pl-3.5 text-lg font-semibold text-slate-900 transition-all duration-300 ease-in-out">
+                <button
+                  type="button"
+                  className="rounded p-1.5 text-black font-semibold hover:bg-slate-200 focus:outline-none"
+                  aria-label="Toggle sidebar"
+                  aria-expanded={expanded}
+                  aria-controls="sidenav-list"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+                >
+                  ☰
+                </button>
+              </div>
             )}
-
-            <button
-              type="button"
-              className="rounded p-2 text-slate-600 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              aria-label="Toggle sidebar"
-              aria-expanded={expanded}
-              aria-controls="sidenav-list"
-              onClick={() => setExpanded((prev) => !prev)}
-              title={expanded ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              <svg
-                aria-hidden="true"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                className={expanded ? "transition-transform" : "rotate-180 transition-transform"}
-              >
-                <path fill="currentColor" d="M9 6l6 6-6 6" />
-              </svg>
-            </button>
           </div>
 
-          <div id="sidenav-list" className="space-y-4 overflow-y-auto px-2">
+          <div id="sidenav-list" className="space-y-0 overflow-y-auto px-2">
             {isHod ? (
               hodSections.map((section) => (
                 <SidebarSection
@@ -216,7 +229,7 @@ export default function FacultySideNav() {
                 />
               ))
             ) : (
-              <ul className="space-y-0">
+              <ul className="space-y-0 p-0">
                 {facultyLinks.map((link) => (
                   <NavLinkItem
                     key={link.href}
@@ -230,8 +243,9 @@ export default function FacultySideNav() {
           </div>
         </div>
 
+            {/* logout button */}
         <div className="p-2">
-          <div className="mt-1 border-t-2 border-slate-300 pt-2" aria-hidden="true" />
+          <div className="" aria-hidden="true" />
           <LogoutButton to="/login" />
         </div>
       </div>
