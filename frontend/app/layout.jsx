@@ -3,7 +3,7 @@ import "./globals.css";
 import Top_Header from "@/src/top_header";
 
 export const metadata = {
-  title: "UNIkart Attendance",
+  title: "SAMS - Student Attendance Management System",
   description:
     "Modern faculty–student attendance and notification system for universities.",
 };
@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
         <Top_Header />
 
         {/* Page container */}
-        <div className="z-5 bg-white/60">
+        <div className="z-5 bg-white/70">
           <div>
             {children}
           </div>

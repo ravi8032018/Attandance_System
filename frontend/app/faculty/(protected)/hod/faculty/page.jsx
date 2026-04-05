@@ -182,15 +182,15 @@ export default function HodFacultyPage() {
                     {/* Lower buttons */}
                 <div className="mt-4 flex justify-start gap-3">
                   <Link
-                    href={`/hod/faculty/${faculty.faculty_id}`}
+                    href={`/faculty/hod/faculty/${faculty.faculty_id}`}
                     className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
                   >
                     View Profile
                   </Link>
 
                   <Link
-                    href={`/hod/faculty/assign-subject?faculty_id=${faculty.faculty_id}`}
-                    className="text-white rounded-md border border-slate-100 bg-slate-600 px-4 py-2 text-sm font-medium  hover:bg-slate-700"
+                    href={`/faculty/hod/faculty/assign-subject?faculty_id=${faculty.faculty_id}`}
+                    className="text-white rounded-md border border-slate-100 bg-slate-600 px-4 py-2 text-sm font-medium hover:bg-slate-700"
                   >
                     Assign
                   </Link>
