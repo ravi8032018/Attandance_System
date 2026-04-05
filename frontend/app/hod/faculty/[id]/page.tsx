@@ -268,6 +268,7 @@ export default function FacultyProfileClient({ params }) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1 overflow-y-auto max-h-40 pr-1">
           {subjects.map((subject) => (
             <div
+              key={subject.subject_code}   // add this line
               className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:shadow-md transition"
             >
               <p className="text-sm font-semibold text-slate-900">
