@@ -185,7 +185,7 @@ async def get_current_faculty_profile(
     return FacultyFullProfileResponse(**faculty)
 
 @router.patch("/me")
-async def update_current_student_profile(
+async def update_current_faculty_profile(
         update_data: FacultySelfUpdateRequest,
         current_user: dict = Depends(faculty_required)
 ):

@@ -1,21 +1,69 @@
-// app/hod/layout.jsx
-import { redirect } from "next/navigation";
-import { getFacultyDetailsServer } from "@/src/_hooks/get_faculty_me_server";
+"use client";
 
-export default async function HodLayout({ children }) {
-  const user = await getFacultyDetailsServer();
-    console.log("HOD Layout - User details:", user); // Debug log
-  if (!user) {
-    redirect("/login");
-  }
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-  const roles = user?.role || [];
-  const isHod = Array.isArray(roles)
-    ? roles.includes("hod")
-    : String(roles).toLowerCase().includes("hod");
+export default function HodLayout({ children }) {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-  if (!isHod) {
-    redirect("/faculty/dashboard");
+  useEffect(() => {
+    let cancelled = false;
+
+    async function check() {
+      try {
+        const api = process.env.NEXT_PUBLIC_API_BASE;
+
+        const res = await fetch(`${api}/faculty/me`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          if (!cancelled) router.replace("/login");
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        console.log("HOD Layout - Fetched user details:", data); // Debug log
+
+        if (!data) {
+          if (!cancelled) router.replace("/login");
+          return;
+        }
+
+        const rolesRaw = data?.role ?? data?.roles ?? data?.token_role ?? [];
+        const roles = Array.isArray(rolesRaw)
+          ? rolesRaw.map((r) => String(r).toLowerCase().trim())
+          : [String(rolesRaw).toLowerCase().trim()];
+
+        const isHod = roles.includes("hod");
+        console.log("HOD Layout - User roles:", roles, "Is HOD?", isHod); // Debug log
+
+        if (!cancelled && !isHod) {
+          router.replace("/faculty/dashboard");
+          return;
+        }
+      } catch (e) {
+        if (!cancelled) router.replace("/login");
+        return;
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }
+
+    check();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (checking) {
+    return <div className="p-6 text-sm text-slate-600">Checking session…</div>;
   }
 
   return (

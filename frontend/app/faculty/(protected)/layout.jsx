@@ -23,10 +23,20 @@ export default function FacultyProtectedLayout({ children }) {
           return;
         }
 
-        const data = await res.json();
-        const role = String(data.token_role || "").trim().toLowerCase();
+        const data = await res.json().catch(() => null);
+        if (!data) {
+          if (!cancelled) router.replace("/login");
+          return;
+        }
 
-        if (!cancelled && role !== "faculty") {
+        const rolesRaw = data?.role ?? data?.roles ?? data?.token_role ?? [];
+        const roles = Array.isArray(rolesRaw)
+          ? rolesRaw.map((r) => String(r).toLowerCase().trim())
+          : [String(rolesRaw).toLowerCase().trim()];
+
+        const allowed = roles.includes("faculty") || roles.includes("hod");
+
+        if (!cancelled && !allowed) {
           router.replace("/login");
           return;
         }
