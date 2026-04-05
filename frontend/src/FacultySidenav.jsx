@@ -31,11 +31,11 @@ const hodSections = [
     key: "departmentWorkspace",
     title: "Department Workspace",
     links: [
-      { href: "/hod/dashboard", label: "HOD Dashboard", icon: "🏛️" },
-      { href: "/hod/faculty", label: "Faculty Management", icon: "👥" },
-      { href: "/hod/students", label: "Student Management", icon: "🎓" },
-      { href: "/hod/curriculum", label: "Curriculum", icon: "📚" },
-      { href: "/hod/reports", label: "Reports", icon: "📊" },
+      { href: "/faculty/hod/dashboard", label: "HOD Dashboard", icon: "🏛️" },
+      { href: "/faculty/hod/faculty", label: "Faculty Management", icon: "👥" },
+      { href: "/faculty/hod/students", label: "Student Management", icon: "🎓" },
+      { href: "/faculty/hod/curriculum", label: "Curriculum", icon: "📚" },
+      { href: "/faculty/hod/reports", label: "Reports", icon: "📊" },
     ],
   },
 ];
