@@ -49,7 +49,7 @@ function NavLinkItem({ link, pathname, expanded }) {
         href={link.href}
         className={
           "flex items-center gap-3 rounded-md p-1 text-sm font-medium text-slate-900 transition-colors " +
-          (active ? "bg-indigo-200" : "hover:bg-indigo-100")
+          (active ? "bg-indigo-300" : "hover:bg-indigo-200")
         }
         aria-current={active ? "page" : undefined}
         title={!expanded ? link.label : undefined}
@@ -82,11 +82,11 @@ function SidebarSection({
         <button
           type="button"
           onClick={onToggle}
-          className="flex w-full items-center justify-between rounded-md p-2 text-left text-xs font-semibold uppercase tracking-wide bg-gray-200 text-slate-500 hover:bg-slate-200"
+          className="flex w-full items-center justify-between rounded-md pt-2 pb-2 pl-1 text-left text-xs font-semibold uppercase tracking-wide bg-gray-30 text-slate-500 hover:bg-gray-200 focus:outline-none "
           aria-expanded={isOpen}
           aria-controls={`section-${section.key}`}
         >
-          <span>{section.title}</span>
+          <span className="px-1">{section.title}</span>
 
           <svg
             aria-hidden="true"
@@ -105,11 +105,11 @@ function SidebarSection({
         <div
           id={`section-${section.key}`}
           className={
-            "overflow-hidden transition-all duration-300 ease-in-out " +
+            "overflow-hidden transition-all duration-300 ease-in-out pl-3 " +
             (isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")
           }
         >
-          <ul className="space-y-0">
+          <ul className="space-y-0 pl-1 border-l-2 border-gray-400">
             {section.links.map((link) => (
               <NavLinkItem
                 key={link.href}
@@ -119,7 +119,7 @@ function SidebarSection({
               />
             ))}
           </ul>
-          <div className="h-[1.5px] mb-2 bg-slate-300" aria-hidden="true" />
+          {/* <div className="mb-2 bg-slate-300" aria-hidden="true" /> */}
         </div>
       ) : (
         // item in section when closed
@@ -132,7 +132,7 @@ function SidebarSection({
               expanded={expanded}
             />
           ))}
-        <div className="h-[1.5px] mb-2 bg-slate-300" aria-hidden="true" />
+        <div className="h-[3px] mb-2 bg-gray-300" aria-hidden="true" />
 
         </ul>
       )}
@@ -179,7 +179,7 @@ export default function FacultySideNav() {
       }
       aria-label="Primary"
     >
-      <div className="flex min-h-screen flex-col justify-between">
+      <div className="flex min-h-scree flex-col justify-between">
         <div>
           {/* menu part */}
           <div className="flex items-center justify-between">
@@ -215,7 +215,7 @@ export default function FacultySideNav() {
               </div>
             )}
           </div>
-
+            {/* hod sections */}
           <div id="sidenav-list" className="space-y-0 overflow-y-auto px-2">
             {isHod ? (
               hodSections.map((section) => (
@@ -229,7 +229,7 @@ export default function FacultySideNav() {
                 />
               ))
             ) : (
-              <ul className="space-y-0 p-0">
+              <ul className="space-y-0">
                 {facultyLinks.map((link) => (
                   <NavLinkItem
                     key={link.href}
@@ -244,10 +244,18 @@ export default function FacultySideNav() {
         </div>
 
             {/* logout button */}
-        <div className="p-2">
-          <div className="" aria-hidden="true" />
-          <LogoutButton to="/login" />
-        </div>
+        {expanded ? (
+              <div className="m-2 pt-2 border-t-2 border-gray-400 ">
+                <div className="" aria-hidden="true" />
+                <LogoutButton to="/login" className=""/>
+              </div>
+            ) : (
+              <div className="ml-2 mr-2 mt-1  ">
+                <div className="" aria-hidden="true" />
+                <LogoutButton to="/login" expanded={expanded} />
+              </div>
+            )}
+        
       </div>
     </aside>
   );
