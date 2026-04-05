@@ -6,11 +6,10 @@ export async function getFacultyDetailsServer() {
   const base = process.env.NEXT_PUBLIC_API_BASE;
   const cookieStore = await cookies();
 
-  const token =
-    cookieStore.get("dept_user_token")?.value ||
-    cookieStore.get("token")?.value;
-  console.log("getFacultyDetailsServer - Retrieved token from cookies:", token); // Debug log
-  if (!token) return null;
+  const token = cookieStore.get("dept_user_token")?.value || cookieStore.get("token")?.value;
+  
+  console.log("getFacultyDetailsServer - In get faculty details server:", token); // Debug log
+  // if (!token) return null;
   const cookieHeader = cookieStore.toString();
 
   const res = await fetch(`${base}/faculty/me`, {
@@ -26,6 +25,6 @@ export async function getFacultyDetailsServer() {
   if (!res.ok) return null;
 
   const data = await res.json().catch(() => null);
-  console.log("getFacultyDetailsServer - Fetched user details:", data); // Debug log
+  console.log("getFacultyDetailsServer - Out Fetched user details:", data); // Debug log
   return data;
 }

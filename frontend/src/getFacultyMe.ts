@@ -15,6 +15,7 @@ export function useFacultyMe() {
     async function run() {
       setLoading(true);
       setErr("");
+  console.log("getFacultyHelper - IN Fetching faculty details..."); // Debug log
 
       try {
         const data = await getFacultyDetails();
@@ -27,6 +28,7 @@ export function useFacultyMe() {
     }
 
     run();
+  console.log("getFacultyHelper - OUT Fetching faculty details..."); // Debug log
 
     return () => {
       cancelled = true;

@@ -1,6 +1,5 @@
 // app/hod/layout.jsx
 import { redirect } from "next/navigation";
-import FacultySideNav from "@/src/FacultySidenav";
 import { getFacultyDetailsServer } from "@/src/_hooks/get_faculty_me_server";
 
 export default async function HodLayout({ children }) {
