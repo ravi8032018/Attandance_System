@@ -116,6 +116,15 @@ async def faculty_subjects_for_sem(
 
     return CurriculumListResponse(data=items)
 
+
+
+
+
+
+
+
+
+
 @router.get("/update_curriculum_db")
 async def update_curriculum():
     pay = {
@@ -141,6 +150,7 @@ async def update_curriculum():
         {"$set": subject_doc}
     )
     print("Matched:", result.matched_count, "Modified:", result.modified_count)
+
 
 '''
 json_data=[

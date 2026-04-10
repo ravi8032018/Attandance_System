@@ -20,6 +20,8 @@ ENV = os.getenv("ENV", "development")
 IS_PROD = ENV == "production"
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 
+# FRONTEND_ORIGIN2 = os.getenv("FRONTEND_ORIGIN2", "http://10.53.2.106:3000")
+
 
 
 fastapi_app = FastAPI()

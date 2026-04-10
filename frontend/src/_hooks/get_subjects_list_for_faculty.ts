@@ -1,14 +1,18 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import qs from "@/src/_hooks/qs";
 import { apiFetch } from "@/src/api_fetch";
 
-type Subject = {
+export type FacultySubject = {
   subject_code: string;
   subject_name: string;
+  semester?: string;
+  department?: string;
 };
 
 export function useFacultySubjects(facultyId?: string) {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<FacultySubject[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,12 +67,12 @@ export function useFacultySubjects(facultyId?: string) {
         }
       }
     }
-    loadSubjects();
 
+    loadSubjects();
     return () => {
       ignore = true;
     };
   }, [facultyId]);
 
-  return { subjects, loading, error };
+  return { subjects, setSubjects, loading, error };
 }

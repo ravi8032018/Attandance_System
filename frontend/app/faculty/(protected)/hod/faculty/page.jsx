@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getFacultyList } from "@/src/_hooks/getFacultyListHelper";
+import { getFacultyList } from "@/src/_hooks/getFacultyList";
 import { TitleCase } from "@/src/_hooks/toTitleCase";
 
 export default function HodFacultyPage() {
@@ -71,7 +71,7 @@ export default function HodFacultyPage() {
 
         <div className="flex gap-3">
           <Link
-            href="/hod/faculty/assign-subject"
+            href="/faculty/hod/faculty/assign-subject"
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
             Assign Subject

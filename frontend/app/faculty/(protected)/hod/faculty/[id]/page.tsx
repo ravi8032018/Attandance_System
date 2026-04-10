@@ -6,7 +6,7 @@ import { TitleCase } from "@/src/_hooks/toTitleCase";
 import { apiFetch } from "@/src/api_fetch";
 import Breadcrumbs from "@/src/_hooks/breakcrumbs";
 import qs from "@/src/_hooks/qs";
-import { getFacultyList } from "@/src/_hooks/getFacultyListHelper";
+// import { getFacultyList } from "@/src/_hooks/getSubjectsList";
 import { useFacultySubjects } from "@/src/_hooks/get_subjects_list_for_faculty";
 
 

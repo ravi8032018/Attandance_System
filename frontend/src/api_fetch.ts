@@ -6,7 +6,6 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
     credentials: "include", // include cookies
     ...init,
   });
-  console.log("--> response from apiFetch : ",res);
   
   if (res.status === 401) {
     // Token invalid/expired – mirror what layout does

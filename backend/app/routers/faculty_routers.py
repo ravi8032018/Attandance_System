@@ -279,8 +279,8 @@ async def change_faculty_password(
 
 @router.get("/", response_model=FacultyPaginatedResponse)
 async def list_faculty(
-        params: FacultyFilterParamsRequest = Depends(),
-        current_admin: dict = Depends(admin_or_hod_required)
+    params: FacultyFilterParamsRequest = Depends(),
+    current_admin: dict = Depends(admin_or_hod_required)
 ):
     if params.limit < 1:
         raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")
