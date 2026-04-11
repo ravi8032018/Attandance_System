@@ -167,3 +167,45 @@ export function SubjectSelect({
   );
 }
 
+export const formatDisplayName = (first = "", last = "", isFaculty = false, maxLength = 25)=> {
+  let firstPart = first.trim();
+  let lastParts = last.trim().split(/\s+/);
+  let finalName = "";
+
+  // 1. Handle Middle Names inside the Last Name field
+  if (lastParts.length > 1) {
+    const surname = lastParts.pop(); // Take the actual last name (Sharma)
+    // Map middle parts (Kumar) to initials (K.)
+    const initials = lastParts.map(part => `${part.charAt(0).toUpperCase()}`).join(" ");
+    finalName = `${firstPart} ${initials} ${surname}`;
+  } else {
+    finalName = [firstPart, lastParts[0]].filter(Boolean).join(" ");
+  }
+
+  // 2. Add Faculty Prefix
+  if (isFaculty) {
+    finalName = `Dr. ${finalName}`;
+  }
+
+  // 3. Shorten if it exceeds maxLength
+  if (finalName.length > maxLength) {
+    return finalName.substring(0, maxLength - 3) + "...";
+  }
+
+  return CapitalizeEachWord(finalName);
+};
+
+export const getNameInitials = (first = "", last = "") => {
+  const firstInitial = first.trim().charAt(0).toUpperCase();
+  
+  // Split the last name string to find middle names and the surname
+  const lastParts = last.trim().split(/\s+/).filter(Boolean);
+  
+  // Map all parts of the last name field to their first initials
+  const remainingInitials = lastParts.map(part => part.charAt(0).toUpperCase());
+
+  // Join the first initial with any initials found in the last name field
+  return [firstInitial, ...remainingInitials].filter(Boolean).join(" ");
+};
+
+

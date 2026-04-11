@@ -93,7 +93,7 @@ class StudentSelfUpdateRequest(BaseModel):
 
 class StudentFilterParamsRequest(BaseModel):
     skip: int = Field(0, ge=0, description="Number of students to skip")
-    limit: int = Field(10, ge=1, le=100, description="Max number of students per page")
+    limit: int = Field(10, ge=1, le=1000, description="Max number of students per page")
     registration_no: Optional[str] = Field(None, description="Filter by registration number")
     email: Optional[str] = Field(None, description="Filter by email (partial match)")
     first_name: Optional[str] = Field(None, description="Filter by first name (partial match)")

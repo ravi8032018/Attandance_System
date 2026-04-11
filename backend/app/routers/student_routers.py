@@ -541,7 +541,7 @@ async def list_students(
     )
 
 @router.get("/my", response_model=StudentPaginatedResponse)
-async def list_students(
+async def list_my_students(
     params: StudentFilterParamsRequest= Depends(),
     current_user: dict = Depends(get_current_user)
 ):
