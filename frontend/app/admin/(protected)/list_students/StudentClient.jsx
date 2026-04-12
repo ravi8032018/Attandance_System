@@ -289,7 +289,7 @@ export default function StudentsClient({ initialQuery }) {
                 </tr>
               ) : (
                 rows.map((s, idx) => (
-                  <tr key={s.registration_no ?? idx} className="text-center text-sm font-mono hover:bg-slate-50 ">
+                  <tr key={s.registration_no ?? idx} className="text-center text-sm   hover:bg-slate-50 ">
                     <td className="px-4 py-3 font-medium">{s.registration_no}</td>
 
                     <td className="px-auto py-auto transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">

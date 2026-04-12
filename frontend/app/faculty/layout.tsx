@@ -1,4 +1,5 @@
 // app/dashboard/layout.jsx
+import "@/app/globals.css";
 import FacultySideNav from "../../src/FacultySidenav";
 import { redirect } from "next/navigation";
 

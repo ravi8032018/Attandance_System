@@ -604,7 +604,7 @@ export default function HODDashboardClient() {
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {alert.student_name}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 text-sm font-mono">
+                        <td className="px-4 py-3 text-slate-600 text-sm  ">
                           {alert.registration_no}
                         </td>
                         <td className="px-4 py-3 text-slate-600 text-xs truncate">

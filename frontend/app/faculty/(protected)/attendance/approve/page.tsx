@@ -260,7 +260,7 @@ export default function FacultyCRApprovalsPage() {
                     )}&nbsp;&nbsp;<b className='text-lg'>┃</b>&nbsp;&nbsp;
                     {s.subject_code}
                   </div>
-                  <div id="date-display" className="text-xs text-black font-mono">
+                  <div id="date-display" className="text-xs text-black  ">
 
                     {formatDateTime(s.date)}
                   </div>

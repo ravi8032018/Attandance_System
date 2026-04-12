@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from './api_fetch';
+import { ThemeSwitch } from './ThemeSwitch';
+
 
 type NotificationMessage = {
   id?: string;
@@ -198,7 +200,9 @@ export function NotificationCenter() {
   }
 
   return (
-    <div ref={wrapperRef} className="">
+    <div ref={wrapperRef} className="flex items-center">
+      {/* <ThemeSwitch /> */}
+
       {/* Bell icon with badge */}
       <button
         type="button"
@@ -282,7 +286,7 @@ export function NotificationCenter() {
                     className="ml-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete notification"
                   >
-                    ✕
+                    Ã¢Å“â€¢
                   </button>
                 </li>
               ))}

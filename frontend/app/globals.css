@@ -1,22 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f2f8;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f0f2f8; /* Primary light background */
+  --foreground: #171717; /* Primary text color */
+
+  --card-background: #ffffff; /* Background for cards, modals, etc. */
+  --card-foreground: #0a0a0a; /* Text color within cards */
+
+  --muted-background: #f8fafb; /* For less prominent backgrounds */
+  --muted-foreground: #647c8b; /* For placeholder text or secondary info (slate-500) */
+
+  --primary: #4f46e5; /* Main accent color (indigo-600) */
+  --primary-foreground: #ffffff; /* Text on primary buttons/elements */
+
+  --secondary: #f59e0b; /* Secondary accent color (amber-500) */
+  --secondary-foreground: #ffffff; /* Text on secondary elements */
+
+  --success: #16a34a; /* Green for success states */
+  --success-foreground: #ffffff; /* Text on success elements */
+
+  --error: #ef4444; /* Red for error states */
+  --error-foreground: #ffffff; /* Text on error elements */
+
+  --border: #e2e8f0; /* Default border color (slate-200) */
+  --ring1: #a9b0e2; /* Focus ring color (indigo-200) */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #f8f8f8;
+  --card-background: #141a26;
+  --card-foreground: #f8f8f8;
+  --muted-background: #19222f;
+  --muted-foreground: #7a8394;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f59e0b;
+  --secondary-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --error: #ef4444;
+  --error-foreground: #ffffff;
+  --border: #6b7885;
+  --ring2: #c3ace6;
 }
 
 body {

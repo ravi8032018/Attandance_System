@@ -184,14 +184,14 @@ export default function Home() {
               <dl className="mt-3 space-y-1">
                 <div>
                   <dt className="text-[12px] text-slate-500">Email</dt>
-                  <dd className="font-mono text-[12px] text-slate-900">
+                  <dd className=" text-[12px] text-slate-900">
                     Demo@User.com 
                     <CopyButton value={"Demo@User.com"} className={`size-6`}/>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[11px] text-slate-500">Password</dt>
-                  <dd className="font-mono text-[11px] text-slate-900">
+                  <dd className=" text-[11px] text-slate-900">
                     demo1234
                   </dd>
                 </div>
@@ -210,13 +210,13 @@ export default function Home() {
               <dl className="mt-3 space-y-1">
                 <div>
                   <dt className="text-[11px] text-slate-500">Email</dt>
-                  <dd className="font-mono text-[11px] text-slate-900">
+                  <dd className=" text-[11px] text-slate-900">
                     demo_faculty@unikart.app
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[11px] text-slate-500">Password</dt>
-                  <dd className="font-mono text-[11px] text-slate-900">
+                  <dd className=" text-[11px] text-slate-900">
                     demo1234
                   </dd>
                 </div>

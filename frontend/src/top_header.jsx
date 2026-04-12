@@ -48,7 +48,7 @@ export default function Top_Header() {
               <div className={`overflow-hidden ease-in-out block font-bold transition-all duration-300 ${hideDept ? "text-2xl" : " p-0 text-4xl"}`}
               >AUS&nbsp;CS</div>
 
-              <div className={`overflow-hidden ease-in-out duration-400 font-mono text-xs tracking-tighter grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-0 ${hideDept ? "max-h-0 opacity-0" : "max-h-8 opacity-100"}`}>
+              <div className={`overflow-hidden ease-in-out duration-400   text-xs tracking-tighter grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-0 ${hideDept ? "max-h-0 opacity-0" : "max-h-8 opacity-100"}`}>
                 <ul className={"text-left border-r-2 p-0"}><li>Assam University<br></br>Silchar</li> </ul>
                 <ul className={"pl-2 text-left"}><li>Department of<br></br>Computer Science</li> </ul>
 
@@ -57,13 +57,13 @@ export default function Top_Header() {
           </Link>
 
           {/* Nav & Notification */}
-          <nav className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-0" : "text-md gap-8"}`}>
-            <div className={`overflow-hidden ease-in-out flex font-mono items-center-safe transition-all duration-300 ${hideDept ? " text-xs font-semibold gap-0" : "text-md gap-8"}`}>  
+          <nav className={`overflow-hidden ease-in-out flex   items-center-safe transition-all duration-300 ${hideDept ? "text-sm font-semibold gap-0" : "text-md gap-8"}`}>
+            <div className={`overflow-hidden ease-in-out flex   items-center-safe transition-all duration-300 ${hideDept ? " text-xs font-semibold gap-0" : "text-md gap-8"}`}>  
             </div>
               <NotificationCenter />
 
             {/* Logout button  */}
-            {/* <div className={`overflow-hidden ease-in-out flex font-mono justify-items-center-safe transition-all duration-0 ${hideDept ? "gap-2 max-h-4 opacity-100" : "text-md gap-4 max-h-8 opacity-100"}`}>
+            {/* <div className={`overflow-hidden ease-in-out flex   justify-items-center-safe transition-all duration-0 ${hideDept ? "gap-2 max-h-4 opacity-100" : "text-md gap-4 max-h-8 opacity-100"}`}>
               <LogoutButton />
             </div> */}
 

@@ -8,17 +8,17 @@ import { useEffect, useState } from "react";
 
 function StudentRow({ student, checked, onToggle }) {
   return (
-    <label className="flex items-center justify-between rounded-md border bg-[#f0f0ff] border-slate-200 px-3 py-2 ">
-      <span className="w-30 text-md block text-slate-900">
+    <label className="flex items-center justify-between rounded-md border bg-card-background border-border px-3 py-2 ">
+      <span className="w-30 text-md block text-foreground">
         {(student.first_name + " " + student.last_name) || student.registration_no}
       </span>
-      <span className="text-sm block text-slate-800">{student.registration_no}
+      <span className="text-sm block text-muted-foreground">{student.registration_no}
       </span>
-      <span className={"gap-3 flex text-xs font-medium " + (checked ? "text-green-700" : "text-rose-700")}>
+      <span className={"gap-3 flex text-xs font-medium " + (checked ? "text-success" : "text-error")}>
         {checked ? "present" : "absent"}
         <input
           type="checkbox"
-          className="h-4 w-4 accent-indigo-600"
+          className="h-4 w-4 accent-primary"
           checked={checked}
           onChange={() => onToggle(student.registration_no)}
           aria-label={`Mark ${student.registration_no} present`}
@@ -267,7 +267,7 @@ export default function FacultyAttendancePage() {
       console.log("--> Attendance submission API response : ", api_response);
 
       setInfo(
-        `Attendance saved • Session: ${api_response.session_id || "N/A"} • Status: ${
+        `Attendance saved â€¢ Session: ${api_response.session_id || "N/A"} â€¢ Status: ${
           api_response.status || "ok"
         }`
       );
@@ -328,14 +328,14 @@ export default function FacultyAttendancePage() {
   }, [token]);
 
   return (
-    <main className="p-4 md:p-6 bg-slate-100">
+    <main className="p-4 md:p-6 bg-background">
       <div className="mx-auto">
         <header className="mb-6 flex justify-between  gap-2">
-          <div className="text-sm text-slate-500">
-            <h1 className="text-2xl font-semibold text-slate-900 pb-2">
+          <div className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-semibold text-foreground pb-2">
               Mark Attendance
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Select students who are present. Unchecked will be marked absent.
             </p>
           </div>
@@ -348,7 +348,7 @@ export default function FacultyAttendancePage() {
         {error && (
           <div
             role="alert"
-            className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700"
+            className="mb-3 rounded-md border border-error bg-error/10 px-3 py-2 text-error"
           >
             {error}
           </div>
@@ -356,7 +356,7 @@ export default function FacultyAttendancePage() {
         {info && (
           <div
             role="status"
-            className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700"
+            className="mb-3 rounded-md border border-success bg-success/10 px-3 py-2 text-success"
           >
             {info}
           </div>
@@ -367,22 +367,22 @@ export default function FacultyAttendancePage() {
         {/* Dept + Sem grouped */}
         <div className="flex flex-col gap-3 md:flex-row md:flex-[2]">
           <div id="dept" className="flex flex-col gap-1 md:flex-1 min-w-[140px]">
-            <label className="text-sm text-slate-600">Department</label>
+            <label className="text-sm text-muted-foreground">Department</label>
             <input
               value={department}
               onChange={(e) => setDepartment(e.target.value?.toUpperCase())}
-              className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+              className="w-full rounded-md border px-3 py-2 text-sm bg-muted-background text-muted-foreground cursor-not-allowed"
               placeholder="CS"
               disabled
             />
           </div>
 
           <div id="sem" className="flex flex-col gap-1 md:flex-1 min-w-[100px]">
-            <label className="text-sm text-slate-600">Semester</label>
+            <label className="text-sm text-muted-foreground">Semester</label>
             <input
               value={sem}
               onChange={(e) => setSem(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+              className="w-full rounded-md border px-3 py-2 text-sm bg-muted-background text-muted-foreground cursor-not-allowed"
               placeholder="4"
               disabled
             />
@@ -391,11 +391,11 @@ export default function FacultyAttendancePage() {
 
         {/* Subject */}
         <div id="subj" className="flex flex-col gap-1 md:flex-[3] min-w-[220px]">
-          <label className="text-sm text-slate-600">Subject</label>
+          <label className="text-sm text-muted-foreground">Subject</label>
           <select
             value={subjectCode}
             onChange={(e) => setSubjectCode(e.target.value)}
-            className="w-full h-9.5 rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+            className="w-full h-9.5 rounded-md border px-3 py-2 text-sm bg-muted-background text-muted-foreground cursor-not-allowed"
             disabled
           >
             <option value="">Select subject</option>
@@ -409,12 +409,12 @@ export default function FacultyAttendancePage() {
 
         {/* Class date/time */}
         <div id="class-date/time" className="flex flex-col gap-1 md:flex-[2] min-w-[200px]">
-          <label className="text-sm text-slate-600">Class date/time</label>
+          <label className="text-sm text-muted-foreground">Class date/time</label>
           <input
             type="datetime-local"
             value={classDate}
             onChange={(e) => setClassDate(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+            className="w-full rounded-md border px-3 py-2 text-sm bg-muted-background text-muted-foreground cursor-not-allowed"
             disabled
           />
         </div>
@@ -427,7 +427,7 @@ export default function FacultyAttendancePage() {
             <input
               type="search"
               placeholder="Search by reg no or name"
-              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search students"
@@ -435,7 +435,7 @@ export default function FacultyAttendancePage() {
             <button
               type="button"
               onClick={() => setPresentSet(new Set())}
-              className="w-16 text-white block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-indigo-600 hover:bg-indigo-500"
+              className="w-16 text-primary-foreground block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-primary hover:bg-primary/90"
               title="Clear selections"
             >
               Clear
@@ -453,7 +453,7 @@ export default function FacultyAttendancePage() {
 
             return (
               <label className="inline-flex items-center gap-2 pr-4 select-none">
-                <span className="text-sm text-slate-700">
+                <span className="text-sm text-muted-foreground">
                   {allSelected
                     ? "All selected"
                     : anySelected
@@ -463,7 +463,7 @@ export default function FacultyAttendancePage() {
                 <input
                   ref={ref}
                   type="checkbox"
-                  className="h-4 w-4 accent-indigo-600"
+                  className="h-4 w-4 accent-primary"
                   checked={allSelected}
                   onChange={() => toggleAllFiltered(filtered, allSelected)}
                   aria-checked={allSelected ? "true" : anySelected ? "mixed" : "false"}
@@ -483,14 +483,14 @@ export default function FacultyAttendancePage() {
 
         {/* List + Submit */}
         <form onSubmit={handleSubmit} className="flex h-fit flex-col gap-1">
-          <div className="mt-3 max-h-[45vh] overflow-y-auto rounded-md border border-slate-200">
-            <ul className="divide-y-2 p-0.5 border rounded-md divide-slate-300">
+          <div className="mt-3 max-h-[45vh] overflow-y-auto rounded-md border border-border">
+            <ul className="divide-y-2 p-0.5 border rounded-md divide-border">
               {loading ? (
-                <div className="rounded-md border border-slate-200 px-3 py-6 text-center text-slate-500">
+                <div className="rounded-md border border-border px-3 py-6 text-center text-muted-foreground">
                   Loading Students...
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="rounded-md border border-slate-200 px-3 py-6 text-center text-slate-500">
+                <div className="rounded-md border border-border px-3 py-6 text-center text-muted-foreground">
                   No students found
                 </div>
               ) : (
@@ -507,8 +507,8 @@ export default function FacultyAttendancePage() {
             </ul>
           </div>
 
-          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-white/70 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/50">
-            <div className="text-sm text-slate-600">
+          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-card-background/70 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-card-background/50">
+            <div className="text-sm text-muted-foreground">
               Present: {presentSet.size} / {students.length}
             </div>
             <button
@@ -517,13 +517,13 @@ export default function FacultyAttendancePage() {
               className={
                 "rounded-md px-4 py-2 text-sm font-medium " +
                 (saving || !requiredOk || students.length === 0
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-indigo-600 text-white hover:bg-indigo-500")
+                  ? "bg-muted-background text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90")
               }
               aria-busy={saving}
               title={!requiredOk ? "Fill all required fields" : undefined}
             >
-              {saving ? "Saving…" : "Save attendance"}
+              {saving ? "Savingâ€¦" : "Save attendance"}
             </button>
           </div>
         </form>

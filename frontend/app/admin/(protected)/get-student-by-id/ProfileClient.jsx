@@ -385,7 +385,7 @@ export default function ProfileClient({ registrationNo, initialTab = "overview" 
               key={t}
               onClick={() => setTab(t)}
               className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-slate-900 hover:bg-white hover:border-b-1 hover:border-slate-900 hover:shadow-sm ${
-                tab === t ? "border-slate-900 text-black font-sans bg-white shadow-md" : "border-transparent text-slate-600  "
+                tab === t ? "border-slate-900 text-black bg-white shadow-md" : "border-transparent text-slate-600  "
               }`}
             >
               {t}

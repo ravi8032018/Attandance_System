@@ -15,7 +15,7 @@ export default function FacultyDashboardPage() {
   ];
 
   return (
-    <main className="w-full h-full p-4 bg-slate-100 text-black font-mono">
+    <main className="w-full h-full p-4 bg-slate-100 text-black  ">
       <header className="mb-6 ">
         <h1 className="text-2xl font-semibold">Faculty Dashboard</h1>
         <p className="text-slate-800 text-sm">Overview of semesters and batches assigned.</p>
@@ -58,7 +58,7 @@ export default function FacultyDashboardPage() {
 
                     {/*</div>*/}
                   <div className="">
-                    <SemesterPie present={72} absent={28} h={15} w={15} />
+                    <SemesterPie present={62} absent={28} h={15} w={15} />
                   </div>
             </div>
             </a>
