@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
         <Top_Header />
 
         {/* Page container */}
-        <div className="z-5 bg-white/70">
+        <div className="z-5 bg-background/70">
           <div>
             {children}
           </div>

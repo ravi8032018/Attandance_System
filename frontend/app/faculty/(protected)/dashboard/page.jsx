@@ -15,17 +15,17 @@ export default function FacultyDashboardPage() {
   ];
 
   return (
-    <main className="w-full h-full p-4 bg-slate-100 text-black  ">
+    <main className="w-full h-full p-4 bg-background text-foreground  ">
       <header className="mb-6 ">
         <h1 className="text-2xl font-semibold">Faculty Dashboard</h1>
-        <p className="text-slate-800 text-sm">Overview of semesters and batches assigned.</p>
+        <p className="text-foreground text-sm">Overview of semesters and batches assigned.</p>
       </header>
 
       {/* Semesters */}
       <section className="mb-8">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-medium">Semesters</h2>
-          <a href="/dashboard/faculty/semesters" className="text-sm hover:text-indigo-700">
+          <a href="/dashboard/faculty/semesters" className="text-sm hover:text-primary">
             View all
           </a>
         </div>
@@ -50,7 +50,7 @@ export default function FacultyDashboardPage() {
                     Batches: <span className="font-medium">{s.batches}</span>
                   </p>
                   <div className="mt-3">
-                    <span className="inline-flex items-center text-sm hover:text-indigo-600">
+                    <span className="inline-flex items-center text-sm hover:text-primary">
                       Manage semester →
                     </span>
                   </div>
@@ -72,7 +72,7 @@ export default function FacultyDashboardPage() {
       <section className={"mb-3"}>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-medium">Batches</h2>
-          <a href="/dashboard/faculty/batches" className="text-sm text-slate-700 hover:text-indigo-600">
+          <a href="/dashboard/faculty/batches" className="text-sm text-foreground hover:text-primary">
             View all
           </a>
         </div>
@@ -86,14 +86,14 @@ export default function FacultyDashboardPage() {
             >
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="text-base font-semibold">{b.id}</h3>
-                <span className="rounded-2xl bg-slate-200 px-2.5 py-1 text-xs text-black">{b.year}</span>
+                <span className="rounded-2xl bg-muted px-2.5 py-1 text-xs text-foreground">{b.year}</span>
               </div>
               <p className="text-sm ">{b.program}</p>
               <p className="text-sm ">
                 Strength: <span className="font-medium">{b.size}</span>
               </p>
               <div className="mt-3">
-                <span className="inline-flex items-center text-sm  group-hover:text-indigo-700">
+                <span className="inline-flex items-center text-sm  group-hover:text-primary">
                   Open batch →
                 </span>
               </div>

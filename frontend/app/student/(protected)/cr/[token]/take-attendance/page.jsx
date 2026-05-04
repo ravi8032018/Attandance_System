@@ -1,4 +1,4 @@
-// app/faculty/attendance/page.jsx
+// app/student/cr/[token]/take-attendance/page.jsx
 "use client";
 
 import React from "react";
@@ -427,7 +427,7 @@ export default function FacultyAttendancePage() {
             <input
               type="search"
               placeholder="Search by reg no or name"
-              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
+              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-card-background"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search students"
@@ -435,7 +435,7 @@ export default function FacultyAttendancePage() {
             <button
               type="button"
               onClick={() => setPresentSet(new Set())}
-              className="w-16 text-primary-foreground block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-primary hover:bg-primary/90"
+              className="w-16 text-primary-foreground block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-primary hover:bg-primary/90"
               title="Clear selections"
             >
               Clear

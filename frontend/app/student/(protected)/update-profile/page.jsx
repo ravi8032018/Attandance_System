@@ -125,23 +125,23 @@ export default function EditStudentProfilePage() {
   return (
     <main className="p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           Edit profile
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Update your personal and contact information.
         </p>
       </header>
 
-      <section className="rounded-2xl border bg-white p-6 shadow-sm max-w-2xl">
+      <section className="rounded-2xl border bg-card p-6 shadow-sm max-w-2xl">
         {loading ? (
           <div className="space-y-4">
-            <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
+            <div className="h-5 w-40 animate-pulse rounded bg-muted" />
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
-                  <div className="h-10 w-full animate-pulse rounded bg-slate-100" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                  <div className="h-10 w-full animate-pulse rounded bg-muted" />
                 </div>
               ))}
             </div>
@@ -151,7 +151,7 @@ export default function EditStudentProfilePage() {
             <div className="grid gap-4 md:grid-cols-2">
               {/* First name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   First name
                 </label>
                 <input
@@ -159,12 +159,12 @@ export default function EditStudentProfilePage() {
                   name="first_name"
                   value={form.first_name}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
               {/* last name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Last name
                 </label>
                 <input
@@ -172,14 +172,14 @@ export default function EditStudentProfilePage() {
                   name="last_name"
                   value={form.last_name}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
             {/* dob */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Date of Birth
                 </label>
                 <input
@@ -187,19 +187,19 @@ export default function EditStudentProfilePage() {
                   name="dob"
                   value={form.dob}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
               {/* gender */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Gender
                 </label>
                 <select
                   name="gender"
                   value={form.gender}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
@@ -211,7 +211,7 @@ export default function EditStudentProfilePage() {
 
             {/* email */}
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 Email
               </label>
               <input
@@ -219,14 +219,14 @@ export default function EditStudentProfilePage() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               {/* phone */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Phone
                 </label>
                 <input
@@ -234,12 +234,12 @@ export default function EditStudentProfilePage() {
                   name="contact_number"
                   value={form.contact_number}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
               {/* guardian email */}
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Guardian email
                 </label>
                 <input
@@ -247,18 +247,18 @@ export default function EditStudentProfilePage() {
                   name="guardian_email"
                   value={form.guardian_email}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
 
             {err && (
-              <p className="text-sm text-rose-700">
+              <p className="text-sm text-error">
                 {err}
               </p>
             )}
             {success && (
-              <p className="text-sm text-emerald-700">
+              <p className="text-sm text-success">
                 {success}
               </p>
             )}
@@ -266,14 +266,14 @@ export default function EditStudentProfilePage() {
             <div className="flex items-center justify-between pt-2">
               <a
                 href="/student/profile"
-                className="text-sm text-slate-600 hover:underline"
+                className="text-sm text-muted-foreground hover:underline"
               >
                 Cancel
               </a>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>

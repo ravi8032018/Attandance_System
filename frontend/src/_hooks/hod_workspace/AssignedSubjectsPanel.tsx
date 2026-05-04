@@ -24,7 +24,7 @@ export default function AssignedSubjectsPanel({
     return (
       <section className="...">
         <h2>Assigned subjects</h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           Choose a faculty member to view assignments.
         </p>
       </section>
@@ -32,22 +32,22 @@ export default function AssignedSubjectsPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="text-base font-semibold text-slate-900">Assigned subjects</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <h2 className="text-base font-semibold text-foreground">Assigned subjects</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         Review and rebalance the selected faculty’s current subject load.
       </p>
 
       {loading ? (
         <div className="mt-4 space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-100" />
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       ) : error ? (
-        <p className="mt-4 text-sm text-rose-600">{error}</p>
+        <p className="mt-4 text-sm text-error">{error}</p>
       ) : assignedSubjects.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">No subjects assigned yet.</p>
+        <p className="mt-4 text-sm text-muted-foreground">No subjects assigned yet.</p>
       ) : (
         <div className="mt-4 space-y-3">
           {assignedSubjects.map((subject) => {
@@ -56,14 +56,14 @@ export default function AssignedSubjectsPanel({
             return (
               <div
                 key={subject.subject_code}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                className="rounded-xl border border-border bg-muted p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {subject.subject_name}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {subject.subject_code}
                     </p>
                   </div>
@@ -72,7 +72,7 @@ export default function AssignedSubjectsPanel({
                     type="button"
                     disabled={loadingRow}
                     onClick={() => onUnassign(subject)}
-                    className="rounded-lg border-2 border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-200 disabled:opacity-50"
+                    className="rounded-lg border-2 border-rose-300 bg-card px-3 py-1.5 text-sm font-medium text-error hover:bg-rose-200 disabled:opacity-50"
                   >
                     {loadingRow ? "Removing..." : "Remove"}
                   </button>

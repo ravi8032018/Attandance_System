@@ -67,10 +67,10 @@ export default function FacultyPicker({
   }, [selectedFaculty]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="mb-4">
-        <h2 className="text-base font-semibold text-slate-900">Faculty context</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-base font-semibold text-foreground">Faculty context</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Select a faculty member to view and manage teaching assignments.
         </p>
       </div>
@@ -80,18 +80,18 @@ export default function FacultyPicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search faculty..."
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+        className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:focus:border-primary"
       />
 
       <div className="mt-3 max-h-60 space-y-2 overflow-y-auto pr-1">
         {facultyLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
           ))
         ) : facultyError ? (
-          <p className="text-sm text-rose-600">{facultyError}</p>
+          <p className="text-sm text-error">{facultyError}</p>
         ) : facultyList.length === 0 ? (
-          <p className="text-sm text-slate-500">No faculty found.</p>
+          <p className="text-sm text-muted-foreground">No faculty found.</p>
         ) : (
           facultyList.map((faculty) => {
             const active =
@@ -105,18 +105,18 @@ export default function FacultyPicker({
                 onClick={() => setSelectedFaculty(faculty)}
                 className={`w-full rounded-xl border p-3 text-left transition ${
                   active
-                    ? "border-indigo-200 bg-indigo-50"
-                    : "border-slate-200 hover:bg-slate-50"
+                    ? "border-indigo-200 bg-primary/10"
+                    : "border-border hover:bg-muted"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {[faculty.first_name, faculty.last_name].filter(Boolean).join(" ")}
                     </p>
-                    <p className="text-sm text-slate-500">{faculty.faculty_id}</p>
+                    <p className="text-sm text-muted-foreground">{faculty.faculty_id}</p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                  <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
                     {faculty.department || "—"}
                   </span>
                 </div>
@@ -126,10 +126,10 @@ export default function FacultyPicker({
         )}
       </div>
 
-      <div className="mt-4 rounded-xl bg-slate-50 p-3">
-        <p className="text-xs uppercase tracking-wide text-slate-500">Selected</p>
-        <p className="mt-1 font-semibold text-slate-900">{selectedName}</p>
-        <p className="mt-1 text-sm text-slate-600">
+      <div className="mt-4 rounded-xl bg-muted p-3">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Selected</p>
+        <p className="mt-1 font-semibold text-foreground">{selectedName}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
           {selectedFaculty?.faculty_id || presetFacultyId || "Choose a faculty to continue"}
         </p>
       </div>

@@ -63,12 +63,12 @@ export default function HodLayout({ children }) {
   }, [router]);
 
   if (checking) {
-    return <div className="p-6 text-sm text-slate-600">Checking session…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Checking session…</div>;
   }
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden">
-      <aside className="bg-slate-50 border-r-2 border-[#d2d9d8]">
+      <aside className="bg-muted border-r-2 border-[#d2d9d8]">
         {/* <FacultySideNav /> */}
       </aside>
 

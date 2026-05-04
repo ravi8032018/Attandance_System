@@ -349,7 +349,7 @@ export default function FacultyAttendancePage() {
       type="button"
       onClick={handlePingCR}
       disabled={loading || !canPing}
-      className="w-auto text-white block rounded-md border px-3 py-2 text-md outline-none focus:ring-2 focus:ring-indigo-200 bg-success hover:bg-green-600 disabled:bg-gray-400 "
+      className="w-auto text-white block rounded-md border px-3 py-2 text-md outline-none focus:ring-2 focus:ring-ring bg-success hover:opacity-90 disabled:bg-muted "
     >
       {loading ? "Pinging CR..." : "Ping CR"}
     </button>
@@ -390,7 +390,7 @@ export default function FacultyAttendancePage() {
         {error && (
           <div
             role="alert"
-            className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-error"
+            className="mb-3 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-error"
           >
             {error}
           </div>
@@ -398,7 +398,7 @@ export default function FacultyAttendancePage() {
         {info && (
           <div
             role="status"
-            className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-success"
+            className="mb-3 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-success"
           >
             {info}
           </div>
@@ -413,7 +413,7 @@ export default function FacultyAttendancePage() {
             <input
               value={department}
               onChange={(e) => setDepartment(e.target.value?.toUpperCase())}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-card-background"
               // placeholder="CS"
               disabled
             />
@@ -424,7 +424,7 @@ export default function FacultyAttendancePage() {
             <input
               value={sem}
               onChange={(e) => setSem(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-card-background"
               placeholder="4"
               autoFocus
             />
@@ -455,7 +455,7 @@ export default function FacultyAttendancePage() {
             type="datetime-local"
             value={classDate}
             onChange={(e) => setClassDate(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-card-background"
           />
         </div>
       </section>
@@ -467,7 +467,7 @@ export default function FacultyAttendancePage() {
             <input
               type="search"
               placeholder="Search by reg no or name"
-              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-card-background"
+              className="lg:w-64 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-card-background"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search students"
@@ -475,7 +475,7 @@ export default function FacultyAttendancePage() {
             <button
               type="button"
               onClick={() => setPresentSet(new Set())}
-              className="w-16 text-primary-foreground block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-primary hover:bg-indigo-500"
+              className="w-16 text-primary-foreground block rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-primary hover:bg-primary"
               title="Clear selections"
             >
               Clear
@@ -524,7 +524,7 @@ export default function FacultyAttendancePage() {
         {/* List + Submit */}
         <form onSubmit={handleSubmit} className="flex h-fit flex-col gap-1">
           <div className="mt-3 max-h-[45vh] overflow-y-auto rounded-md border border-border">
-            <ul className="divide-y-2 p-0.5 border rounded-md divide-slate-300">
+            <ul className="divide-y-2 p-0.5 border rounded-md divide-border">
               {loading ? (
                 <div className="rounded-md border border-border px-3 py-6 text-center text-muted-foreground">
                   Loading Students...
@@ -547,7 +547,7 @@ export default function FacultyAttendancePage() {
             </ul>
           </div>
 
-          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-white/70 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/50">
+          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-card/70 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/50">
             <div className="text-sm text-muted-foreground">
               Present: {presentSet.size} / {students.length}
             </div>
@@ -557,8 +557,8 @@ export default function FacultyAttendancePage() {
               className={
                 "rounded-md px-4 py-2 text-sm font-medium " +
                 (saving || !requiredOk || students.length === 0
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-primary text-primary-foreground hover:bg-indigo-500")
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary")
               }
               aria-busy={saving}
               title={!requiredOk ? "Fill all required fields" : undefined}

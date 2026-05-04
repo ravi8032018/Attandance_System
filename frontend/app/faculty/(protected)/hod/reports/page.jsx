@@ -6,7 +6,7 @@ import { apiFetch } from "@/src/api_fetch";
 
 function attendanceColor(pct) {
   if (pct >= 75) return { bar: "bg-green-500", badge: "bg-green-100 text-green-700" };
-  if (pct >= 60) return { bar: "bg-amber-500", badge: "bg-amber-100 text-amber-700" };
+  if (pct >= 60) return { bar: "bg-warning", badge: "bg-warning/20 text-warning" };
   return { bar: "bg-red-500", badge: "bg-red-100 text-red-700" };
 }
 
@@ -15,10 +15,10 @@ function AttendanceCard({ report }) {
   const { bar, badge } = attendanceColor(pct);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-sm">
       {/* Top row: code + percentage badge */}
       <div className="flex items-start justify-between gap-2">
-        <span className="inline-block rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-indigo-700">
+        <span className="inline-block rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold tracking-wide text-primary">
           {report.subject_code || "—"}
         </span>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge}`}>
@@ -28,7 +28,7 @@ function AttendanceCard({ report }) {
 
       {/* Progress bar */}
       <div className="mt-4">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
             className={`h-full rounded-full transition-all ${bar}`}
             style={{ width: `${Math.min(pct, 100)}%` }}
@@ -44,16 +44,16 @@ function AttendanceCard({ report }) {
         </div>
         <div className="rounded-lg bg-red-50 py-2">
           <p className="font-bold text-red-700">{report.absent_count ?? 0}</p>
-          <p className="text-red-600">Absent</p>
+          <p className="text-error">Absent</p>
         </div>
-        <div className="rounded-lg bg-slate-50 py-2">
-          <p className="font-bold text-slate-700">{report.excused_count ?? 0}</p>
-          <p className="text-slate-500">Excused</p>
+        <div className="rounded-lg bg-muted py-2">
+          <p className="font-bold text-foreground">{report.excused_count ?? 0}</p>
+          <p className="text-muted-foreground">Excused</p>
         </div>
       </div>
 
       {/* Total classes */}
-      <p className="mt-3 text-center text-xs text-slate-400">
+      <p className="mt-3 text-center text-xs text-muted-foreground">
         {report.total_classes ?? 0} total classes
       </p>
     </div>
@@ -121,8 +121,8 @@ export default function HodReportsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-        <p className="mt-2 text-slate-600">
+        <h1 className="text-2xl font-bold text-foreground">Reports</h1>
+        <p className="mt-2 text-muted-foreground">
           Access attendance summaries and academic reports for any student.
         </p>
       </div>
@@ -130,16 +130,16 @@ export default function HodReportsPage() {
       {/* Search Form */}
       <form
         onSubmit={handleSearch}
-        className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+        className="rounded-xl border border-border bg-card p-5 shadow-xs"
       >
-        <h2 className="mb-4 text-base font-semibold text-slate-900">
+        <h2 className="mb-4 text-base font-semibold text-foreground">
           Student Attendance Report
         </h2>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           {/* Registration No */}
           <div className="flex-1">
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
               Registration Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -148,22 +148,22 @@ export default function HodReportsPage() {
               onChange={(e) => setRegNo(e.target.value)}
               placeholder="e.g. CSBSC2024003"
               required
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:focus:border-primary"
             />
           </div>
 
           {/* Subject Code (optional) */}
           <div className="sm:w-52">
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
               Subject Code{" "}
-              <span className="text-slate-400 font-normal">(optional)</span>
+              <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={subjectCode}
               onChange={(e) => setSubjectCode(e.target.value.toUpperCase())}
               placeholder="e.g. CSDSC201"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm uppercase outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm uppercase outline-none focus:focus:border-primary"
             />
           </div>
 
@@ -171,7 +171,7 @@ export default function HodReportsPage() {
           <button
             type="submit"
             disabled={loading || !regNo.trim()}
-            className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-colors"
           >
             {loading ? "Searching…" : "Get Report"}
           </button>
@@ -191,7 +191,7 @@ export default function HodReportsPage() {
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="h-44 animate-pulse rounded-xl border border-slate-200 bg-slate-100"
+              className="h-44 animate-pulse rounded-xl border border-border bg-muted"
             />
           ))}
         </div>
@@ -201,17 +201,17 @@ export default function HodReportsPage() {
       {!loading && searched && (
         <>
           {/* Summary bar */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   Report for{" "}
-                  <span className="font-semibold text-slate-800">{searchedReg}</span>
+                  <span className="font-semibold text-foreground">{searchedReg}</span>
                   {subjectCode && (
-                    <> · Subject <span className="font-semibold text-slate-800">{subjectCode}</span></>
+                    <> · Subject <span className="font-semibold text-foreground">{subjectCode}</span></>
                   )}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {reports.length} subject{reports.length !== 1 ? "s" : ""} found
                 </p>
               </div>
@@ -219,18 +219,18 @@ export default function HodReportsPage() {
               {reports.length > 0 && (
                 <div className="flex gap-4 text-sm">
                   <div className="text-center">
-                    <p className="font-bold text-slate-900">{avgPct.toFixed(1)}%</p>
-                    <p className="text-xs text-slate-500">Avg Attendance</p>
+                    <p className="font-bold text-foreground">{avgPct.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground">Avg Attendance</p>
                   </div>
                   <div className="text-center">
-                    <p className={`font-bold ${below75 > 0 ? "text-red-600" : "text-green-600"}`}>
+                    <p className={`font-bold ${below75 > 0 ? "text-error" : "text-green-600"}`}>
                       {below75}
                     </p>
-                    <p className="text-xs text-slate-500">Below 75%</p>
+                    <p className="text-xs text-muted-foreground">Below 75%</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-slate-900">{reports.length - below75}</p>
-                    <p className="text-xs text-slate-500">Above 75%</p>
+                    <p className="font-bold text-foreground">{reports.length - below75}</p>
+                    <p className="text-xs text-muted-foreground">Above 75%</p>
                   </div>
                 </div>
               )}
@@ -238,7 +238,7 @@ export default function HodReportsPage() {
           </div>
 
           {reports.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">
+            <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">
               No attendance records found for <strong>{searchedReg}</strong>.
             </div>
           ) : (

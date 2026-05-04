@@ -48,8 +48,8 @@ function NavLinkItem({ link, pathname, expanded }) {
       <Link
         href={link.href}
         className={
-          "flex items-center gap-3 rounded-md p-1 text-sm font-medium text-slate-900 transition-colors " +
-          (active ? "bg-indigo-300" : "hover:bg-indigo-200")
+          "flex items-center gap-3 rounded-md p-1 text-sm font-medium text-foreground transition-colors " +
+          (active ? "bg-primary/30" : "hover:bg-primary/10")
         }
         aria-current={active ? "page" : undefined}
         title={!expanded ? link.label : undefined}
@@ -82,7 +82,7 @@ function SidebarSection({
         <button
           type="button"
           onClick={onToggle}
-          className="flex w-full items-center justify-between rounded-md pt-2 pb-2 pl-1 text-left text-xs font-semibold uppercase tracking-wide bg-gray-30 text-slate-500 hover:bg-gray-200 focus:outline-none "
+          className="flex w-full items-center justify-between rounded-md pt-2 pb-2 pl-1 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted focus:outline-none "
           aria-expanded={isOpen}
           aria-controls={`section-${section.key}`}
         >
@@ -109,7 +109,7 @@ function SidebarSection({
             (isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")
           }
         >
-          <ul className="space-y-0 pl-1 border-l-2 border-gray-400">
+          <ul className="space-y-0 pl-1 border-l-2 border-border">
             {section.links.map((link) => (
               <NavLinkItem
                 key={link.href}
@@ -119,7 +119,6 @@ function SidebarSection({
               />
             ))}
           </ul>
-          {/* <div className="mb-2 bg-slate-300" aria-hidden="true" /> */}
         </div>
       ) : (
         // item in section when closed
@@ -132,7 +131,7 @@ function SidebarSection({
               expanded={expanded}
             />
           ))}
-        <div className="h-[3px] mb-2 bg-gray-300" aria-hidden="true" />
+        <div className="h-[3px] mb-2 bg-border" aria-hidden="true" />
 
         </ul>
       )}
@@ -174,7 +173,7 @@ export default function FacultySideNav() {
     <aside
       id="app-sidenav"
       className={
-        "border-r border-slate-300 bg-[#f8fafb] transition-all duration-300 ease-in-out " +
+        "border-r border-border bg-muted/30 transition-all duration-300 ease-in-out " +
         (expanded ? "w-64" : "w-14")
       }
       aria-label="Primary"
@@ -185,11 +184,11 @@ export default function FacultySideNav() {
           <div className="flex items-center justify-between">
             {/* expanded menu> */}
             {expanded ? (
-              <div className="flex gap-40 items-baseline text-md font-semibold text-slate-900 mx-4 my-1 ">
+              <div className="flex gap-40 items-baseline text-md font-semibold text-foreground mx-4 my-1 ">
                 <span>Menu</span>
                 <button
                   type="button"
-                  className="px-1.5 rounded-sm text-black font-semibold hover:bg-slate-200 focus:outline-none"
+                  className="px-1.5 rounded-sm text-foreground font-semibold hover:bg-muted focus:outline-none"
                   aria-label="Toggle sidebar"
                   aria-expanded={expanded}
                   aria-controls="sidenav-list"
@@ -200,10 +199,10 @@ export default function FacultySideNav() {
                 </button>
               </div>
             ) : (
-              <div className="pt-1 pl-3.5 text-lg font-semibold text-slate-900 transition-all duration-300 ease-in-out">
+              <div className="pt-1 pl-3.5 text-lg font-semibold text-foreground transition-all duration-300 ease-in-out">
                 <button
                   type="button"
-                  className="rounded p-1.5 text-black font-semibold hover:bg-slate-200 focus:outline-none"
+                  className="rounded p-1.5 text-foreground font-semibold hover:bg-muted focus:outline-none"
                   aria-label="Toggle sidebar"
                   aria-expanded={expanded}
                   aria-controls="sidenav-list"
@@ -245,7 +244,7 @@ export default function FacultySideNav() {
 
             {/* logout button */}
         {expanded ? (
-              <div className="m-2 pt-2 border-t-2 border-gray-400 ">
+              <div className="m-2 pt-2 border-t-2 border-border ">
                 <div className="" aria-hidden="true" />
                 <LogoutButton to="/login" className=""/>
               </div>

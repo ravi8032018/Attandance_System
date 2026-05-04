@@ -79,7 +79,7 @@ export function ContactCell({student}) {
                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted-background focus:bg-muted-background outline-none"
                   onClick={() => setOpen(false)}
               >
-                {/*<ChatBubbleLeftEllipsisIcon className="h-4 w-4 text-slate-600"/>*/}
+                {/*<ChatBubbleLeftEllipsisIcon className="h-4 w-4 text-muted-foreground"/>*/}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="size-4" xmlSpace="preserve">
   <path
     fill="hsl(var(--primary))"

@@ -70,7 +70,7 @@ export function SubjectSelect({
 
   // console.log("Filterred subjects:", filteredSubjects);
 
-  if (allSubjectsLoading) return <p className="text-sm text-slate-400 animate-pulse mt-4">Loading subjects...</p>;
+  if (allSubjectsLoading) return <p className="text-sm text-muted-foreground animate-pulse mt-4">Loading subjects...</p>;
   if (allSubjectsError) return <p className="text-sm text-rose-500 mt-4">{allSubjectsError}</p>;
 
   return (
@@ -79,23 +79,23 @@ export function SubjectSelect({
       <button
         onClick={() => facultySelected && setIsOpen(!isOpen)}
         disabled={!facultySelected || allSubjects.length === 0}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm transition-all hover:border-indigo-300 focus:ring-4 focus:ring-indigo-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5 text-sm transition-all hover:border-indigo-300 focus:ring-4 focus:ring-indigo-50 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60"
       >
-        <span className={!facultySelected ? "text-slate-400" : "text-slate-700"}>
+        <span className={!facultySelected ? "text-muted-foreground" : "text-foreground"}>
           {facultySelected ? "Select a subject..." : "Select faculty first"}
         </span>
-        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-border bg-card shadow-xl animate-in fade-in zoom-in-95 duration-200">
           
           {/* Search Bar inside dropdown */}
           <div className="relative border-b border-slate-50 p-2">
-            <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input 
-              className="w-full rounded-lg bg-slate-50 py-1.5 pl-8 pr-4 text-sm outline-none placeholder:text-slate-400 focus:bg-white focus:ring-1 focus:ring-indigo-100"
+              className="w-full rounded-lg bg-muted py-1.5 pl-8 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:bg-card focus:ring-1 focus:ring-indigo-100"
               placeholder="Search code or name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -105,7 +105,7 @@ export function SubjectSelect({
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-muted-foreground transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -115,7 +115,7 @@ export function SubjectSelect({
           {/* Options List */}
           <div className="max-h-60 overflow-y-auto p-1">
             {filteredSubjects.length === 0 ? (
-              <div className="py-4 text-center text-sm text-slate-400">No matches found</div>
+              <div className="py-4 text-center text-sm text-muted-foreground">No matches found</div>
             ) : (
               filteredSubjects.map((subject) => {
                 const code = new Set([subject.subject_code]);
@@ -132,8 +132,8 @@ export function SubjectSelect({
                     }}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors
                       ${isAssigned 
-                        ? 'cursor-not-allowed bg-slate-100 text-slate-400' 
-                        : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'}
+                        ? 'cursor-not-allowed bg-muted text-muted-foreground' 
+                        : 'text-foreground hover:bg-primary/10 hover:text-primary'}
                     `}
                   >
                     {/* names of the subject and code in a column */}
@@ -143,11 +143,11 @@ export function SubjectSelect({
                     </div>
                     
                     {isAssigned && (
-                      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Assigned
                       </span>
                     )}
-                    {isLoading && <div className="h-4 w-4 animate-spin border-2 border-indigo-500 border-t-transparent rounded-full" />}
+                    {isLoading && <div className="h-4 w-4 animate-spin border-2 border-primary border-t-transparent rounded-full" />}
                   </button>
                 );
               })

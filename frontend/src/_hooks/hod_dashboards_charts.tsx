@@ -238,14 +238,14 @@ export function StatCard({
   trendColor = "text-green-600",
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs hover:shadow-sm transition">
+    <div className="rounded-lg border border-border bg-card p-6 shadow-xs hover:shadow-sm transition">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             {label}
           </p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
-          {subtext && <p className="mt-1 text-xs text-slate-500">{subtext}</p>}
+          <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+          {subtext && <p className="mt-1 text-xs text-muted-foreground">{subtext}</p>}
         </div>
         {Icon && (
           <div className={`rounded-lg ${bgColor} p-3`}>
@@ -275,7 +275,7 @@ export function AlertBanner({
 }) {
   const colors = {
     info: "bg-blue-50 border-blue-200 text-blue-800",
-    warning: "bg-amber-50 border-amber-200 text-amber-800",
+    warning: "bg-warning/10 border-amber-200 text-amber-800",
     danger: "bg-red-50 border-red-200 text-red-800",
   };
 
@@ -312,7 +312,7 @@ export function ChartSkeleton({ h = 300, w = "100%" }) {
   return (
     <div
       style={{ height: h, width: w }}
-      className="animate-pulse rounded-lg bg-slate-200"
+      className="animate-pulse rounded-lg bg-muted"
     />
   );
 }
@@ -331,10 +331,10 @@ export function attendanceStatusColor(percentage: number) {
   }
   if (percentage >= 60) {
     return {
-      bg: "bg-amber-50",
-      text: "text-amber-700",
+      bg: "bg-warning/10",
+      text: "text-warning",
       bar: "bg-amber-500",
-      badge: "bg-amber-100 text-amber-700",
+      badge: "bg-amber-100 text-warning",
     };
   }
   return {

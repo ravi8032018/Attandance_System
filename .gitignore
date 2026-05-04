@@ -4,7 +4,15 @@
 /frontend/public/
 /frontend/README.md
 
-
+/ai_agent_overview.md
+/.qodo/
+/.continue/
+/plans/
+gemini.md
+overview.md
+prompt.md
+frontend/app/test-theme.jsx
+refactor_colors.js
 
 # dependencies
 /node_modules/

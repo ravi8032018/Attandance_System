@@ -85,17 +85,17 @@ export default function HodStudentsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Student Management</h1>
-          <p className="mt-2 text-slate-600">
+          <h1 className="text-2xl font-bold text-foreground">Student Management</h1>
+          <p className="mt-2 text-muted-foreground">
             View and manage department students, semester grouping, and academic records.
           </p>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 shrink-0">
+          <h2 className="text-lg font-semibold text-foreground shrink-0">
             Students ({totalCount})
           </h2>
 
@@ -106,14 +106,14 @@ export default function HodStudentsPage() {
               placeholder="Search by name..."
               value={query}
               onChange={handleQueryChange}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 sm:w-56"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:focus:border-primary sm:w-56"
             />
 
             {/* Semester filter */}
             <select
               value={semester}
               onChange={handleSemesterChange}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-500 bg-white cursor-pointer"
+              className="rounded-md border border-border px-3 py-2 text-sm text-foreground outline-none focus:focus:border-primary bg-card cursor-pointer"
             >
               <option value="">All Semesters</option>
               {SEMESTERS.map((s) => (
@@ -127,7 +127,7 @@ export default function HodStudentsPage() {
             <select
               value={status}
               onChange={handleStatusChange}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-500 bg-white cursor-pointer"
+              className="rounded-md border border-border px-3 py-2 text-sm text-foreground outline-none focus:focus:border-primary bg-card cursor-pointer"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -143,7 +143,7 @@ export default function HodStudentsPage() {
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="h-52 animate-pulse rounded-2xl border border-slate-300 bg-slate-50"
+              className="h-52 animate-pulse rounded-2xl border border-border bg-muted"
             />
           ))}
         </div>
@@ -152,7 +152,7 @@ export default function HodStudentsPage() {
           {err}
         </div>
       ) : studentList.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-600">
+        <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
           No students found.
         </div>
       ) : (
@@ -167,15 +167,15 @@ export default function HodStudentsPage() {
                 <Link
                   key={key}
                   href={`/faculty/hod/students/${student.registration_no}`}
-                  className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:-translate-y-1 hover:shadow-sm cursor-pointer"
+                  className="block rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:-translate-y-1 hover:shadow-sm cursor-pointer"
                 >
                   {/* Card header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-slate-900 truncate">
+                      <h3 className="text-base font-semibold text-foreground truncate">
                         {fullName || "—"}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {student.registration_no || ""}
                       </p>
                     </div>
@@ -184,7 +184,7 @@ export default function HodStudentsPage() {
                       className={`shrink-0  rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         student.status?.toLowerCase() === "active"
                           ? "bg-green-100 text-green-700"
-                          : "bg-amber-100 text-amber-700"
+                          : "bg-warning/20 text-warning"
                       }`}
                     >
                       {TitleCase(student.status || "Unknown")}
@@ -192,10 +192,10 @@ export default function HodStudentsPage() {
                   </div>
 
                   {/* Card data */}
-                  <div className="mt-4 space-y-2 text-sm text-slate-700">
+                  <div className="mt-4 space-y-2 text-sm text-foreground">
                     {/* Email */}
                     <p className="truncate">
-                      <span className="font-medium text-slate-900">Email:</span>{" "}
+                      <span className="font-medium text-foreground">Email:</span>{" "}
                       {student.email ? (
                         <a
                           href={`mailto:${student.email}`}
@@ -210,13 +210,13 @@ export default function HodStudentsPage() {
 
                     {/* Course */}
                     <p>
-                      <span className="font-medium text-slate-900">Course:</span>{" "}
+                      <span className="font-medium text-foreground">Course:</span>{" "}
                       {student.course ? TitleCase(student.course) : "—"}
                     </p>
 
                     {/* Semester */}
                     <p>
-                      <span className="font-medium text-slate-900">Semester:</span>{" "}
+                      <span className="font-medium text-foreground">Semester:</span>{" "}
                       {student.semester ? ` ${student.semester}` : "—"}
                     </p>
                   </div>
@@ -226,8 +226,8 @@ export default function HodStudentsPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between rounded-lg border border-slate-300 bg-white px-4 py-2">
-            <p className="text-sm text-slate-600">
+          <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2">
+            <p className="text-sm text-muted-foreground">
               Page {page} of {totalPages || 1}
             </p>
 
@@ -235,7 +235,7 @@ export default function HodStudentsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-50 disabled:bg-gray-100 hover:bg-slate-50 transition-colors"
+                className="rounded-md border border-border px-4 py-2 text-sm disabled:opacity-50 disabled:bg-muted hover:bg-muted transition-colors"
               >
                 Previous
               </button>
@@ -243,7 +243,7 @@ export default function HodStudentsPage() {
               <button
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-50 disabled:bg-gray-100 hover:bg-slate-50 transition-colors"
+                className="rounded-md border border-border px-4 py-2 text-sm disabled:opacity-50 disabled:bg-muted hover:bg-muted transition-colors"
               >
                 Next
               </button>

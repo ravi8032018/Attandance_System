@@ -207,43 +207,43 @@ export function NotificationCenter() {
       <button
         type="button"
         onClick={() => setShowDropdown((s) => !s)}
-        className="relative inline-flex items-center justify-center p-2 rounded-full hover:bg-slate-100"
+        className="relative inline-flex items-center justify-center p-2 rounded-full hover:bg-muted"
         aria-label="Notifications"
       >
         {/* notifications */}
         <div className='flex items-center relative'>
-          <span className="material-icons text-slate-700">
+          <span className="material-icons text-foreground">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="25" height="25" viewBox="0 0 50 50">
-              <path d="M 25 1 A 4 4 0 0 0 25 9 A 4 4 0 0 0 25 1 z M 19.400391 7.0996094 C 14.800391 8.9996094 12 13.4 12 19 C 12 29.4 9.2 31.9 7.5 33.5 C 6.7 34.2 6 34.9 6 36 C 6 40 12.2 42 25 42 C 37.8 42 44 40 44 36 C 44 34.9 43.3 34.2 42.5 33.5 C 40.8 31.9 38 29.4 38 19 C 38 13.3 35.299609 8.9996094 30.599609 7.0996094 C 29.799609 9.3996094 27.6 11 25 11 C 22.4 11 20.200391 9.3996094 19.400391 7.0996094 z M 19.099609 43.800781 C 19.499609 46.800781 22 49 25 49 C 28 49 30.500391 46.800781 30.900391 43.800781 C 29.000391 44.000781 27 44 25 44 C 23 44 20.999609 44.000781 19.099609 43.800781 z"></path>
+              <path fill="currentColor" d="M 25 1 A 4 4 0 0 0 25 9 A 4 4 0 0 0 25 1 z M 19.400391 7.0996094 C 14.800391 8.9996094 12 13.4 12 19 C 12 29.4 9.2 31.9 7.5 33.5 C 6.7 34.2 6 34.9 6 36 C 6 40 12.2 42 25 42 C 37.8 42 44 40 44 36 C 44 34.9 43.3 34.2 42.5 33.5 C 40.8 31.9 38 29.4 38 19 C 38 13.3 35.299609 8.9996094 30.599609 7.0996094 C 29.799609 9.3996094 27.6 11 25 11 C 22.4 11 20.200391 9.3996094 19.400391 7.0996094 z M 19.099609 43.800781 C 19.499609 46.800781 22 49 25 49 C 28 49 30.500391 46.800781 30.900391 43.800781 C 29.000391 44.000781 27 44 25 44 C 23 44 20.999609 44.000781 19.099609 43.800781 z"></path>
             </svg>
           </span>
           {notifications.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] text-white">
+            <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-error px-1 text-[11px] text-error-foreground">
               {notifications.length}
             </span>
           )}
         </div>
         
         <span
-            className={`flex ml-1 h-2 w-2 mb-1 rounded-full ${connected ? 'bg-green-500' : 'bg-red-400'}`}
+            className={`flex ml-1 h-2 w-2 mb-1 rounded-full ${connected ? 'bg-success' : 'bg-error/70'}`}
             title={connected ? 'Connected' : 'Disconnected'}
         />
       </button>
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute right-6 mt-1 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg bg-white border-gray-300 border-1">
-          <div className="flex items-center justify-between px-3 py-2 border-b">
-            <span className="text-sm font-semibold">Notifications</span>
+        <div className="absolute right-6 mt-1 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg bg-card border-border border">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+            <span className="text-sm font-semibold text-foreground">Notifications</span>
             <div className="flex items-center gap-2">
-              {error && <span className="text-xs text-red-500">{error}</span>}
+              {error && <span className="text-xs text-error">{error}</span>}
               {notifications.length > 0 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     clearAllNotifications();
                   }}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-xs text-primary hover:text-primary/80 font-medium"
                   title="Clear all notifications"
                 >
                   Clear All
@@ -252,28 +252,28 @@ export function NotificationCenter() {
             </div>
           </div>
           {notifications.length === 0 ? (
-            <div className="px-3 py-4 text-sm text-slate-500">No notifications.</div>
+            <div className="px-3 py-4 text-sm text-muted-foreground">No notifications.</div>
           ) : (
-            <ul className="divide-y divide-slate-200">
+            <ul className="divide-y divide-border">
               {notifications.map((n, idx) => (
                 <li
                   key={n.id ?? idx}
-                  className={`px-3 py-2 font-medium text-sm hover:bg-[#f8fafb] cursor-pointer flex items-start justify-between group ${
-                    n.read ? 'bg-slate-50' : 'bg-white'
+                  className={`px-3 py-2 font-medium text-sm hover:bg-muted cursor-pointer flex items-start justify-between group ${
+                    n.read ? 'bg-muted/50' : 'bg-card'
                   }`}
                   onClick={() => handleNotificationClick(n)}
                 >
                   <div className="flex-1">
                     <div className={`font-medium ${
-                      n.read ? 'text-slate-600' : 'text-slate-900'
+                      n.read ? 'text-muted-foreground' : 'text-foreground'
                     }`}>
                       {n.title ?? n.type}
                     </div>
                     {n.body && (
-                      <div className="text-xs text-slate-600 mt-0.5">{n.body}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{n.body}</div>
                     )}
                     {n.timestamp && (
-                      <div className="text-[10px] text-slate-400 mt-0.5">
+                      <div className="text-[10px] text-muted-foreground/70 mt-0.5">
                         {new Date(n.timestamp).toLocaleTimeString()}
                       </div>
                     )}
@@ -283,10 +283,10 @@ export function NotificationCenter() {
                       e.stopPropagation();
                       deleteNotification(n);
                     }}
-                    className="ml-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="ml-2 text-muted-foreground hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete notification"
                   >
-                    Ã¢Å“â€¢
+                    ✕
                   </button>
                 </li>
               ))}

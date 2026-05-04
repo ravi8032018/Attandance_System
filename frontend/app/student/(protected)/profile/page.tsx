@@ -262,24 +262,24 @@ export default function ProfileClient({ initialTab = "overview" }) {
   return (
     <main className="p-4 h-full bg-[#f2f5f9]">
       {/* Breadcrumbs */}
-      <nav className="mb-4 text-md text-slate-700 ">
+      <nav className="mb-4 text-md text-foreground ">
         <Link href="/faculty/dashboard" className="hover:underline">Dashboard</Link>
         <span className="mx-1">/</span>
         <Link href="/faculty/list_students" className="hover:underline">Students</Link>
         <span className="mx-1">/</span>
-        <span className="text-slate-900">{registrationNo}</span>
+        <span className="text-foreground">{registrationNo}</span>
       </nav>
 
       {/* Header */}
     <div className={`grid grid-cols-2 sm:grid-cols-1`}>
-      <section className="mb-4 p-4 shadow-sm hover:shadow-lg rounded-2xl border border-slate-200 bg-white px-5 py-4 ">
+      <section className="mb-4 p-4 shadow-sm hover:shadow-lg rounded-2xl border border-border bg-card px-5 py-4 ">
         {loading ? (
           <div className="animate-pulse">
-            <div className="h-13 w-60 rounded bg-slate-200" />
-            <div className="mt-2 h-4 w-96 rounded bg-slate-200" />
+            <div className="h-13 w-60 rounded bg-muted" />
+            <div className="mt-2 h-4 w-96 rounded bg-muted" />
           </div>
         ) : err ? (
-          <div className="text-rose-700">{err}</div>
+          <div className="text-error">{err}</div>
         ) : s ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ">
             {/* Left: Avatar + identity */}
@@ -296,7 +296,7 @@ export default function ProfileClient({ initialTab = "overview" }) {
                   />
                 ) : (
                   <div
-                    className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
+                    className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-border bg-primary/20 text-primary"
                     aria-label="avatar initials"
                   >
                     <span className="font-semibold">
@@ -310,10 +310,10 @@ export default function ProfileClient({ initialTab = "overview" }) {
               {/* Identity text */}
               <div className={`mt-2 text-md `}>
                 <h1 className="text-2xl font-semibold">{fullName}</h1>
-                <p className="mt-0.5 text-slate-600">
+                <p className="mt-0.5 text-muted-foreground">
                   Reg no: <span className="font-medium">{s.registration_no}<br></br></span>
                 </p>
-                <p className="text-slate-600">
+                <p className="text-muted-foreground">
                   Course: {s.course ?? "—"}<br></br>Sem: {s.semester ?? "—"}
                 </p>
               </div>
@@ -322,28 +322,28 @@ export default function ProfileClient({ initialTab = "overview" }) {
             {/* Right Buttons */}
             <div className="flex flex-col sm:items-end sm:justify-end pt-21 ">
               <div className="flex gap-3">
-                <button onClick={() => setTab("attendance")} className="text-sm bg-indigo-500 text-white rounded-xl px-6 py-2.5">View Report</button>
+                <button onClick={() => setTab("attendance")} className="text-sm bg-primary text-white rounded-xl px-6 py-2.5">View Report</button>
 
-                <button onClick={() => window.location.href = "/student/update-profile"} className="text-sm bg-indigo-500 text-white rounded-xl px-5 py-2.5">Update Profile</button>
+                <button onClick={() => window.location.href = "/student/update-profile"} className="text-sm bg-primary text-white rounded-xl px-5 py-2.5">Update Profile</button>
               </div>
             </div>
           </div>
 
         ) : (
-          <div className="text-slate-600">No profile found.</div>
+          <div className="text-muted-foreground">No profile found.</div>
         )}
       </section>
     </div>
 
       {/* Tabs */}
       <section className="mb-3">
-        <div className="flex border-b-2 border-slate-300">
+        <div className="flex border-b-2 border-border">
           {["overview", "attendance"].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-slate-900 hover:bg-white hover:border-b-1 hover:border-slate-900 hover:shadow-sm ${
-                tab === t ? "border-slate-900 text-black  bg-white shadow-md" : "border-transparent text-slate-600  "
+              className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-foreground hover:bg-card hover:border-b-1 hover:border-slate-900 hover:shadow-sm ${
+                tab === t ? "border-slate-900 text-foreground  bg-card shadow-md" : "border-transparent text-muted-foreground  "
               }`}
             >
               {t}
@@ -355,47 +355,47 @@ export default function ProfileClient({ initialTab = "overview" }) {
       {tab === "overview" && (
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3 ">
           {/* Left: details */}
-          <div className="lg:col-span-2 border p-4 hover:shadow-lg rounded-2xl  border-slate-200 bg-white px-5 py-4 shadow-sm max-w-200">
+          <div className="lg:col-span-2 border p-4 hover:shadow-lg rounded-2xl  border-border bg-card px-5 py-4 shadow-sm max-w-200">
             <h2 className="mb-3 text-base font-semibold">Student details</h2>
             {loading ? (
               <div className="space-y-2 animate-pulse">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-4 w-64 rounded bg-slate-200" />
+                  <div key={i} className="h-4 w-64 rounded bg-muted" />
                 ))}
               </div>
             ) : s ? (
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                 <div>
-                  <dt className="flex text-sm text-slate-500">Email</dt>
-                    <dd className="text-md transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+                  <dt className="flex text-sm text-muted-foreground">Email</dt>
+                    <dd className="text-md transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-primary hover:font-semibold">
                       <a href={`mailto:${s.email}`}>{s.email ?? "—"}</a>
                     </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-slate-500">Roll number</dt>
+                  <dt className="text-sm text-muted-foreground">Roll number</dt>
                   <dd className="text-md">{s.roll_number ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-slate-500">Contact</dt>
+                  <dt className="text-sm text-muted-foreground">Contact</dt>
                   <dd className="text-md">
                     <ContactCell student={s} />
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-slate-500">Guardian email</dt>
+                  <dt className="text-sm text-muted-foreground">Guardian email</dt>
                   <dd className="text-md">{s.guardian_email ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-slate-500">Course</dt>
+                  <dt className="text-sm text-muted-foreground">Course</dt>
                   <dd className="text-md">{s.course ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-slate-500">Semester</dt>
+                  <dt className="text-sm text-muted-foreground">Semester</dt>
                   <dd className="text-md">{s.semester ?? "—"}</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-slate-600">No data.</p>
+              <p className="text-sm text-muted-foreground">No data.</p>
             )}
           </div>
         </section>
@@ -404,11 +404,11 @@ export default function ProfileClient({ initialTab = "overview" }) {
       {tab === "attendance" && (
         <section className="">
           {/* Outer card always present */}
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm max-w-200">
+          <div className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm max-w-200">
             {/* Card header + selector */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 px-1">
+                <h2 className="text-lg font-semibold text-foreground px-1">
                   Attendance
                 </h2>
               </div>
@@ -417,7 +417,7 @@ export default function ProfileClient({ initialTab = "overview" }) {
                 <select
                   value={subjectCode}
                   onChange={(e) => setSubjectCode(e.target.value)}
-                  className="rounded-lg border-2 border-slate-300 bg-white/50 px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 overflow-ellipsis"
+                  className="rounded-lg border-2 border-border bg-card/50 px-3 py-2 text-sm text-foreground shadow-sm outline-none focus:focus:border-primary focus:ring-2 focus:ring-ring overflow-ellipsis"
                 >
                   <option value="">Select subject</option>
                   <option value={ALL_SUBJECTS}>All subjects (combined)</option>
@@ -437,14 +437,14 @@ export default function ProfileClient({ initialTab = "overview" }) {
                 {/* Loading skeleton */}
                 {attendanceLoading && (
                   <>
-                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
-                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
-                    <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-muted" />
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-muted" />
+                    <div className="h-14 w-full animate-pulse rounded-xl bg-muted" />
                   </>
                 )}
 
                 {!attendanceLoading && subjectCode && !attendance && (
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       No attendance data available for this subject.
                     </p>
                 )}
@@ -454,19 +454,19 @@ export default function ProfileClient({ initialTab = "overview" }) {
                   !attendanceError &&
                   subjectCode && (
                     <>
-                      <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 h-14">
-                        <div className="flex items-center text-sm font-medium text-emerald-700">
+                      <div className="flex items-center justify-between rounded-xl border border-success/20 bg-success/10 px-3 py-2 h-14">
+                        <div className="flex items-center text-sm font-medium text-success">
                           Present
                         </div>
-                        <div className="text-2xl font-bold text-emerald-700">
+                        <div className="text-2xl font-bold text-success">
                           {attendance.present_count}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 h-14">
-                        <div className="flex items-center text-sm font-medium text-rose-700">
+                      <div className="flex items-center justify-between rounded-xl border border-error/20 bg-error/10 px-3 py-2 h-14">
+                        <div className="flex items-center text-sm font-medium text-error">
                           Absent
                         </div>
-                        <div className="text-2xl font-semibold text-rose-700">
+                        <div className="text-2xl font-semibold text-error">
                           {attendance.absent_count}
                         </div>
                       </div>
@@ -483,10 +483,10 @@ export default function ProfileClient({ initialTab = "overview" }) {
 
                 {/* Messages for global states */}
                 {!attendanceLoading && attendanceError && (
-                  <p className="text-sm text-rose-700">{attendanceError}</p>
+                  <p className="text-sm text-error">{attendanceError}</p>
                 )}
                 {!attendanceLoading && !attendanceError && !subjectCode && (
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-muted-foreground">
                     Select a subject above to view attendance.
                   </p>
                 )}
@@ -496,7 +496,7 @@ export default function ProfileClient({ initialTab = "overview" }) {
             <div className="flex flex-col items-center gap-2 mt-2 mr-15">
               <div>
                 {attendanceLoading && subjectCode && (
-                  <div className="h-40 w-40 animate-pulse rounded-full bg-slate-100" />
+                  <div className="h-40 w-40 animate-pulse rounded-full bg-muted" />
                 )}
                 {!attendanceLoading && attendance && subjectCode && (
                   <AttendancePie
@@ -510,13 +510,13 @@ export default function ProfileClient({ initialTab = "overview" }) {
             
               <div>
                 {subjectCode && attendance && !attendanceLoading && !attendanceError && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     Total classes{" "}
-                    <span className="text-sm font-semibold text-slate-800">
+                    <span className="text-sm font-semibold text-foreground">
                       {attendance.total_classes}
                     </span>{" "}
                     &nbsp;·Attendance{" "}
-                    <span className="text-sm font-semibold text-emerald-600">
+                    <span className="text-sm font-semibold text-success">
                       {attendance.attendance_percentage}%
                     </span>
                   </p>

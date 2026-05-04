@@ -55,7 +55,7 @@ export default function FacultyProtectedLayout({ children }) {
   }, [router]);
 
   if (checking) {
-    return <div className="p-6 text-sm text-slate-600">Checking session…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Checking session…</div>;
   }
 
   return <>{children}</>;

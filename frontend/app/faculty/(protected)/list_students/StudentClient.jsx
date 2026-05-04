@@ -132,13 +132,13 @@ export default function StudentsClient({ initialQuery }) {
       <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Students</h1>
-          <p className="text-slate-500">Search, filter, and manage students.</p>
+          <p className="text-muted-foreground">Search, filter, and manage students.</p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={query.limit}
             onChange={(e) => setLimit(parseInt(e.target.value, 10))}
-            className={`rounded-md border px-2 py-1 text-sm bg-[#ffffff] hover:drop-shadow-lg }`}
+            className={`rounded-md border border-input px-2 py-1 text-sm bg-input hover:drop-shadow-lg }`}
             aria-label="Rows per page"
           >
             {[10, 20, 50, 100].map((n) => (
@@ -157,7 +157,7 @@ export default function StudentsClient({ initialQuery }) {
                 status: "",
               })
             }
-            className="rounded-md border h-7 w-auto text-center px-3 py-auto text-sm font-semibold text-gray-900 bg-blue-400 hover:drop-shadow-lg"
+            className="rounded-md border h-7 w-auto text-center px-3 py-auto text-sm font-semibold text-foreground bg-primary hover:drop-shadow-lg"
           >
             Clear
           </button>
@@ -167,56 +167,56 @@ export default function StudentsClient({ initialQuery }) {
       {/* Filters row */}
       <section className="mb-4 text-sm grid grid-cols-1 gap-3 lg:grid-cols-6">
         <div>
-          <label className="mb-1 block font-medium text-slate-600">Registration no</label>
+          <label className="mb-1 block font-medium text-muted-foreground">Registration no</label>
           <input
             value={query.registration_no}
             onChange={(e) => update({ registration_no: e.target.value })}
             placeholder="CSBSC20XXXXX"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-slate-600">Sem</label>
+          <label className="mb-1 block font-medium text-muted-foreground">Sem</label>
           <input
             value={query.sem}
             onChange={(e) => update({ sem: e.target.value })}
             placeholder="1"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-slate-600">Email</label>
+          <label className="mb-1 block font-medium text-muted-foreground">Email</label>
           <input
             value={query.email}
             onChange={(e) => update({ email: e.target.value })}
             placeholder="student@gmail.com"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-slate-600">First name</label>
+          <label className="mb-1 block font-medium text-muted-foreground">First name</label>
           <input
             value={query.first_name}
             onChange={(e) => update({ first_name: e.target.value })}
             placeholder="Harry"
-            className="w-full rounded-md border text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-ring bg-input"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-slate-600">Last name</label>
+          <label className="mb-1 block font-medium text-muted-foreground">Last name</label>
           <input
             value={query.last_name}
             onChange={(e) => update({ last_name: e.target.value })}
             placeholder="Puttar"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-slate-600">Status</label>
+          <label className="mb-1 block font-medium text-muted-foreground">Status</label>
           <select
             value={query.status}
             onChange={(e) => update({ status: e.target.value })}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-[#ffffff]"
+            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -227,11 +227,11 @@ export default function StudentsClient({ initialQuery }) {
 
       {/* Sort bar */}
       <section className="mb-3 flex flex-wrap items-center gap-2 ">
-        <label className="text-sm font-medium text-slate-600">Sort by</label>
+        <label className="text-sm font-medium text-muted-foreground">Sort by</label>
         <select
           value={query.sort_by}
           onChange={(e) => update({ sort_by: e.target.value }, false)}
-          className="rounded-md border px-2 py-1 text-sm bg-[#ffffff]"
+          className="rounded-md border border-input px-2 py-1 text-sm bg-input"
         >
           <option value="email">Email</option>
           <option value="registration_no">Registration no</option>
@@ -242,7 +242,7 @@ export default function StudentsClient({ initialQuery }) {
         <select
           value={query.sort_order}
           onChange={(e) => update({ sort_order: e.target.value }, false)}
-          className="rounded-md border px-2 py-1 text-sm bg-[#ffffff]"
+          className="rounded-md border border-input px-2 py-1 text-sm bg-input"
         >
           <option value="asc">Asc</option>
           <option value="desc">Desc</option>
@@ -250,11 +250,11 @@ export default function StudentsClient({ initialQuery }) {
       </section>
 
       {/* Table */}
-      <section className=" bg-white border rounded-sm">
+      <section className=" bg-card border rounded-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full table-fixed">
 
-            <thead className="bg-slate-50 text-center text-xs uppercase text-slate-500 ">
+            <thead className="bg-muted text-center text-xs uppercase text-muted-foreground ">
               <tr className={`divide-y divide-gray-500`}>
                 <th className="px-4 py-3">Registration no</th>
                 <th className="px-4 py-3">Email</th>
@@ -265,17 +265,16 @@ export default function StudentsClient({ initialQuery }) {
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Guardian email</th>
                 <th className="px-4 py-3">Roll no</th>
-                <th className="px-4 py-3 text-slate-50 table-cell border-gray-500 border-b-1">V</th>
-              </tr>
+                <th className="px-4 py-3 text-card-foreground table-cell border-border border-b-1">V</th>              </tr>
             </thead>
 
-            <tbody className="divide-y  divide-gray-200">
+            <tbody className="divide-y  divide-border">
               {loading ? (
                 Array.from({ length: query.limit }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     {Array.from({ length: 9 }).map((__, j) => (
                       <td key={j} className="px-4 py-3">
-                        <div className="h-4 w-28 rounded bg-slate-200" />
+                        <div className="h-4 w-28 rounded bg-muted" />
                       </td>
                     ))}
                     <td className="px-4 py-3"></td>
@@ -283,16 +282,16 @@ export default function StudentsClient({ initialQuery }) {
                 ))
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     No students found. Try different filters.
                   </td>
                 </tr>
               ) : (
                 rows.map((s, idx) => (
-                  <tr key={s.registration_no ?? idx} className="text-center text-sm   hover:bg-slate-50 ">
+                  <tr key={s.registration_no ?? idx} className="text-center text-sm   hover:bg-muted ">
                     <td className="px-4 py-3 font-medium">{s.registration_no}</td>
 
-                    <td className="px-auto py-auto transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+                    <td className="px-auto py-auto transition-all duration-100 hover:underline  hover:underline-offset-2 hover:text-primary hover:font-semibold">
                       <a href={`mailto:${s.email}`}>
                         {s.email}
                       </a>
@@ -308,8 +307,8 @@ export default function StudentsClient({ initialQuery }) {
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${
                           s.status === "active"
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-400"
-                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-400"
+                            ? "bg-success/10 text-success ring-1 ring-success/50"
+                            : "bg-warning/10 text-warning ring-1 ring-warning/50"
                         }`}
                       >
                         {s.status ?? "—"}
@@ -326,7 +325,7 @@ export default function StudentsClient({ initialQuery }) {
                           href={`get-student-by-id/${encodeURIComponent(
                             s.registration_no ?? ""
                           )}`}
-                          className="text-indigo-600 hover:text-indigo-500 hover:underline"
+                          className="text-primary hover:text-primary hover:underline"
                         >
                           Details
                         </a>
@@ -340,11 +339,11 @@ export default function StudentsClient({ initialQuery }) {
         </div>
 
         {/* Error bar */}
-        {err ? <div className="border-t bg-rose-50 px-4 py-2 text-sm text-rose-700">{err}</div> : null}
+        {err ? <div className="border-t bg-error/10 px-4 py-2 text-sm text-error">{err}</div> : null}
 
         {/* Pagination */}
-        <div className="flex items-center justify-between border-t bg-slate-50 px-4 py-2 text-sm">
-          <div className="text-slate-600">
+        <div className="flex items-center justify-between border-t bg-muted px-4 py-2 text-sm">
+          <div className="text-muted-foreground">
             {rows.length > 0
               ? `Showing ${(query.page - 1) * query.limit + 1}–${
                   (query.page - 1) * query.limit + rows.length
@@ -353,7 +352,7 @@ export default function StudentsClient({ initialQuery }) {
           </div>
           <div className="flex items-center gap-2 ">
             <button
-              className="rounded-md border px-1.5 py-0.5 bg-white hover:drop-shadow-md disabled:opacity-50"
+              className="rounded-md border px-1.5 py-0.5 bg-card hover:drop-shadow-md disabled:opacity-50"
               onClick={() => setPage(query.page - 1)}
               disabled={query.page <= 1}
               aria-label="Previous page"
@@ -364,7 +363,7 @@ export default function StudentsClient({ initialQuery }) {
               Page {query.page} / {totalPages}
             </span>
             <button
-              className="rounded-md border px-1.5 py-0.5 bg-white hover:drop-shadow-md disabled:opacity-50"
+              className="rounded-md border px-1.5 py-0.5 bg-card hover:drop-shadow-md disabled:opacity-50"
               onClick={() => setPage(query.page + 1)}
               disabled={query.page >= totalPages}
               aria-label="Next page"

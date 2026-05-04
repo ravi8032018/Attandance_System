@@ -94,23 +94,23 @@ export default function FacultyProfilePage() {
   return (
     <main className="p-4 h-full bg-[#f2f5f9]">
       {/* Breadcrumbs */}
-      <nav className="mb-4 text-md text-slate-700 ">
+      <nav className="mb-4 text-md text-foreground ">
         <Link href="/faculty/dashboard" className="hover:underline">
           Dashboard
         </Link>
         <span className="mx-1">/</span>
-        <span className="text-slate-900">My profile</span>
+        <span className="text-foreground">My profile</span>
       </nav>
 
       {/* Header card */}
-      <section className="mb-4 p-4 shadow-sm hover:shadow-lg rounded-2xl border border-slate-200 bg-white px-5 py-4">
+      <section className="mb-4 p-4 shadow-sm hover:shadow-lg rounded-2xl border border-border bg-card px-5 py-4">
         {loading ? (
           <div className="animate-pulse">
-            <div className="h-8 w-60 rounded bg-slate-200" />
-            <div className="mt-2 h-4 w-96 rounded bg-slate-200" />
+            <div className="h-8 w-60 rounded bg-muted" />
+            <div className="mt-2 h-4 w-96 rounded bg-muted" />
           </div>
         ) : err ? (
-          <div className="text-rose-700">{err}</div>
+          <div className="text-error">{err}</div>
         ) : faculty ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Left: avatar + identity */}
@@ -126,7 +126,7 @@ export default function FacultyProfilePage() {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800">
+                  <div className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-border bg-primary/20 text-primary">
                     <span className="font-semibold">
                       {(faculty.first_name || "").charAt(0).toUpperCase()}
                       {(faculty.last_name || "").charAt(0).toUpperCase()}
@@ -138,7 +138,7 @@ export default function FacultyProfilePage() {
               {/* Identity text */}
               <div className="mt-1 text-sm">
                 <h1 className="text-2xl font-semibold">{fullName}</h1>
-                <p className="mt-0.5 text-slate-600">
+                <p className="mt-0.5 text-muted-foreground">
                   Faculty ID:{" "}
                   <span className="font-medium">{faculty.faculty_id ?? "—"}</span>
                   <br />
@@ -155,7 +155,7 @@ export default function FacultyProfilePage() {
                 {/* If you have a faculty profile update page */}
                 <button
                   onClick={() => (window.location.href = "/faculty/update-profile")}
-                  className="text-sm bg-indigo-500 text-white rounded-xl px-5 py-2.5 hover:bg-indigo-600"
+                  className="text-sm bg-primary text-white rounded-xl px-5 py-2.5 hover:hover:opacity-90"
                 >
                   Update Profile
                 </button>
@@ -164,14 +164,14 @@ export default function FacultyProfilePage() {
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
                     faculty.status === "active"
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                      ? "bg-success/10 text-success border border-emerald-200"
+                      : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
                   Status: {faculty.status ?? "—"}
                 </span>
                 {faculty.profile_complete && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-primary/10 text-primary border border-indigo-200">
                     Profile complete
                   </span>
                 )}
@@ -180,36 +180,36 @@ export default function FacultyProfilePage() {
             </div>
           </div>
         ) : (
-          <div className="text-slate-600">No profile found.</div>
+          <div className="text-muted-foreground">No profile found.</div>
         )}
       </section>
 
       {/* Details card */}
       <section className="grid grid-cols-1 gap-0 lg:grid-cols-3">
-        <div className="lg:col-span-2 border p-4 hover:shadow-lg rounded-2xl border-slate-200 bg-white px-5 py-4 shadow-sm max-w-200">
+        <div className="lg:col-span-2 border p-4 hover:shadow-lg rounded-2xl border-border bg-card px-5 py-4 shadow-sm max-w-200">
           <h2 className="mb-3 text-base font-semibold">Faculty details</h2>
           {loading ? (
             <div className="space-y-2 animate-pulse">
               {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="h-4 w-64 rounded bg-slate-200" />
+                <div key={i} className="h-4 w-64 rounded bg-muted" />
               ))}
             </div>
           ) : faculty ? (
             <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
               <div>
-                <dt className="text-sm text-slate-500">Email</dt>
-                <dd className="text-md transition-all duration-100 hover:underline hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+                <dt className="text-sm text-muted-foreground">Email</dt>
+                <dd className="text-md transition-all duration-100 hover:underline hover:underline-offset-2 hover:text-primary hover:font-semibold">
                   <a href={`mailto:${faculty.email}`}>{faculty.email ?? "—"}</a>
                 </dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Contact</dt>
+                <dt className="text-sm text-muted-foreground">Contact</dt>
                 <dd className="text-md">
                   {faculty.contact_number ? (
                     <a
                       href={`tel:${faculty.contact_number}`}
-                      className="hover:underline hover:text-indigo-600"
+                      className="hover:underline hover:text-primary"
                     >
                       {faculty.contact_number}
                     </a>
@@ -220,41 +220,41 @@ export default function FacultyProfilePage() {
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Gender</dt>
+                <dt className="text-sm text-muted-foreground">Gender</dt>
                 <dd className="text-md">
                   {faculty.gender ? faculty.gender.toUpperCase() : "—"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Date of birth</dt>
+                <dt className="text-sm text-muted-foreground">Date of birth</dt>
                 <dd className="text-md">{formatDate(faculty.dob)}</dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Joining date</dt>
+                <dt className="text-sm text-muted-foreground">Joining date</dt>
                 <dd className="text-md">{formatDate(faculty.joining_date)}</dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Roles</dt>
+                <dt className="text-sm text-muted-foreground">Roles</dt>
                 <dd className="text-md">
                   {faculty.role && faculty.role.length ? faculty.role.join(", ") : "—"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Created at</dt>
+                <dt className="text-sm text-muted-foreground">Created at</dt>
                 <dd className="text-md">{formatDate(faculty.created_at)}</dd>
               </div>
 
               <div>
-                <dt className="text-sm text-slate-500">Last updated</dt>
+                <dt className="text-sm text-muted-foreground">Last updated</dt>
                 <dd className="text-md">{formatDate(faculty.updated_at)}</dd>
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-slate-600">No data.</p>
+            <p className="text-sm text-muted-foreground">No data.</p>
           )}
         </div>
       </section>

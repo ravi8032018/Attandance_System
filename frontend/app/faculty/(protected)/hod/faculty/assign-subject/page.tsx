@@ -152,15 +152,15 @@ export default function FacultyAssignWorkspace() {
       {/* header + back */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Assign Subjects</h1>
-          <p className="mt-1 text-slate-600">
+          <h1 className="text-2xl font-bold text-foreground">Assign Subjects</h1>
+          <p className="mt-1 text-muted-foreground">
             Manage faculty teaching assignments and balance workload with full context.
           </p>
         </div>
         <div className="flex gap-3">
           <Link
             href="/faculty/hod/faculty"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             Back to Faculty
           </Link>
@@ -168,13 +168,13 @@ export default function FacultyAssignWorkspace() {
       </div>
 
       {actionError && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
           {actionError}
         </div>
       )}
 
       {actionSuccess && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
           {actionSuccess}
         </div>
       )}

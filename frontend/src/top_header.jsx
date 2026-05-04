@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import useScrolled from "@/src/_hooks/is_scrolled";
 import LogoutButton from "@/src/logout"
 import { NotificationCenter } from "./NotificationPanel";
+import { ThemeSwitch } from "./ThemeSwitch";
 
 export default function Top_Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -20,8 +21,8 @@ export default function Top_Header() {
   // console.log(hideDept);
   return (
     <header
-      className={`ease-in-out sticky top-0 z-10 bg-white border-transparent transition-all ${
-        hideDept ? "border-slate-300" : "border-white"}
+      className={`ease-in-out sticky top-0 z-10 bg-card-background border-transparent transition-all ${
+        hideDept ? "border-border" : "border-card-background"}
       }`}
     >
       <div
@@ -61,6 +62,7 @@ export default function Top_Header() {
             <div className={`overflow-hidden ease-in-out flex   items-center-safe transition-all duration-300 ${hideDept ? " text-xs font-semibold gap-0" : "text-md gap-8"}`}>  
             </div>
               <NotificationCenter />
+              <ThemeSwitch />
 
             {/* Logout button  */}
             {/* <div className={`overflow-hidden ease-in-out flex   justify-items-center-safe transition-all duration-0 ${hideDept ? "gap-2 max-h-4 opacity-100" : "text-md gap-4 max-h-8 opacity-100"}`}>

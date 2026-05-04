@@ -62,36 +62,36 @@ export default function StudentDashboardClient() {
       {/* <NotificationPanel /> */}
       {/* Header similar in spirit to faculty dashboard */}
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           Student Dashboard
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Welcome back, {student?.first_name || "student"}
         </p>
       </header>
 
       {loading ? (
         <div className="space-y-4">
-          <div className="h-24 w-full max-w-xl animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-24 w-full max-w-xl animate-pulse rounded-xl bg-muted" />
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
-            <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
-            <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
           </div>
         </div>
       ) : err ? (
-        <p className="text-sm text-rose-700">{err}</p>
+        <p className="text-sm text-error">{err}</p>
       ) : student ? (
         <div className="space-y-6">
           {/* Top card: basic info */}
-        <section className="mb-4 rounded-xl border bg-white p-4 shadow-sm hover:shadow-lg">
+        <section className="mb-4 rounded-xl border bg-card p-4 shadow-sm hover:shadow-lg">
             {loading ? (
             <div className="animate-pulse">
-                <div className="h-13 w-60 rounded bg-slate-200" />
-                <div className="mt-2 h-4 w-96 rounded bg-slate-200" />
+                <div className="h-13 w-60 rounded bg-muted" />
+                <div className="mt-2 h-4 w-96 rounded bg-muted" />
             </div>
             ) : err ? (
-            <div className="text-rose-700">{err}</div>
+            <div className="text-error">{err}</div>
             ) : student ? (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 {/* Left: Avatar + identity */}
@@ -108,7 +108,7 @@ export default function StudentDashboardClient() {
                     />
                     ) : (
                     <div
-                        className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
+                        className="h-16 w-16 rounded-full grid place-items-center ring-2 ring-border bg-primary/20 text-primary"
                         aria-label="avatar initials"
                     >
                         <span className="font-semibold">
@@ -122,10 +122,10 @@ export default function StudentDashboardClient() {
                 {/* Identity text */}
                 <div className={`text-md`}>
                     <h1 className="text-2xl font-semibold">{fullName}</h1>
-                    <p className="mt-0.5 text-slate-600">
+                    <p className="mt-0.5 text-muted-foreground">
                     Reg no: <span className="font-medium">{student.registration_no}<br></br></span>
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-muted-foreground">
                     Course: {student.course ?? "—"}<br></br>Sem: {student.semester ?? "—"}
                     </p>
                 </div>
@@ -136,62 +136,62 @@ export default function StudentDashboardClient() {
                 <div className="flex gap-2">
                 <a
                     href={`#`}
-                    className="inline-flex items-center justify-center rounded-md border-2 border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700 shadow-sm hover:shadow-md"
+                    className="inline-flex items-center justify-center rounded-md border-2 border-primary bg-primary px-3 py-2 text-sm text-white hover:opacity-90 shadow-sm hover:shadow-md"
                 >
                     View attendance
                 </a>
-                    <button className="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700 shadow-sm hover:shadow-md">
+                    <button className="rounded-md border border-primary bg-primary px-3 py-2 text-sm text-white hover:opacity-90 shadow-sm hover:shadow-md">
                     Message student
                     </button>
-                    <button className="rounded-md border px-3 py-2 text-sm border-indigo-600 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:drop-shadow-md">
+                    <button className="rounded-md border px-3 py-2 text-sm border-primary bg-primary hover:opacity-90 text-white shadow-sm hover:drop-shadow-md">
                     Export profile
                     </button>
                 </div>
                 </div>
             </div>
             ) : (
-            <div className="text-slate-600">No profile found.</div>
+            <div className="text-muted-foreground">No profile found.</div>
             )}
         </section>
 
           {/* Second row: quick tiles (you can later wire to attendance, courses etc.) */}
           <section className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground">
                 Attendance
               </h3>
-              <p className="mt-1 text-xs text-slate-600">
+              <p className="mt-1 text-xs text-muted-foreground">
                 View your subject‑wise attendance.
               </p>
               <a
                 href="/student/attendance"
-                className="mt-3 inline-flex text-xs font-medium text-indigo-600 hover:underline"
+                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
               >
                 Open → 
               </a>
             </div>
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">Profile</h3>
-              <p className="mt-1 text-xs text-slate-600">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground">Profile</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Update contact details and guardian info.
               </p>
               <a
                 href="/student/profile"
-                className="mt-3 inline-flex text-xs font-medium text-indigo-600 hover:underline"
+                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
               >
                 Edit profile →
               </a>
             </div>
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground">
                 Security
               </h3>
-              <p className="mt-1 text-xs text-slate-600">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Change your account password.
               </p>
               <a
                 href="/student/security"
-                className="mt-3 inline-flex text-xs font-medium text-indigo-600 hover:underline"
+                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
               >
                 Change password →
               </a>
@@ -199,7 +199,7 @@ export default function StudentDashboardClient() {
           </section>
         </div>
       ) : (
-        <p className="text-sm text-slate-600">No profile data found.</p>
+        <p className="text-sm text-muted-foreground">No profile data found.</p>
       )}
     </main>
   );

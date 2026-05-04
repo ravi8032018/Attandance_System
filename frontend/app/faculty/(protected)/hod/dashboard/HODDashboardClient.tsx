@@ -277,43 +277,42 @@ export default function HODDashboardClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="mx-auto max-w-7xl">
-        
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">HOD Dashboard</h1>
-              <p className="mt-2 text-slate-600">
-                Overview of department activity, faculty, students, and attendance metrics.
-              </p>
-            </div>
-          
-            <div className="flex gap-3">
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
-                  autoRefresh
-                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                }`}
-              >
-                <RefreshCw className="h-4 w-4" />
-                {autoRefresh ? "Auto-refreshing" : "Paused"}
-              </button>
-              <button
-                onClick={fetchDashboardData}
-                disabled={state.loading}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
+   <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
+     <div className="mx-auto max-w-7xl">
 
+       {/* Header */}
+       <div className="mb-8">
+         <div className="flex items-center justify-between">
+           <div>
+             <h1 className="text-3xl font-bold text-foreground">HOD Dashboard</h1>
+             <p className="mt-2 text-muted-foreground">
+               Overview of department activity, faculty, students, and attendance metrics.
+             </p>
+           </div>
+
+           <div className="flex gap-3">
+             <button
+               onClick={() => setAutoRefresh(!autoRefresh)}
+               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                 autoRefresh
+                   ? "bg-success/10 text-success hover:bg-success/20"
+                   : "bg-muted text-foreground hover:bg-muted/80"
+               }`}
+             >
+               <RefreshCw className="h-4 w-4" />
+               {autoRefresh ? "Auto-refreshing" : "Paused"}
+             </button>
+             <button
+               onClick={fetchDashboardData}
+               disabled={state.loading}
+               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
+             >
+               <RefreshCw className="h-4 w-4" />
+               Refresh
+             </button>
+           </div>
+         </div>
+       </div>
         {/* Error Banner */}
         {state.error && (
           <div className="mb-6">
@@ -334,24 +333,24 @@ export default function HODDashboardClient() {
             label="Total Students"
             value={state.metrics.totalStudents || 0}
             subtext={`In ${Object.keys(studentsBySemester).length} semesters`}
-            bgColor="bg-blue-50"
-            iconColor="text-blue-600"
+            bgColor="bg-primary/10"
+            iconColor="text-primary"
             />
           <StatCard
             icon={Users}
             label="Total Faculty"
             value={state.metrics.totalFaculty || 0}
             subtext={`${state.metrics.activeFaculty || 0} active`}
-            bgColor="bg-purple-50"
-            iconColor="text-purple-600"
+            bgColor="bg-primary/10"
+            iconColor="text-primary"
             />
           <StatCard
             icon={BookOpen}
             label="Total Subjects"
             value={state.metrics.totalSubjects || 0}
             subtext="Courses available"
-            bgColor="bg-green-50"
-            iconColor="text-green-600"
+            bgColor="bg-success/10"
+            iconColor="text-success"
             />
           <StatCard
             icon={TrendingUp}
@@ -366,17 +365,17 @@ export default function HODDashboardClient() {
             }
             bgColor={
               state.avgAttendance >= 75
-                ? "bg-green-50"
+                ? "bg-success/10"
                 : state.avgAttendance >= 60
-                ? "bg-amber-50"
-                : "bg-red-50"
+                ? "bg-warning/10"
+                : "bg-error/10"
             }
             iconColor={
               state.avgAttendance >= 75
-                ? "text-green-600"
+                ? "text-success"
                 : state.avgAttendance >= 60
-                ? "text-amber-600"
-                : "text-red-600"
+                ? "text-warning"
+                : "text-error"
             }
             />
           <StatCard
@@ -384,8 +383,8 @@ export default function HODDashboardClient() {
             label="Low Attendance Alerts"
             value={state.lowAttendanceAlerts.length}
             subtext="Students below 75%"
-            bgColor="bg-red-50"
-            iconColor="text-red-600"
+            bgColor="bg-error/10"
+            iconColor="text-error"
             />
           <StatCard
             icon={Users}
@@ -399,16 +398,16 @@ export default function HODDashboardClient() {
                 : 0
             }
             subtext="Subjects per faculty"
-            bgColor="bg-indigo-50"
-            iconColor="text-indigo-600"
+            bgColor="bg-primary/10"
+            iconColor="text-primary"
             />
         </div>
 
         {/* Charts Section - Row 1 */}
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Student Distribution */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
+            <h3 className="mb-4 text-lg font-semibold text-foreground">
               Student Distribution by Semester
             </h3>
             <div className="flex justify-center">
@@ -421,7 +420,7 @@ export default function HODDashboardClient() {
                   w={400}
                 />
               ) : (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-muted-foreground">
                   No data available
                 </div>
               )}
@@ -429,8 +428,8 @@ export default function HODDashboardClient() {
           </div>
 
           {/* Attendance Trend */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
+            <h3 className="mb-4 text-lg font-semibold text-foreground">
               Average Attendance Trend (6 Months)
             </h3>
             <div className="flex justify-center">
@@ -444,8 +443,8 @@ export default function HODDashboardClient() {
         </div>
 
         {/* Charts Section - Row 2 */}
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">
+        <div className="mb-6 rounded-lg border border-border bg-card p-6 shadow-xs">
+          <h3 className="mb-4 text-lg font-semibold text-foreground">
             Faculty Workload Distribution
           </h3>
           <div className="flex justify-center">
@@ -454,7 +453,7 @@ export default function HODDashboardClient() {
             ) : state.facultyWorkload.length > 0 ? (
               <FacultyWorkloadBar data={state.facultyWorkload} h={350} w={800} />
             ) : (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No faculty data available
               </div>
             )}
@@ -462,21 +461,21 @@ export default function HODDashboardClient() {
         </div>
 
         {/* Faculty Table Section */}
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="mb-6 rounded-lg border border-border bg-card p-6 shadow-xs">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Faculty & Workload</h3>
+            <h3 className="text-lg font-semibold text-foreground">Faculty & Workload</h3>
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Search faculty..."
                 value={searchFaculty}
                 onChange={(e) => setSearchFaculty(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
                 value={sortFacultyBy}
                 onChange={(e) => setSortFacultyBy(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="name">Sort by Name</option>
                 <option value="workload">Sort by Workload</option>
@@ -485,41 +484,41 @@ export default function HODDashboardClient() {
           </div>
 
           {state.loading ? (
-            <div className="text-center py-8 text-slate-500">Loading...</div>
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                  <tr className="border-b border-border bg-muted">
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">
                       Faculty Name
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">
                       Faculty ID
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-center font-semibold text-foreground">
                       Subjects Assigned
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">
                       Status
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredFaculty.slice(0, 15).map((faculty, idx) => (
-                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition">
-                      <td className="px-4 py-3 font-medium text-slate-900">
+                    <tr key={idx} className="border-b border-border hover:bg-muted transition">
+                      <td className="px-4 py-3 font-medium text-foreground">
                         {faculty.first_name} {faculty.last_name}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{faculty.faculty_id}</td>
-                      <td className="px-4 py-3 text-slate-600 text-xs truncate">
+                      <td className="px-4 py-3 text-muted-foreground">{faculty.faculty_id}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs truncate">
                         {faculty.email}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        <span className="inline-block bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-semibold">
                           {faculty.subjects_assigned || 0}
                         </span>
                       </td>
@@ -527,8 +526,8 @@ export default function HODDashboardClient() {
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                             faculty.status === "active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-100 text-slate-700"
+                              ? "bg-success/20 text-success"
+                              : "bg-muted text-foreground"
                           }`}
                         >
                           {faculty.status || "Active"}
@@ -543,21 +542,21 @@ export default function HODDashboardClient() {
         </div>
 
         {/* Low Attendance Alerts Section */}
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Low Attendance Alerts</h3>
+            <h3 className="text-lg font-semibold text-foreground">Low Attendance Alerts</h3>
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Search students..."
                 value={searchAlerts}
                 onChange={(e) => setSearchAlerts(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-error"
               />
               <select
                 value={sortAlertsBy}
                 onChange={(e) => setSortAlertsBy(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-error"
               >
                 <option value="name">Sort by Name</option>
                 <option value="attendance">Sort by Attendance</option>
@@ -566,32 +565,32 @@ export default function HODDashboardClient() {
           </div>
 
           {state.loading ? (
-            <div className="text-center py-8 text-slate-500">Loading...</div>
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
           ) : filteredAlerts.length === 0 ? (
-            <div className="text-center py-8 text-green-600 font-medium">
+            <div className="text-center py-8 text-success font-medium">
               ✓ No students with low attendance
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-red-50">
-                    <th className="px-4 py-3 text-left font-semibold text-red-700">
+                  <tr className="border-b border-border bg-error/10">
+                    <th className="px-4 py-3 text-left font-semibold text-error">
                       Student Name
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-red-700">
+                    <th className="px-4 py-3 text-left font-semibold text-error">
                       Registration No
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-red-700">
+                    <th className="px-4 py-3 text-left font-semibold text-error">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-red-700">
+                    <th className="px-4 py-3 text-center font-semibold text-error">
                       Semester
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-red-700">
+                    <th className="px-4 py-3 text-center font-semibold text-error">
                       Avg Attendance
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-red-700">
+                    <th className="px-4 py-3 text-center font-semibold text-error">
                       Low Subjects
                     </th>
                   </tr>
@@ -600,17 +599,17 @@ export default function HODDashboardClient() {
                   {filteredAlerts.slice(0, 15).map((alert, idx) => {
                     const statusColor = attendanceStatusColor(alert.average_attendance);
                     return (
-                      <tr key={idx} className="border-b border-red-100 hover:bg-red-50 transition">
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                      <tr key={idx} className="border-b border-error/10 hover:bg-error/5 transition">
+                        <td className="px-4 py-3 font-medium text-foreground">
                           {alert.student_name}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 text-sm  ">
+                        <td className="px-4 py-3 text-muted-foreground text-sm  ">
                           {alert.registration_no}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 text-xs truncate">
+                        <td className="px-4 py-3 text-muted-foreground text-xs truncate">
                           {alert.email}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600">
+                        <td className="px-4 py-3 text-center text-muted-foreground">
                           Sem {alert.semester}
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -619,7 +618,7 @@ export default function HODDashboardClient() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
+                          <span className="inline-block bg-error/20 text-error px-2 py-1 rounded text-xs font-semibold">
                             {alert.low_attendance_subjects.length}
                           </span>
                         </td>
@@ -633,18 +632,18 @@ export default function HODDashboardClient() {
         </div>
 
                 {/* Filters Section */}
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Filters</h2>
+        <div className="mb-6 rounded-lg border border-border bg-card p-6 shadow-xs">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Filters</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Department Selector */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Department
               </label>
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {defaultDepartments.map((dept) => (
                   <option key={dept} value={dept}>
@@ -656,13 +655,13 @@ export default function HODDashboardClient() {
 
             {/* Semester Selector */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Semester
               </label>
               <select
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">All Semesters</option>
                 {defaultSemesters.map((sem) => (
@@ -675,13 +674,13 @@ export default function HODDashboardClient() {
 
             {/* Date Range Selector */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Date Range
               </label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="1-month">Last Month</option>
                 <option value="3-months">Last 3 Months</option>
@@ -692,13 +691,13 @@ export default function HODDashboardClient() {
 
             {/* Export Buttons */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Export
               </label>
               <div className="flex gap-2">
                 <button
                   onClick={handleExportPDF}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-error/10 text-error rounded-lg text-sm font-medium hover:bg-error/20 transition"
                   title="Export as PDF"
                 >
                   <Download className="h-4 w-4" />
@@ -706,7 +705,7 @@ export default function HODDashboardClient() {
                 </button>
                 <button
                   onClick={handleExportCSV}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-success/10 text-success rounded-lg text-sm font-medium hover:bg-success/20 transition"
                   title="Export as CSV"
                 >
                   <Download className="h-4 w-4" />
@@ -718,7 +717,7 @@ export default function HODDashboardClient() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-xs text-slate-500">
+        <div className="mt-8 text-center text-xs text-muted-foreground">
           Last updated: {new Date().toLocaleTimeString()}
         </div>
       </div>

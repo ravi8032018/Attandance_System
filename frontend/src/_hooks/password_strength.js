@@ -9,11 +9,11 @@ export function PasswordStrengthBar({ password }) {
   const active = Math.min(score, steps); // 0..4
 
   const colors = {
-    0: "bg-slate-200",
+    0: "bg-muted",
     1: "bg-red-500",
     2: "bg-orange-500",
     3: "bg-amber-500",
-    4: "bg-emerald-500",
+    4: "bg-success",
   };
 
   const labels = {
@@ -31,7 +31,7 @@ export function PasswordStrengthBar({ password }) {
         {Array.from({ length: steps }, (_, i) => (
           <div
             key={i}
-            className={`h-1.5 w-full rounded ${i < active ? colors[score] : "bg-slate-200"}`}
+            className={`h-1.5 w-full rounded ${i < active ? colors[score] : "bg-muted"}`}
           />
         ))}
       </div>

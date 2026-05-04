@@ -2,53 +2,132 @@
 
 :root {
   color-scheme: light;
-  --background: #f0f2f8; /* Primary light background */
-  --foreground: #171717; /* Primary text color */
-
-  --card-background: #ffffff; /* Background for cards, modals, etc. */
-  --card-foreground: #0a0a0a; /* Text color within cards */
-
-  --muted-background: #f8fafb; /* For less prominent backgrounds */
-  --muted-foreground: #647c8b; /* For placeholder text or secondary info (slate-500) */
-
-  --primary: #4f46e5; /* Main accent color (indigo-600) */
-  --primary-foreground: #ffffff; /* Text on primary buttons/elements */
-
-  --secondary: #f59e0b; /* Secondary accent color (amber-500) */
-  --secondary-foreground: #ffffff; /* Text on secondary elements */
-
-  --success: #16a34a; /* Green for success states */
-  --success-foreground: #ffffff; /* Text on success elements */
-
-  --error: #ef4444; /* Red for error states */
-  --error-foreground: #ffffff; /* Text on error elements */
-
-  --border: #e2e8f0; /* Default border color (slate-200) */
-  --ring1: #a9b0e2; /* Focus ring color (indigo-200) */
+  
+  /* Base colors */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  
+  /* Surface colors */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  
+  /* Accent colors */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #f59e0b;
+  --secondary-foreground: #ffffff;
+  
+  /* Status colors */
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --error: #ef4444;
+  --error-foreground: #ffffff;
+  
+  /* Border and focus */
+  --border: #e2e8f0;
+  --ring: #93c5fd;
+  --input: #e2e8f0;
+  
+  /* Additional semantic colors */
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #f8f8f8;
-  --card-background: #141a26;
-  --card-foreground: #f8f8f8;
-  --muted-background: #19222f;
-  --muted-foreground: #7a8394;
-  --primary: #6366f1;
+  
+  /* Base colors */
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  
+  /* Surface colors */
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  
+  /* Accent colors */
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --secondary: #f59e0b;
   --secondary-foreground: #ffffff;
+  
+  /* Status colors */
   --success: #22c55e;
   --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
   --error: #ef4444;
   --error-foreground: #ffffff;
-  --border: #6b7885;
-  --ring2: #c3ace6;
+  
+  /* Border and focus */
+  --border: #334155;
+  --ring: #60a5fa;
+  --input: #334155;
+  
+  /* Additional semantic colors */
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility classes for common patterns */
+.bg-background { background-color: var(--background); }
+.bg-foreground { background-color: var(--foreground); }
+.text-background { color: var(--background); }
+.text-foreground { color: var(--foreground); }
+.border-foreground { border-color: var(--foreground); }
+.bg-card { background-color: var(--card); }
+.bg-card-background { background-color: var(--card); }
+.bg-input { background-color: var(--input); }
+.text-card-foreground { color: var(--card-foreground); }
+.bg-muted { background-color: var(--muted); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.bg-secondary { background-color: var(--secondary); }
+.text-secondary { color: var(--secondary); }
+.text-secondary-foreground { color: var(--secondary-foreground); }
+.bg-success { background-color: var(--success); }
+.text-success { color: var(--success); }
+.text-success-foreground { color: var(--success-foreground); }
+.bg-warning { background-color: var(--warning); }
+.text-warning { color: var(--warning); }
+.text-warning-foreground { color: var(--warning-foreground); }
+.bg-error { background-color: var(--error); }
+.text-error { color: var(--error); }
+.text-error-foreground { color: var(--error-foreground); }
+.border-border { border-color: var(--border); }
+.border-card-background { border-color: var(--card); }
+.border-input { border-color: var(--input); }
+.ring-ring { ring-color: var(--ring); }
+
+/* Focus styles */
+.focus-ring:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }

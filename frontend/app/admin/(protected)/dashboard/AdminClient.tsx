@@ -41,10 +41,10 @@ export default function AdminDashboardClient() {
     <div className="p-6">
       <header className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-2xl font-semibold text-foreground">
             Admin Dashboard
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Overview of students, faculty and courses.
           </p>
         </div>
@@ -53,63 +53,63 @@ export default function AdminDashboardClient() {
       {loading ? (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
-            <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
-            <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
           </div>
-          <div className="h-64 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
         </div>
       ) : err ? (
-        <p className="text-sm text-rose-700">{err}</p>
+        <p className="text-sm text-error">{err}</p>
       ) : (
         <div className="space-y-6">
           <section className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-700">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">
                 Total students
               </h2>
-              <p className="mt-2 text-3xl font-bold text-slate-900">
+              <p className="mt-2 text-3xl font-bold text-foreground">
                 {stats?.totalStudents ?? 0}
               </p>
             </div>
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-700">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">
                 Total faculty
               </h2>
-              <p className="mt-2 text-3xl font-bold text-slate-900">
+              <p className="mt-2 text-3xl font-bold text-foreground">
                 {stats?.totalFaculty ?? 0}
               </p>
             </div>
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-700">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">
                 Active courses
               </h2>
-              <p className="mt-2 text-3xl font-bold text-slate-900">
+              <p className="mt-2 text-3xl font-bold text-foreground">
                 {stats?.activeCourses ?? 0}
               </p>
             </div>
           </section>
 
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">
+          <section className="rounded-xl border bg-card p-6 shadow-sm">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
               Quick actions
             </h2>
             <div className="flex flex-wrap gap-3 text-sm">
               <a
                 href="/admin/students"
-                className="rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700"
+                className="rounded-md bg-primary px-3 py-2 text-white hover:opacity-90"
               >
                 Manage students
               </a>
               <a
                 href="/admin/faculty"
-                className="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-2 text-foreground hover:bg-muted"
               >
                 Manage faculty
               </a>
               <a
                 href="/admin/settings"
-                className="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-2 text-foreground hover:bg-muted"
               >
                 System settings
               </a>

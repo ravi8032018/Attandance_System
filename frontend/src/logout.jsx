@@ -32,7 +32,7 @@ export default function LogoutButton({ to = "/login", className = "" }) {
       disabled={loading}
       className={
         "w-full flex items-center gap-1 rounded-md px-1 py-2 " +
-        (loading ? "bg-slate-200 text-slate-400 cursor-not-allowed " : "bg-gray-200 text-slate-900 hover:bg-gray-300 hover:text-black") +
+        (loading ? "bg-muted text-muted-foreground cursor-not-allowed " : "bg-muted text-foreground hover:bg-gray-300 hover:text-foreground") +
         className
       }
       aria-busy={loading}

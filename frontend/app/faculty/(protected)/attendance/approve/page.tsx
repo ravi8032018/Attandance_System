@@ -205,15 +205,15 @@ export default function FacultyCRApprovalsPage() {
   }
 
   return (
-    <main className="m-4 p-4 pl-6 pr-6 bg-white/80 rounded-2xl max-w-3xl ">
+    <main className="m-4 p-4 pl-6 pr-6 bg-card/80 rounded-2xl max-w-3xl ">
       <div className="mx-auto">
         {/* Global Error Display */}
         {error && (
-          <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 flex items-center justify-between">
+          <div className="mb-4 rounded-md border border-error/30 bg-error/10 px-4 py-3 text-error flex items-center justify-between">
             <span>{error}</span>
             <button
               onClick={() => setError('')}
-              className="text-rose-700 hover:text-rose-900 font-bold"
+              className="text-error hover:text-error font-bold"
             >
               ✕
             </button>
@@ -222,25 +222,25 @@ export default function FacultyCRApprovalsPage() {
 
         {/* Global Info Display */}
         {info && (
-          <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 flex items-center justify-between">
+          <div className="mb-4 rounded-md border border-success/30 bg-success/10 px-4 py-3 text-success flex items-center justify-between">
             <span>{info}</span>
             <button
               onClick={() => setInfo('')}
-              className="text-emerald-700 hover:text-emerald-900 font-bold"
+              className="text-success hover:text-success font-bold"
             >
               ✕
             </button>
           </div>
         )}
 
-        <h1 className=" text-2xl border-b-2 border-slate-500 font-semibold mb-4">Pending Attendance Approvals</h1>
+        <h1 className=" text-2xl border-b-2 border-border font-semibold mb-4">Pending Attendance Approvals</h1>
 
         {loading ? (
-          <div className="border-slate-200 px-3 py-6 text-center text-slate-500">
+          <div className="border-border px-3 py-6 text-center text-muted-foreground">
             Loading pending attendance sessions...
           </div>
         ) : sessions.length === 0 ? (
-          <div className="rounded-md border border-slate-300 px-3 py-6 text-center text-slate-500">
+          <div className="rounded-md border border-border px-3 py-6 text-center text-muted-foreground">
             No pending CR attendance session to approve.
           </div>
         ) : (
@@ -248,19 +248,19 @@ export default function FacultyCRApprovalsPage() {
             {sessions.map((s: any) => (
               <li
                 key={s.id}
-                className="border-b-1 border-slate-400 last:border-0"
+                className="border-b-1 border-border last:border-0"
               >
-              <div className="m-3 p-4 bg-white flex items-center justify-between rounded-lg shadow-sm border-2 border-slate-200 hover:bg-[#c9d1fc]/70 hover:shadow-lg hover:border-slate-400 transition">
+              <div className="m-3 p-4 bg-card flex items-center justify-between rounded-lg shadow-sm border-2 border-border hover:bg-primary/20 hover:shadow-lg hover:border-border transition">
                 {/* content */}
                 <div className=" ">
-                  <div className="text-md text-slate-700">
+                  <div className="text-md text-foreground">
                     {s.department} Sem {s.semester}
                     {usedSubjectNameMap[s.subject_code] && (
                         <>&nbsp;&nbsp;<b className='text-lg'>┃</b>&nbsp;&nbsp;{usedSubjectNameMap[s.subject_code]}</>
                     )}&nbsp;&nbsp;<b className='text-lg'>┃</b>&nbsp;&nbsp;
                     {s.subject_code}
                   </div>
-                  <div id="date-display" className="text-xs text-black  ">
+                  <div id="date-display" className="text-xs text-foreground  ">
 
                     {formatDateTime(s.date)}
                   </div>
@@ -271,7 +271,7 @@ export default function FacultyCRApprovalsPage() {
                     type="button"
                     onClick={() => handleApprove(s.session_id)}
                     disabled={actionLoadingId === s.session_id}
-                    className="px-4 py-1.5 rounded-lg bg-emerald-700  hover:bg-emerald-600 disabled:bg-slate-300"
+                    className="px-4 py-1.5 rounded-lg bg-success hover:opacity-90 disabled:bg-muted"
                   >
                     {actionLoadingId === s.session_id ? 'Approving…' : 'Approve'}
                   </button>
@@ -279,7 +279,7 @@ export default function FacultyCRApprovalsPage() {
                     type="button"
                     onClick={() => handleReject(s.session_id)}
                     disabled={actionLoadingId === s.session_id}
-                    className="px-4 py-1.5 rounded-lg  bg-rose-500  hover:bg-rose-600 disabled:bg-slate-300"
+                    className="px-4 py-1.5 rounded-lg  bg-error hover:opacity-90 disabled:bg-muted"
                   >
                     {actionLoadingId === s.session_id ? 'Rejecting…' : 'Reject'}
                   </button>

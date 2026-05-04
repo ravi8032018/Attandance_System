@@ -8,7 +8,7 @@ export default async function FacultyLayout({ children }) {
     <div className="flex min-h-dvh flex-col md:flex-row md:overflow-hidden ">
       {/* Sidebar */}
 
-      <aside className="bg-slate-50 border-r-2 border-[#d2d9d8]">
+      <aside className="bg-muted border-r-2 border-[#d2d9d8]">
         <FacultySideNav />
       </aside>
 

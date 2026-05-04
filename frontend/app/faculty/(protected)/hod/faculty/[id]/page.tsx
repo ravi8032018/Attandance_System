@@ -97,14 +97,14 @@ export default function FacultyProfileClient({ params }) {
 
       {/* Header */}
       <div className="grid grid-cols-2 sm:grid-cols-1">
-        <section className="mb-4 rounded-xl border bg-white p-4 shadow-sm hover:shadow-lg">
+        <section className="mb-4 rounded-xl border bg-card p-4 shadow-sm hover:shadow-lg">
           {loading ? (
             <div className="animate-pulse">
-              <div className="h-6 w-60 rounded bg-slate-200" />
-              <div className="mt-2 h-4 w-96 rounded bg-slate-200" />
+              <div className="h-6 w-60 rounded bg-muted" />
+              <div className="mt-2 h-4 w-96 rounded bg-muted" />
             </div>
           ) : err ? (
-            <div className="text-rose-700">{err}</div>
+            <div className="text-error">{err}</div>
           ) : f ? (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               {/* Left: avatar + identity */}
@@ -121,7 +121,7 @@ export default function FacultyProfileClient({ params }) {
                     />
                   ) : (
                     <div
-                      className="h-26 w-26 rounded-full grid place-items-center ring-2 ring-slate-200 bg-indigo-100 text-indigo-800"
+                      className="h-26 w-26 rounded-full grid place-items-center ring-2 ring-border bg-primary/20 text-primary"
                       aria-label="avatar initials"
                     >
                       <span className="font-semibold">
@@ -134,24 +134,24 @@ export default function FacultyProfileClient({ params }) {
                   {/* faculty details */}
                 <div className="text-[15px]">
                   <h1 className="text-2xl font-semibold mb-1">Dr. {fullName}</h1>
-                  <p className="mt-0.5 text-slate-600">
+                  <p className="mt-0.5 text-muted-foreground">
                     Faculty id:{" "}
                     <span className="font-medium">{f.faculty_id ?? "—"}</span>
                     <span
                     className={`rounded-full px-3 py-0.5 ml-5 text-xs font-semibold ${
                       f.status?.toLowerCase() === "active"
                         ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
+                        : "bg-amber-100 text-warning"
                     }`}
                   >
                     {f.status || "Unknown"}
                   </span>
                   </p>
-                  <p className="mt-0.5 text-slate-600">
+                  <p className="mt-0.5 text-muted-foreground">
                     Designation:{" "}
                     <span className="font-medium">{TitleCase(f.designation) ?? "—"}</span>
                   </p>
-                  <p className="mt-0.5 text-slate-600">
+                  <p className="mt-0.5 text-muted-foreground">
                     Department:{" "}
                     <span className="font-medium">{f.department ?? "—"}</span>
                   </p>
@@ -163,36 +163,36 @@ export default function FacultyProfileClient({ params }) {
                 <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/hod/faculty/assign-subject?faculty_id=${f.faculty_id}`}
-                    className="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700 shadow-sm hover:shadow-md"
+                    className="rounded-md border border-primary bg-primary px-3 py-2 text-sm text-white hover:opacity-90 shadow-sm hover:shadow-md"
                   >
                     Assign Subject
                   </Link>
-                  <button className="rounded-md border px-3 py-2 text-sm border-indigo-600 bg-white text-indigo-700 hover:bg-indigo-50 shadow-sm hover:shadow-md">
+                  <button className="rounded-md border px-3 py-2 text-sm border-primary bg-card text-primary hover:bg-primary/10 shadow-sm hover:shadow-md">
                     Message faculty
                   </button>
-                  <button className="rounded-md border px-3 py-2 text-sm border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-sm hover:shadow-md">
+                  <button className="rounded-md border px-3 py-2 text-sm border-border bg-card hover:bg-muted text-foreground shadow-sm hover:shadow-md">
                     Export profile
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-slate-600">No profile found.</div>
+            <div className="text-muted-foreground">No profile found.</div>
           )}
         </section>
       </div>
 
       {/* Tabs (keeping simple for now; you can add more later) */}
       <section className="mb-3">
-        <div className="flex border-b-2 border-slate-300">
+        <div className="flex border-b-2 border-border">
           {["overview"].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-slate-900 hover:bg-white hover:border-b-1 hover:border-slate-900 hover:shadow-sm ${
-                tab === t
-                  ? "border-slate-900 text-black bg-white shadow-md"
-                  : "border-transparent text-slate-600"
+              className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-foreground hover:bg-card hover:border-b-1 hover:border-foreground hover:shadow-sm ${
+               tab === t
+                 ? "border-foreground text-foreground bg-card shadow-md"
+                 : "border-transparent text-muted-foreground"
               }`}
             >
               {t}
@@ -204,52 +204,52 @@ export default function FacultyProfileClient({ params }) {
      {tab === "overview" && (
   <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
     {/* Left: faculty details */}
-    <div className="lg:col-span-2 rounded-lg border bg-white p-4 shadow-sm hover:shadow-lg">
+    <div className="lg:col-span-2 rounded-lg border bg-card p-4 shadow-sm hover:shadow-lg">
       <h2 className="mb-3 text-base font-semibold">Faculty details</h2>
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-4 w-64 rounded bg-slate-200" />
+            <div key={i} className="h-4 w-64 rounded bg-muted" />
           ))}
         </div>
       ) : f ? (
         <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
           <div>
-            <dt className="text-sm text-slate-500">Email</dt>
-            <dd className="text-md transition-all duration-100 hover:underline hover:underline-offset-2 hover:text-indigo-600 hover:font-semibold">
+            <dt className="text-sm text-muted-foreground">Email</dt>
+            <dd className="text-md transition-all duration-100 hover:underline hover:underline-offset-2 hover:text-primary hover:font-semibold">
               {f.email ? <a href={`mailto:${f.email}`}>{f.email}</a> : "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-500">Contact number</dt>
+            <dt className="text-sm text-muted-foreground">Contact number</dt>
             <dd className="text-md">{f.contact_number ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-500">Date of birth</dt>
+            <dt className="text-sm text-muted-foreground">Date of birth</dt>
             <dd className="text-md">{formattedDob}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-500">Gender</dt>
+            <dt className="text-sm text-muted-foreground">Gender</dt>
             <dd className="text-md">{TitleCase(f.gender || "—")}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-500">Status</dt>
+            <dt className="text-sm text-muted-foreground">Status</dt>
             <dd className="text-md">{TitleCase(f.status || "—")}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-500">Joining Date</dt>
+            <dt className="text-sm text-muted-foreground">Joining Date</dt>
             <dd className="text-md">
               {f.joining_date ? new Date(f.joining_date).toLocaleDateString() : "—"}
             </dd>
           </div>
         </dl>
       ) : (
-        <p className="text-sm text-slate-600">No data.</p>
+        <p className="text-sm text-muted-foreground">No data.</p>
       )}
     </div>
 
     {/* Right: subjects assigned */}
-    <div className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-lg">
+    <div className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-lg">
       {/* top heading */}
       <h2 className="flex justify-between pr-2 mb-3 font-semibold">
         <span>Subjects assigned</span>
@@ -261,7 +261,7 @@ export default function FacultyProfileClient({ params }) {
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-4 w-4 rounded bg-slate-200" />
+            <div key={i} className="h-4 w-4 rounded bg-muted" />
           ))}
         </div>
       ) : subjects.length > 0 ? (
@@ -269,19 +269,19 @@ export default function FacultyProfileClient({ params }) {
           {subjects.map((subject) => (
             <div
               key={subject.subject_code}   // add this line
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:shadow-md transition"
+              className="rounded-xl border border-border bg-muted p-3 shadow-sm hover:shadow-md transition"
             >
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-foreground">
                 {subject.subject_code}
               </p>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {subject.subject_name}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-sm text-slate-500">No subjects available.</p>
+        <p className="text-sm text-muted-foreground">No subjects available.</p>
       )}
     </div>
       </section>
