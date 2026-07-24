@@ -8,21 +8,12 @@ import { NotificationCenter } from "./NotificationPanel";
 import { ThemeSwitch } from "./ThemeSwitch";
 
 export default function Top_Header() {
-  const [scrolled, setScrolled] = useState(false);
+  const hideDept = useScrolled({ hideAt: 15, showAt: 6 });
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    onScroll(); // set initial
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const hideDept = useScrolled({ hideAt:15, showAt:6, debounceMs: 100})
-  // console.log(hideDept);
   return (
     <header
-      className={`ease-in-out sticky top-0 z-10 bg-card-background border-transparent transition-all ${
-        hideDept ? "border-border" : "border-card-background"}
+      className={`sticky top-0 z-10 bg-card-background transition-all duration-300 ease-in-out ${
+        hideDept ? "border-b border-border" : "border-b border-card-background"
       }`}
     >
       <div

@@ -118,7 +118,7 @@ export function SubjectSelect({
               <div className="py-4 text-center text-sm text-muted-foreground">No matches found</div>
             ) : (
               filteredSubjects.map((subject) => {
-                const code = new Set([subject.subject_code]);
+                const code = subject.subject_code;
                 const isAssigned = assignedCodes.has(code);
                 const isLoading = actionLoadingId === code;
 

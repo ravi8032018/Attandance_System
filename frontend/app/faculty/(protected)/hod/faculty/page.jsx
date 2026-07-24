@@ -1,10 +1,10 @@
-// app/hod/faculty/page.jsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getFacultyList } from "@/src/_hooks/getFacultyList";
 import { TitleCase } from "@/src/_hooks/toTitleCase";
+import { Badge } from "@/src/components/ui/Badge";
 
 export default function HodFacultyPage() {
   const [facultyList, setFacultyList] = useState([]);
@@ -58,39 +58,40 @@ export default function HodFacultyPage() {
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <div className="p-6 space-y-6">
-
-      {/* header section */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Header section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Faculty Management</h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage faculty profiles, assignments, and teaching workload.
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Faculty Management
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Manage department faculty profiles, curriculum assignments, and teaching workload.
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <Link
             href="/faculty/hod/faculty/assign-subject"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-lg bg-primary px-4 py-2 text-xs sm:text-sm font-medium text-white hover:opacity-90 shadow-xs transition"
           >
             Assign Subject
           </Link>
 
           <Link
-            href="/hod/faculty/workload"
-            className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            href="/faculty/hod/faculty/assign-subject"
+            className="rounded-lg border border-border bg-card px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted shadow-xs transition"
           >
             View Workload
           </Link>
         </div>
       </div>
 
-      {/* total count and search */}
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-lg font-semibold text-foreground">
-            Faculty ({totalCount})
+      {/* Filter and Count Bar */}
+      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-base font-semibold text-foreground">
+            All Faculty Roster <span className="text-xs text-primary font-bold">({totalCount})</span>
           </h2>
 
           <input
@@ -101,96 +102,87 @@ export default function HodFacultyPage() {
               setPage(1);
               setQuery(e.target.value);
             }}
-            className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:focus:border-primary md:w-72"
+            className="w-full rounded-lg border border-border bg-card px-3.5 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition sm:w-72"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="h-56 animate-pulse rounded-2xl border border-border bg-muted"
+              className="h-52 animate-pulse rounded-xl border border-border bg-muted"
             />
           ))}
         </div>
       ) : err ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error">
           {err}
         </div>
       ) : facultyList.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-          No faculty found.
+        <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">
+          No faculty members found matching your filter.
         </div>
       ) : (
         <>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {facultyList.map((faculty) => (
               <div
-              key={faculty.id || faculty._id || faculty.faculty_id}
-              className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"  
+                key={faculty.id || faculty._id || faculty.faculty_id}
+                className="rounded-xl border border-border bg-card p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                {/* card header */}
-                <div>  
-                  <h3 className="text-lg font-semibold text-foreground"><span>Dr. </span>
-                    {[faculty.first_name, faculty.last_name].filter(Boolean).join(" ")}
-                  </h3>
-                </div>
-                <div className="flex items-start justify-between mt-1">
+                {/* Card Header */}
+                <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="text-base font-semibold text-foreground">
+                      Dr. {[faculty.first_name, faculty.last_name].filter(Boolean).join(" ")}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {TitleCase(faculty.designation || "Faculty")}
                     </p>
                   </div>
 
-                  <span
-                    className={`rounded-full px-3 py-0.5 text-xs font-semibold ${
-                      faculty.status?.toLowerCase() === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-warning"
-                    }`}
+                  <Badge
+                    variant={faculty.status?.toLowerCase() === "active" ? "success" : "warning"}
                   >
                     {faculty.status || "Unknown"}
-                  </span>
+                  </Badge>
                 </div>
 
-                {/* card data */}
-                <div className="mt-4 space-y-2 text-sm text-foreground">
-                  {/* faculty id */}
+                {/* Card Metadata */}
+                <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                   <p>
-                    <span className="font-medium text-foreground">Faculty id:</span>{" "}
+                    <span className="font-medium text-foreground">Faculty ID:</span>{" "}
                     {faculty.faculty_id || "—"}
                   </p>
-                  {/* mail */}
-                  <p>
+                  <p className="truncate">
                     <span className="font-medium text-foreground">Email:</span>{" "}
                     <a
                       href={`mailto:${faculty.email}`}
-                      className="hover:underline hover:font-semibold"
+                      className="hover:underline hover:text-primary"
                     >
                       {faculty.email || "—"}
                     </a>
                   </p>
-                  {/* department */}
                   <p>
                     <span className="font-medium text-foreground">Department:</span>{" "}
                     {faculty.department || "—"}
                   </p>
                 </div>
 
-                    {/* Lower buttons */}
-                <div className="mt-4 flex justify-start gap-3">
+                {/* Card Actions */}
+                <div className="mt-5 flex gap-2 pt-3 border-t border-border">
                   <Link
                     href={`/faculty/hod/faculty/${faculty.faculty_id}`}
-                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:hover:opacity-90"
+                    className="flex-1 text-center rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 transition"
                   >
                     View Profile
                   </Link>
 
                   <Link
                     href={`/faculty/hod/faculty/assign-subject?faculty_id=${faculty.faculty_id}`}
-                    className="text-white rounded-md border border-border bg-muted/80 px-4 py-2 text-sm font-medium hover:bg-muted"
+                    className="flex-1 text-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition"
                   >
                     Assign
                   </Link>
@@ -198,25 +190,29 @@ export default function HodFacultyPage() {
               </div>
             ))}
           </div>
-            {/* pagination */}
-          <div className="flex items-center justify-between rounded-lg border-1 border-border bg-card px-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Page {page} of {totalPages || 1}
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
+            <p className="text-xs text-muted-foreground">
+              Page <span className="font-semibold text-foreground">{page}</span> of{" "}
+              <span className="font-semibold text-foreground">{totalPages || 1}</span>
             </p>
 
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-md border border-border px-4 py-2 text-sm disabled:opacity-50"
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 transition"
               >
                 Previous
               </button>
 
               <button
+                type="button"
                 onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
                 disabled={page >= totalPages}
-                className="rounded-md border border-border px-4 py-2 text-sm disabled:opacity-50"
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 transition"
               >
                 Next
               </button>

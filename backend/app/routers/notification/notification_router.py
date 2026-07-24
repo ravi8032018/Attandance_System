@@ -15,12 +15,14 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 @router.get("/")
 async def list_notifications(
-    status: Literal["read", "unread", "archived"] = "unread",
+    status: Literal["read", "unread", "archived", "all"] = "unread",
     current_user = Depends(get_current_user),
 ):
     '''Endpoint to list notifications for the authenticated user, with optional status filter.'''
     query = {"user_id": current_user["id"]}
-    if status:
+    if status == "all":
+        pass
+    else:   
         query["status"] = status
     now = datetime.now(timezone.utc)
     query["$or"] = [

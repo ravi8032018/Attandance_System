@@ -274,7 +274,7 @@ export default function FacultyAttendancePage() {
       const api_response = await res.json();
 
       setInfo(
-        `Attendance saved ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Session: ${api_response.session_id || "N/A"} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Status: ${
+        `Attendance saved • Session: ${api_response.session_id || "N/A"} • Status: ${
           api_response.status || "ok"
         }`
       );
@@ -441,7 +441,7 @@ export default function FacultyAttendancePage() {
           >
             <option value={""}>Select subject</option>
             {subjects.map((subj) => (
-              <option value={subj.subject_code}>
+              <option key={subj.subject_code || subj.id} value={subj.subject_code}>
                 {`${subj.subject_code} - ${subj.subject_name}`}
               </option>
             ))}
@@ -547,9 +547,16 @@ export default function FacultyAttendancePage() {
             </ul>
           </div>
 
-          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-card/70 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/50">
-            <div className="text-sm text-muted-foreground">
-              Present: {presentSet.size} / {students.length}
+          <div className="min-w-full sticky bottom-0 mt-3 flex items-center justify-between rounded-md bg-card/90 px-4 py-2.5 backdrop-blur border border-border shadow-md">
+            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
+              <span>Present: <strong className="text-success font-semibold">{presentSet.size}</strong></span>
+              <span>Absent: <strong className="text-error font-semibold">{students.length - presentSet.size}</strong></span>
+              <span>Total: <strong className="text-foreground font-semibold">{students.length}</strong></span>
+              {students.length > 0 && (
+                <span className="hidden sm:inline-block rounded-full bg-primary/10 px-2 py-0.5 text-primary font-semibold">
+                  {Math.round((presentSet.size / students.length) * 100)}% Present
+                </span>
+              )}
             </div>
             <button
               type="submit"

@@ -17,7 +17,7 @@ type NotificationMessage = {
   read?: boolean;
 };
 
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL;
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
 console.log("--> Web socket URL: ", WS_BASE_URL);
 
 export function NotificationCenter() {
@@ -27,6 +27,8 @@ export function NotificationCenter() {
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // close when clicking outside
   useEffect(() => {
@@ -217,9 +219,9 @@ export function NotificationCenter() {
               <path fill="currentColor" d="M 25 1 A 4 4 0 0 0 25 9 A 4 4 0 0 0 25 1 z M 19.400391 7.0996094 C 14.800391 8.9996094 12 13.4 12 19 C 12 29.4 9.2 31.9 7.5 33.5 C 6.7 34.2 6 34.9 6 36 C 6 40 12.2 42 25 42 C 37.8 42 44 40 44 36 C 44 34.9 43.3 34.2 42.5 33.5 C 40.8 31.9 38 29.4 38 19 C 38 13.3 35.299609 8.9996094 30.599609 7.0996094 C 29.799609 9.3996094 27.6 11 25 11 C 22.4 11 20.200391 9.3996094 19.400391 7.0996094 z M 19.099609 43.800781 C 19.499609 46.800781 22 49 25 49 C 28 49 30.500391 46.800781 30.900391 43.800781 C 29.000391 44.000781 27 44 25 44 C 23 44 20.999609 44.000781 19.099609 43.800781 z"></path>
             </svg>
           </span>
-          {notifications.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-error px-1 text-[11px] text-error-foreground">
-              {notifications.length}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-error px-1 text-[11px] text-error-foreground font-bold">
+              {unreadCount}
             </span>
           )}
         </div>

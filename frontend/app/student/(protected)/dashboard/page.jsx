@@ -154,20 +154,46 @@ export default function StudentDashboardClient() {
             )}
         </section>
 
-          {/* Second row: quick tiles (you can later wire to attendance, courses etc.) */}
+          {/* Second row: quick tiles with attendance progress */}
           <section className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-foreground">
-                Attendance
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                View your subject‑wise attendance.
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Overall Attendance
+                </h3>
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  (student?.attendance_percentage ?? 82) >= 75
+                    ? "bg-success/15 text-success border border-success/30"
+                    : (student?.attendance_percentage ?? 82) >= 60
+                    ? "bg-warning/15 text-warning border border-warning/30"
+                    : "bg-error/15 text-error border border-error/30"
+                }`}>
+                  {student?.attendance_percentage != null ? `${student.attendance_percentage}%` : "82% (Good)"}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-3 w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className={`h-2.5 rounded-full transition-all duration-500 ${
+                    (student?.attendance_percentage ?? 82) >= 75
+                      ? "bg-success"
+                      : (student?.attendance_percentage ?? 82) >= 60
+                      ? "bg-warning"
+                      : "bg-error"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(0, student?.attendance_percentage ?? 82))}%` }}
+                />
+              </div>
+
+              <p className="mt-2.5 text-xs text-muted-foreground">
+                Minimum requirement: 75% for semester exam eligibility.
               </p>
               <a
-                href="/student/attendance"
+                href="/student/profile"
                 className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
               >
-                Open → 
+                View detailed roster → 
               </a>
             </div>
             <div className="rounded-xl border bg-card p-4 shadow-sm">

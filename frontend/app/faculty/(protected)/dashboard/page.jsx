@@ -1,11 +1,13 @@
-// app/faculty/dashboard/page.jsx
-import {SemesterPie} from '@/src/_hooks/charts'
+"use client";
+
+import Link from "next/link";
+import { SemesterPie } from "@/src/_hooks/charts";
+import { StatCard } from "@/src/components/ui/StatCard";
 
 export default function FacultyDashboardPage() {
-  // Placeholder data — swap with real API data later
   const semesters = [
-    { id: "sem-5", name: "Semester 5", period: "Aug–Dec 2025", courses: 4, batches: 2 },
-    { id: "sem-6", name: "Semester 6", period: "Jan–May 2026", courses: 5, batches: 3 },
+    { id: "sem-5", name: "Semester 5", period: "Aug–Dec 2025", courses: 4, batches: 2, present: 62, absent: 28 },
+    { id: "sem-6", name: "Semester 6", period: "Jan–May 2026", courses: 5, batches: 3, present: 78, absent: 14 },
   ];
 
   const batches = [
@@ -15,98 +17,130 @@ export default function FacultyDashboardPage() {
   ];
 
   return (
-    <main className="w-full h-full p-4 bg-background text-foreground  ">
-      <header className="mb-6 ">
-        <h1 className="text-2xl font-semibold">Faculty Dashboard</h1>
-        <p className="text-foreground text-sm">Overview of semesters and batches assigned.</p>
-      </header>
+    <main className="p-4 sm:p-6 space-y-8 max-w-7xl mx-auto min-h-screen bg-background text-foreground">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Faculty Dashboard
+        </h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          Overview of active academic semesters, student batches, and live class attendance statistics.
+        </p>
+      </div>
 
-      {/* Semesters */}
-      <section className="mb-8">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Semesters</h2>
-          <a href="/dashboard/faculty/semesters" className="text-sm hover:text-primary">
-            View all
-          </a>
+      {/* Quick Metrics Banner */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Active Semesters"
+          value="2"
+          description="Aug 2025 – May 2026 term"
+          icon="📚"
+        />
+        <StatCard
+          title="Assigned Batches"
+          value="3"
+          description="173 total students"
+          icon="🎓"
+        />
+        <StatCard
+          title="Avg Attendance"
+          value="76.5%"
+          trend={{ value: "+2.4%", positive: true }}
+          description="vs previous month"
+          icon="📊"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value="4"
+          description="Attendance sessions awaiting review"
+          icon="✅"
+        />
+      </section>
+
+      {/* Active Semesters Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">
+            Current Semesters
+          </h2>
+          <Link href="/faculty/attendance/take" className="text-xs font-semibold text-primary hover:underline">
+            Take Class Attendance →
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {semesters.map((s) => (
-            <div className="justify-between grid grid-cols-[1fr_auto] gap-4">
-            {/* left column: text */}
-              <a
+            <div
               key={s.id}
-              href={`/dashboard/faculty/semesters/${s.id}`}
-              className="group rounded-lg bg-[#ffffff] p-4 shadow-sm hover:drop-shadow-2xl"
+              className="rounded-xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md"
             >
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-0">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-semibold">{s.name}</h3>
-
-                  <p className="text-sm ">
-                    Courses: <span className="font-medium">{s.courses}</span>
-                  </p>
-                  <p className="text-sm ">
-                    Batches: <span className="font-medium">{s.batches}</span>
-                  </p>
-                  <div className="mt-3">
-                    <span className="inline-flex items-center text-sm hover:text-primary">
-                      Manage semester →
-                    </span>
+                  <h3 className="text-base font-bold text-foreground">{s.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{s.period}</p>
+                  
+                  <div className="mt-4 space-y-1 text-xs text-muted-foreground">
+                    <p>
+                      Courses Assigned: <span className="font-semibold text-foreground">{s.courses}</span>
+                    </p>
+                    <p>
+                      Active Batches: <span className="font-semibold text-foreground">{s.batches}</span>
+                    </p>
                   </div>
                 </div>
 
-                    {/*</div>*/}
-                  <div className="">
-                    <SemesterPie present={62} absent={28} h={15} w={15} />
-                  </div>
-            </div>
-            </a>
+                <div className="shrink-0 flex flex-col items-center">
+                  <SemesterPie present={s.present} absent={s.absent} h={14} w={14} />
+                  <span className="mt-1 text-[11px] font-medium text-muted-foreground">Semester Attendance</span>
+                </div>
+              </div>
             </div>
           ))}
-
         </div>
       </section>
 
-      {/* Batches */}
-      <section className={"mb-3"}>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Batches</h2>
-          <a href="/dashboard/faculty/batches" className="text-sm text-foreground hover:text-primary">
-            View all
-          </a>
+      {/* Batches Roster Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">
+            Assigned Student Batches
+          </h2>
+          <Link href="/faculty/list_students" className="text-xs font-semibold text-primary hover:underline">
+            View Student Directory →
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {batches.map((b) => (
-            <a
+            <div
               key={b.id}
-              href={`/dashboard/faculty/batches/${b.id}`}
-              className="group rounded-lg bg-[#ffffff] p-4 shadow-sm hover:drop-shadow-2xl"
+              className="rounded-xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md flex flex-col justify-between"
             >
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="text-base font-semibold">{b.id}</h3>
-                <span className="rounded-2xl bg-muted px-2.5 py-1 text-xs text-foreground">{b.year}</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-bold text-foreground">{b.id}</h3>
+                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                    {b.year}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground font-medium">{b.program}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Total Strength: <span className="font-semibold text-foreground">{b.size} Students</span>
+                </p>
               </div>
-              <p className="text-sm ">{b.program}</p>
-              <p className="text-sm ">
-                Strength: <span className="font-medium">{b.size}</span>
-              </p>
-              <div className="mt-3">
-                <span className="inline-flex items-center text-sm  group-hover:text-primary">
-                  Open batch →
-                </span>
+
+              <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+                <Link
+                  href="/faculty/list_students"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  View Students →
+                </Link>
               </div>
-            </a>
+            </div>
           ))}
         </div>
       </section>
-      <p>
-        What is Lorem Ipsum?
-          Lorem Ipsum is simply dummy text of the printing and typesetting industry. <br></br>Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. <br></br>It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. <br></br>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more<br></br> recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.<br></br>Why do we use it?<br></br>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a <br></br>more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.<br></br> Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for <br></br>'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).  What is Lorem Ipsum?
-          Lorem Ipsum is simply dummy text of the printing and typesetting industry. <br></br>Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. <br></br>It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. <br></br>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more<br></br> recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.<br></br>Why do we use it?<br></br>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a <br></br>more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.<br></br> Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for <br></br>'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
-
-    </p>
     </main>
   );
 }

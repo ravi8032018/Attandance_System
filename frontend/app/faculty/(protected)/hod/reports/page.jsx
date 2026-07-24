@@ -116,6 +116,33 @@ export default function HodReportsPage() {
       : 0;
   const below75 = reports.filter((r) => (r.attendance_percentage ?? 0) < 75).length;
 
+  function handleDownloadCSV() {
+    if (reports.length === 0) return;
+
+    const headers = ["Registration No", "Subject Code", "Total Classes", "Present", "Absent", "Excused", "Attendance %"];
+    const rows = reports.map((r) => [
+      searchedReg,
+      r.subject_code || "N/A",
+      r.total_classes ?? 0,
+      r.present_count ?? 0,
+      r.absent_count ?? 0,
+      r.excused_count ?? 0,
+      (r.attendance_percentage ?? 0).toFixed(1) + "%",
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `attendance_report_${searchedReg}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="p-6 space-y-6 min-h-screen bg-[#f2f5f9]">
 
@@ -217,7 +244,7 @@ export default function HodReportsPage() {
               </div>
 
               {reports.length > 0 && (
-                <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-4 text-sm flex-wrap">
                   <div className="text-center">
                     <p className="font-bold text-foreground">{avgPct.toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground">Avg Attendance</p>
@@ -232,6 +259,13 @@ export default function HodReportsPage() {
                     <p className="font-bold text-foreground">{reports.length - below75}</p>
                     <p className="text-xs text-muted-foreground">Above 75%</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadCSV}
+                    className="ml-2 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all shadow-xs"
+                  >
+                    ↓ Download CSV
+                  </button>
                 </div>
               )}
             </div>

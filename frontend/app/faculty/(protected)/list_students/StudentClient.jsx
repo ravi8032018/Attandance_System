@@ -157,68 +157,68 @@ export default function StudentsClient({ initialQuery }) {
                 status: "",
               })
             }
-            className="rounded-md border h-7 w-auto text-center px-3 py-auto text-sm font-semibold text-foreground bg-primary hover:drop-shadow-lg"
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition shadow-xs"
           >
-            Clear
+            Clear Filters
           </button>
         </div>
       </header>
 
       {/* Filters row */}
-      <section className="mb-4 text-sm grid grid-cols-1 gap-3 lg:grid-cols-6">
+      <section className="mb-4 text-xs grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">Registration no</label>
+          <label className="mb-1 block font-medium text-foreground">Registration No</label>
           <input
             value={query.registration_no}
             onChange={(e) => update({ registration_no: e.target.value })}
-            placeholder="CSBSC20XXXXX"
-            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
+            placeholder="e.g. CSBSC2024003"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">Sem</label>
+          <label className="mb-1 block font-medium text-foreground">Semester</label>
           <input
             value={query.sem}
             onChange={(e) => update({ sem: e.target.value })}
-            placeholder="1"
-            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
+            placeholder="e.g. 4"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">Email</label>
+          <label className="mb-1 block font-medium text-foreground">Email</label>
           <input
             value={query.email}
             onChange={(e) => update({ email: e.target.value })}
             placeholder="student@gmail.com"
-            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">First name</label>
+          <label className="mb-1 block font-medium text-foreground">First Name</label>
           <input
             value={query.first_name}
             onChange={(e) => update({ first_name: e.target.value })}
             placeholder="Harry"
-            className="w-full rounded-md border border-input text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-ring bg-input"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">Last name</label>
+          <label className="mb-1 block font-medium text-foreground">Last Name</label>
           <input
             value={query.last_name}
             onChange={(e) => update({ last_name: e.target.value })}
-            placeholder="Puttar"
-            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
+            placeholder="Potter"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium text-muted-foreground">Status</label>
+          <label className="mb-1 block font-medium text-foreground">Status</label>
           <select
             value={query.status}
             onChange={(e) => update({ status: e.target.value })}
-            className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring bg-input"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
           >
-            <option value="">All</option>
+            <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -226,46 +226,46 @@ export default function StudentsClient({ initialQuery }) {
       </section>
 
       {/* Sort bar */}
-      <section className="mb-3 flex flex-wrap items-center gap-2 ">
-        <label className="text-sm font-medium text-muted-foreground">Sort by</label>
+      <section className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <label className="font-semibold text-muted-foreground uppercase tracking-wide">Sort by:</label>
         <select
           value={query.sort_by}
           onChange={(e) => update({ sort_by: e.target.value }, false)}
-          className="rounded-md border border-input px-2 py-1 text-sm bg-input"
+          className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary"
         >
           <option value="email">Email</option>
-          <option value="registration_no">Registration no</option>
-          <option value="first_name">First name</option>
-          <option value="last_name">Last name</option>
+          <option value="registration_no">Registration No</option>
+          <option value="first_name">First Name</option>
+          <option value="last_name">Last Name</option>
           <option value="created_at">Created At</option>
         </select>
         <select
           value={query.sort_order}
           onChange={(e) => update({ sort_order: e.target.value }, false)}
-          className="rounded-md border border-input px-2 py-1 text-sm bg-input"
+          className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary"
         >
-          <option value="asc">Asc</option>
-          <option value="desc">Desc</option>
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
         </select>
       </section>
 
       {/* Table */}
-      <section className=" bg-card border rounded-sm">
+      <section className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full table-fixed">
-
-            <thead className="bg-muted text-center text-xs uppercase text-muted-foreground ">
-              <tr className={`divide-y divide-gray-500`}>
-                <th className="px-4 py-3">Registration no</th>
+          <table className="min-w-full text-left text-sm border-collapse">
+            <thead className="bg-muted/50 border-b border-border text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <tr>
+                <th className="px-4 py-3">Registration No</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Sem</th>
                 <th className="px-4 py-3">Course</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Guardian email</th>
-                <th className="px-4 py-3">Roll no</th>
-                <th className="px-4 py-3 text-card-foreground table-cell border-border border-b-1">V</th>              </tr>
+                <th className="px-4 py-3">Guardian Email</th>
+                <th className="px-4 py-3">Roll No</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
             </thead>
 
             <tbody className="divide-y  divide-border">

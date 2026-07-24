@@ -1,3 +1,5 @@
+import { useState, useMemo } from "react";
+
 type Subject = {
   subject_code: string;
   subject_name: string;
@@ -20,11 +22,23 @@ export default function AssignedSubjectsPanel({
   actionLoadingId,
   facultySelected,
 }: AssignedSubjectsPanelProps) {
+  const [filterQuery, setFilterQuery] = useState("");
+
+  const filteredSubjects = useMemo(() => {
+    if (!filterQuery.trim()) return assignedSubjects;
+    const q = filterQuery.toLowerCase();
+    return assignedSubjects.filter(
+      (s) =>
+        (s.subject_name || "").toLowerCase().includes(q) ||
+        (s.subject_code || "").toLowerCase().includes(q)
+    );
+  }, [assignedSubjects, filterQuery]);
+
   if (!facultySelected) {
     return (
-      <section className="...">
-        <h2>Assigned subjects</h2>
-        <p className="text-sm text-muted-foreground">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <h2 className="text-base font-semibold text-foreground">Assigned subjects</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Choose a faculty member to view assignments.
         </p>
       </section>
@@ -33,24 +47,42 @@ export default function AssignedSubjectsPanel({
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <h2 className="text-base font-semibold text-foreground">Assigned subjects</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Review and rebalance the selected faculty’s current subject load.
-      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Assigned subjects</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Review and rebalance current load ({assignedSubjects.length}).
+          </p>
+        </div>
+      </div>
+
+      {assignedSubjects.length > 0 && (
+        <div className="mt-3">
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Search assigned subjects..."
+            className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-primary"
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="mt-4 space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       ) : error ? (
         <p className="mt-4 text-sm text-error">{error}</p>
       ) : assignedSubjects.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">No subjects assigned yet.</p>
+      ) : filteredSubjects.length === 0 ? (
+        <p className="mt-4 text-xs text-muted-foreground">No assigned subjects match &quot;{filterQuery}&quot;.</p>
       ) : (
-        <div className="mt-4 space-y-3">
-          {assignedSubjects.map((subject) => {
+        <div className="mt-3 space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          {filteredSubjects.map((subject) => {
             const loadingRow = actionLoadingId === subject.subject_code;
 
             return (

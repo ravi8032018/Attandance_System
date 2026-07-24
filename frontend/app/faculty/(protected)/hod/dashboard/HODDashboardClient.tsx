@@ -277,8 +277,8 @@ export default function HODDashboardClient() {
   };
 
   return (
-   <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
-     <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl">
 
        {/* Header */}
        <div className="mb-8">

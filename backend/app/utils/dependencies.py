@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(__file__), "../../../.env")
 load_dotenv(dotenv_path=env_path)
 
+from bson.errors import InvalidId
+
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 
@@ -20,45 +22,46 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/signin")
 # ✅ Core extractor of user info
 # -----------------------------
 async def get_current_user(request: Request):
-    # print("--> testing frontend : entering get_current_user")
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     token = request.cookies.get("dept_user_token")
-    # print("--> token : {}".format(token))
+
     # 2. If not in cookie, look for Authorization header (for tools like Postman)
     if not token and "authorization" in request.headers:
         auth_header = request.headers["authorization"]
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
 
-    # print("--> testing frontend : just before not token")
     if not token:
         raise credentials_exception
-    # print("--> testing frontend : just after not token")
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         token_role: str = payload.get("token_role")  # ← This must match what you encode
-        print("--> Token Role:", token_role)
 
         if not user_id or not token_role:
             raise credentials_exception
-        user= None
+
+        try:
+            obj_id = ObjectId(user_id)
+        except (InvalidId, TypeError, ValueError):
+            raise credentials_exception
+
+        user = None
         unique_id = None
         if token_role == 'admin':
-            user = await db.Admins.find_one({"_id": ObjectId(user_id)})
-        if token_role == 'faculty' or token_role == 'hod':
-            user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
-            unique_id = user["faculty_id"] if user else None
-        if token_role == 'student' or token_role == 'cr':
-            user = await db.Students.find_one({"_id": ObjectId(user_id)})
-            unique_id = user["registration_no"] if user else None
-        print("--> unique_id from get curr user : ", unique_id)    
-        print("--> user from get curr user : ", user)
+            user = await db.Admins.find_one({"_id": obj_id})
+        elif token_role in ('faculty', 'hod'):
+            user = await db.Faculty.find_one({"_id": obj_id})
+            unique_id = user.get("faculty_id") if user else None
+        elif token_role in ('student', 'cr'):
+            user = await db.Students.find_one({"_id": obj_id})
+            unique_id = user.get("registration_no") if user else None
+
         if not user:
             raise credentials_exception
 
@@ -71,8 +74,7 @@ async def get_current_user(request: Request):
             "token_role": token_role          # role from token
         }
 
-    except JWTError as e:
-        print("JWT Decode Error:", str(e))
+    except JWTError:
         raise credentials_exception
 
 # -----------------------------

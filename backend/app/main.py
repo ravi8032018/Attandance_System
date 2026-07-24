@@ -11,7 +11,6 @@ from backend.app.routers.attendance_routers import router as attendance_router
 from backend.app.routers.notification.notification_router import router as notification_router
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.curriculum.curriculum_routers import router as curriculum_router
-from backend.app.routers.notification.notification_router import router as notification_router
 from backend.app.routers.notification.ws_routers import router as ws_router
 from backend.app.utils.cache_files_checker import cache_files_checker
 import os
@@ -31,10 +30,12 @@ origins = [
     "https://attandance-system-kqy4.onrender.com",  # render frontend url
     "https://attandance-system-mu.vercel.app", # vercel frontend url
 ]
+if FRONTEND_ORIGIN and FRONTEND_ORIGIN not in origins:
+    origins.append(FRONTEND_ORIGIN)
 
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,7 +75,6 @@ async def connect():
         await db["PasswordResetDB"].create_index("expires_at")
         await db["PasswordResetDB"].create_index("email")
         await db["PasswordResetDB"].create_index("is_used")
-        await db["PasswordResetDB"].create_index("expires_at")
         await db["PasswordResetDB"].create_index("created_at")
 
         # await db["Attendance"].create_index("session_id", unique=True)
@@ -109,5 +109,4 @@ fastapi_app.include_router(faculty_router)
 fastapi_app.include_router(attendance_router)
 fastapi_app.include_router(notification_router)
 fastapi_app.include_router(curriculum_router)
-fastapi_app.include_router(notification_router)
 fastapi_app.include_router(ws_router)

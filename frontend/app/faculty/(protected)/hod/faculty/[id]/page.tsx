@@ -89,8 +89,8 @@ export default function FacultyProfileClient({ params }) {
       {/* Breadcrumbs */}
       <Breadcrumbs
           items={[
-            { label: "HOD", href: "/hod" },
-            { label: "Faculty Management", href: "/hod/faculty" },
+            { label: "HOD", href: "/faculty/hod/dashboard" },
+            { label: "Faculty Management", href: "/faculty/hod/faculty" },
             { label: facultyId },
           ]}
         />
@@ -162,7 +162,7 @@ export default function FacultyProfileClient({ params }) {
               <div className="flex flex-col sm:items-end sm:justify-end">
                 <div className="flex flex-wrap gap-2">
                   <Link
-                    href={`/hod/faculty/assign-subject?faculty_id=${f.faculty_id}`}
+                    href={`/faculty/hod/faculty/assign-subject?faculty_id=${f.faculty_id}`}
                     className="rounded-md border border-primary bg-primary px-3 py-2 text-sm text-white hover:opacity-90 shadow-sm hover:shadow-md"
                   >
                     Assign Subject
@@ -182,20 +182,20 @@ export default function FacultyProfileClient({ params }) {
         </section>
       </div>
 
-      {/* Tabs (keeping simple for now; you can add more later) */}
+      {/* Tabs */}
       <section className="mb-3">
         <div className="flex border-b-2 border-border">
-          {["overview"].map((t) => (
+          {["overview", "assigned-subjects", "workload"].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`-mb-px border-b-2 px-6 py-2 text-md capitalize hover:text-foreground hover:bg-card hover:border-b-1 hover:border-foreground hover:shadow-sm ${
                tab === t
-                 ? "border-foreground text-foreground bg-card shadow-md"
+                 ? "border-foreground text-foreground bg-card shadow-md font-semibold"
                  : "border-transparent text-muted-foreground"
               }`}
             >
-              {t}
+              {t.replace("-", " ")}
             </button>
           ))}
         </div>
@@ -250,10 +250,9 @@ export default function FacultyProfileClient({ params }) {
 
     {/* Right: subjects assigned */}
     <div className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-lg">
-      {/* top heading */}
       <h2 className="flex justify-between pr-2 mb-3 font-semibold">
         <span>Subjects assigned</span>
-        <span className="ml-2 text-sm ">
+        <span className="ml-2 text-sm text-primary font-bold">
           ({subjectsLength})
         </span>
       </h2>
@@ -268,7 +267,7 @@ export default function FacultyProfileClient({ params }) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1 overflow-y-auto max-h-40 pr-1">
           {subjects.map((subject) => (
             <div
-              key={subject.subject_code}   // add this line
+              key={subject.subject_code}
               className="rounded-xl border border-border bg-muted p-3 shadow-sm hover:shadow-md transition"
             >
               <p className="text-sm font-semibold text-foreground">
@@ -284,7 +283,100 @@ export default function FacultyProfileClient({ params }) {
         <p className="text-sm text-muted-foreground">No subjects available.</p>
       )}
     </div>
-      </section>
+  </section>
+     )}
+
+     {tab === "assigned-subjects" && (
+       <section className="rounded-lg border bg-card p-5 shadow-sm">
+         <div className="flex items-center justify-between mb-4">
+           <div>
+             <h2 className="text-base font-semibold">All Assigned Subjects</h2>
+             <p className="text-xs text-muted-foreground mt-0.5">Comprehensive curriculum overview for Dr. {fullName}</p>
+           </div>
+           <Link
+             href={`/faculty/hod/faculty/assign-subject?faculty_id=${facultyId}`}
+             className="rounded-md border border-primary bg-primary px-3 py-1.5 text-xs text-white hover:opacity-90 shadow-sm"
+           >
+             + Assign / Remove Subjects
+           </Link>
+         </div>
+
+         {subjectsLoading ? (
+           <div className="grid gap-3 md:grid-cols-2">
+             {Array.from({ length: 4 }).map((_, i) => (
+               <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+             ))}
+           </div>
+         ) : subjects.length === 0 ? (
+           <p className="text-sm text-muted-foreground">No subjects assigned to this faculty member yet.</p>
+         ) : (
+           <div className="grid gap-3 md:grid-cols-2">
+             {subjects.map((s) => (
+               <div key={s.subject_code} className="rounded-xl border border-border bg-muted/60 p-4 shadow-sm">
+                 <div className="flex items-start justify-between">
+                   <div>
+                     <span className="font-semibold text-primary text-sm">{s.subject_code}</span>
+                     <h3 className="font-medium text-foreground text-sm mt-0.5">{s.subject_name}</h3>
+                   </div>
+                   <span className="text-[11px] bg-card px-2 py-0.5 rounded border border-border text-muted-foreground font-mono">
+                     Sem {s.semester || "N/A"}
+                   </span>
+                 </div>
+               </div>
+             ))}
+           </div>
+         )}
+       </section>
+     )}
+
+     {tab === "workload" && (
+       <section className="rounded-lg border bg-card p-5 shadow-sm max-w-2xl">
+         <h2 className="text-base font-semibold mb-1">Workload Capacity & Balance</h2>
+         <p className="text-xs text-muted-foreground mb-4">Teaching load distribution relative to department standard capacity (5 subjects).</p>
+
+         <div className="grid grid-cols-2 gap-4 mb-4">
+           <div className="rounded-xl bg-muted p-3.5">
+             <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Assigned Count</p>
+             <p className="mt-1 font-bold text-foreground text-lg">{subjectsLength} / 5</p>
+           </div>
+           <div className="rounded-xl bg-muted p-3.5">
+             <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Status</p>
+             <span className={`mt-1 inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+               subjectsLength === 0
+                 ? "bg-muted text-muted-foreground"
+                 : subjectsLength <= 2
+                 ? "bg-success/15 text-success border border-success/30"
+                 : subjectsLength <= 4
+                 ? "bg-primary/15 text-primary border border-primary/30"
+                 : "bg-warning/15 text-warning border border-warning/30"
+             }`}>
+               {subjectsLength === 0 ? "Unassigned" : subjectsLength <= 2 ? "Light Load" : subjectsLength <= 4 ? "Optimal Load" : "Heavy Load"}
+             </span>
+           </div>
+         </div>
+
+         <div className="mb-4">
+           <div className="flex justify-between text-xs text-muted-foreground mb-1">
+             <span>Capacity utilization</span>
+             <span className="font-medium">{Math.min(100, Math.round((subjectsLength / 5) * 100))}%</span>
+           </div>
+           <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+             <div
+               className={`h-2.5 rounded-full transition-all duration-300 ${
+                 subjectsLength > 4 ? "bg-warning" : subjectsLength > 2 ? "bg-primary" : "bg-success"
+               }`}
+               style={{ width: `${Math.min(100, Math.round((subjectsLength / 5) * 100))}%` }}
+             />
+           </div>
+         </div>
+
+         <Link
+           href={`/faculty/hod/faculty/assign-subject?faculty_id=${facultyId}`}
+           className="inline-block rounded-md border border-primary bg-primary px-4 py-2 text-xs font-medium text-white hover:opacity-90 shadow-sm"
+         >
+           Manage Faculty Assignments →
+         </Link>
+       </section>
      )}
     </main>
   );

@@ -2,9 +2,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Switch between env files here only
-ENVIRONMENT = "development"   # or "production"
-# ENVIRONMENT = "production"   
+# Switch between env files based on ENV variable
+ENVIRONMENT = os.getenv("ENV", "development")   # "development" or "production"
 
 base_dir = Path(__file__).resolve().parent.parent
 # print("--> env addr: ",base_dir)
