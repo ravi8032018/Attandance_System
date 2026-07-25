@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -18,60 +20,60 @@
 :root {
   color-scheme: light;
   
-  /* Base colors - Clean Light Slate Canvas */
-  --background: #f6f7fb;
+  /* Modern Executive Light Canvas */
+  --background: #f8fafc;
   --foreground: #0f172a;
   
-  /* Solid Surface colors */
+  /* Crisp Solid Card Surfaces */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
   
-  /* Single Primary Accent (Indigo) */
+  /* Primary Indigo Accent & Secondary */
   --primary: #4f46e5;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
+  --secondary: #eef2ff;
+  --secondary-foreground: #3730a3;
   
-  /* Flat Status Indicators */
+  /* Status Color Tokens */
   --success: #059669;
   --warning: #d97706;
   --error: #e11d48;
   
-  /* Solid 1px Borders and Focus Rings */
+  /* Sharp 1px Borders & Focus Rings */
   --border: #e2e8f0;
-  --input: #e2e8f0;
+  --input: #cbd5e1;
   --ring: #6366f1;
 }
 
 .dark {
   color-scheme: dark;
   
-  /* Base colors - Deep Slate Canvas */
-  --background: #0b0e14;
+  /* Deep Obsidian Slate Canvas */
+  --background: #090d16;
   --foreground: #f8fafc;
   
-  /* Solid Dark Surface colors */
-  --card: #12151d;
+  /* Premium Dark Card Surfaces */
+  --card: #111827;
   --card-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
   
-  /* Single Primary Accent (Indigo) */
+  /* Primary Indigo Accent & Secondary */
   --primary: #6366f1;
   --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
+  --secondary: #1e1b4b;
+  --secondary-foreground: #e0e7ff;
   
-  /* Flat Status Indicators */
+  /* Status Color Tokens */
   --success: #10b981;
   --warning: #f59e0b;
   --error: #f43f5e;
   
-  /* Solid 1px Borders and Focus Rings */
-  --border: #1e293b;
-  --input: #1e293b;
+  /* Crisp Dark Borders & Focus Rings */
+  --border: #1f2937;
+  --input: #374151;
   --ring: #818cf8;
 }
 
@@ -83,29 +85,45 @@ body {
   overflow-x: hidden;
 }
 
-/* Surface Cards - Solid, 1px Border, Restrained Elevation */
+/* Ensure Form Select Options inherit proper background & text colors in both modes */
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.dark select option {
+  background-color: #111827;
+  color: #f8fafc;
+}
+
+/* Surface Cards - Solid, Crisp 1px Border, Modern Elevation */
 .glass-card,
 .solid-card {
   background-color: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
 }
 
 .dark .glass-card,
 .dark .solid-card {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* Fast, Purposeful Hover - 1px Accent Border */
+/* Hover Accent Effects */
 .glass-card-hover,
 .solid-card-hover {
-  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
 }
 
 .glass-card-hover:hover,
 .solid-card-hover:hover {
   border-color: var(--primary);
-  box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.12), 0 8px 10px -6px rgba(79, 70, 229, 0.05);
+}
+
+.dark .glass-card-hover:hover,
+.dark .solid-card-hover:hover {
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.25);
 }
 
 /* Disciplined Accent Utilities */
@@ -118,12 +136,16 @@ body {
   color: var(--primary);
 }
 
-/* Login Static Low-Opacity Backdrop Wash (No glow animation) */
+/* Login Backdrop Wash */
 .login-backdrop-wash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
+  background: radial-gradient(circle at 50% 20%, rgba(79, 70, 229, 0.08) 0%, transparent 60%);
   pointer-events: none;
+}
+
+.dark .login-backdrop-wash {
+  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
 }
 
 /* Accessibility: Prefers Reduced Motion Fallback */

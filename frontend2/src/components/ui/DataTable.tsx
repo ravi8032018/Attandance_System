@@ -28,11 +28,11 @@ export function DataTable<T>({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse min-w-[650px]">
           <thead>
-            <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/50">
+            <tr className="border-b border-border bg-muted/60">
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`py-3.5 px-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest ${col.className || ""}`}
+                  className={`py-3.5 px-4 text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest ${col.className || ""}`}
                 >
                   {col.header}
                 </th>
@@ -54,7 +54,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-10 text-center text-sm font-medium text-muted-foreground"
+                  className="py-10 text-center text-sm font-semibold text-muted-foreground"
                 >
                   {emptyMessage}
                 </td>
@@ -63,10 +63,10 @@ export function DataTable<T>({
               data.map((item) => (
                 <tr
                   key={keyExtractor(item)}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150"
+                  className="hover:bg-muted/50 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150"
                 >
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={`py-3.5 px-4 text-foreground font-medium ${col.className || ""}`}>
+                    <td key={cIdx} className={`py-3.5 px-4 text-foreground font-semibold ${col.className || ""}`}>
                       {col.accessor(item)}
                     </td>
                   ))}

@@ -4,62 +4,127 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFacultyMe } from "@/hooks/useFacultyMe";
+import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 
-interface NavLink {
+interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  badge?: string;
+  icon: (props: { className?: string }) => React.JSX.Element;
 }
 
-interface NavSection {
-  key: "facultyWorkspace" | "departmentWorkspace";
-  title: string;
-  links: NavLink[];
+// Vector Icons (24px x 24px)
+function DashboardIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  );
 }
 
-const facultyLinks: NavLink[] = [
-  { href: "/faculty/dashboard", label: "My Dashboard", icon: "📊" },
-  { href: "/faculty/profile", label: "My Profile", icon: "👤" },
-  { href: "/faculty/list_students", label: "My Students", icon: "🎓" },
-  { href: "/faculty/attendance/take", label: "Take Attendance", icon: "📝" },
-  { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: "✅" },
+function ProfileIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function StudentsIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+    </svg>
+  );
+}
+
+function TakeAttendanceIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  );
+}
+
+function ApproveAttendanceIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function HodDashboardIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0l2 2m-2-2l-2 2" />
+    </svg>
+  );
+}
+
+function FacultyManagementIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+function CurriculumIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  );
+}
+
+function ReportsIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+  );
+}
+
+function HamburgerIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-5 h-5 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
+const facultyNavItems: NavItem[] = [
+  { href: "/faculty/dashboard", label: "My Dashboard", icon: DashboardIcon },
+  { href: "/faculty/profile", label: "My Profile", icon: ProfileIcon },
+  { href: "/faculty/list_students", label: "My Students", icon: StudentsIcon },
+  { href: "/faculty/attendance/take", label: "Take Attendance", icon: TakeAttendanceIcon },
+  { href: "/faculty/attendance/approve", label: "Approve Sessions", badge: "2", icon: ApproveAttendanceIcon },
 ];
 
-const hodSections: NavSection[] = [
-  {
-    key: "facultyWorkspace",
-    title: "Faculty Workspace",
-    links: [
-      { href: "/faculty/dashboard", label: "My Dashboard", icon: "📊" },
-      { href: "/faculty/profile", label: "My Profile", icon: "👤" },
-      { href: "/faculty/list_students", label: "My Students", icon: "🎓" },
-      { href: "/faculty/attendance/take", label: "Take Attendance", icon: "📝" },
-      { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: "✅" },
-    ],
-  },
-  {
-    key: "departmentWorkspace",
-    title: "Department Workspace",
-    links: [
-      { href: "/faculty/hod/dashboard", label: "HOD Dashboard", icon: "🏛️" },
-      { href: "/faculty/hod/faculty", label: "Faculty Management", icon: "👥" },
-      { href: "/faculty/hod/students", label: "Student Management", icon: "🎓" },
-      { href: "/faculty/hod/curriculum", label: "Curriculum Catalog", icon: "📚" },
-      { href: "/faculty/hod/reports", label: "Reports & Analytics", icon: "📈" },
-    ],
-  },
+const hodNavItems: NavItem[] = [
+  { href: "/faculty/hod/dashboard", label: "HOD Overview", icon: HodDashboardIcon },
+  { href: "/faculty/hod/faculty", label: "Faculty Roster", icon: FacultyManagementIcon },
+  { href: "/faculty/hod/students", label: "Student Registry", icon: StudentsIcon },
+  { href: "/faculty/hod/curriculum", label: "Curriculum Catalog", icon: CurriculumIcon },
+  { href: "/faculty/hod/reports", label: "Reports & Analytics", icon: ReportsIcon },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isHod } = useFacultyMe();
+  const { faculty, isHod } = useFacultyMe();
 
   const [expanded, setExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    facultyWorkspace: true,
-    departmentWorkspace: true,
-  });
 
   useEffect(() => {
     try {
@@ -68,9 +133,13 @@ export function Sidebar() {
         setExpanded(saved === "true");
       }
     } catch (e) {
-      // Ignore
+      // Fallback
     }
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   function toggleExpanded() {
     setExpanded((prev) => {
@@ -78,125 +147,196 @@ export function Sidebar() {
       try {
         localStorage.setItem("portal_sidebar_expanded", String(next));
       } catch (e) {
-        // Ignore
+        // Fallback
       }
       return next;
     });
   }
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  // Check active navigation link
+  const isLinkActive = (href: string) => {
+    if (href === "/faculty/dashboard") return pathname === href;
+    if (href === "/faculty/hod/dashboard") return pathname === href;
+    return pathname.startsWith(href);
+  };
 
-  function toggleSection(key: string) {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
+  const renderNavContent = (isExpanded: boolean, isMobileDrawer = false) => (
+    <div className="flex h-full flex-col justify-between p-3 select-none pb-6">
+      {/* Top Header: Hamburger Toggle */}
+      <div className="shrink-0 flex items-center justify-between pb-2 mb-2 border-b border-border/70">
+        <button
+          type="button"
+          onClick={() => {
+            if (isMobileDrawer) {
+              setMobileOpen(false);
+            } else {
+              toggleExpanded();
+            }
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-card hover:bg-muted text-foreground border border-border transition-all duration-300 active:scale-95 shadow-xs ml-2"
+          title={isMobileDrawer ? "Close Menu" : isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+          aria-label="Toggle Sidebar Menu"
+        >
+          <HamburgerIcon />
+        </button>
+      </div>
 
-  const activeInDepartment = pathname.includes("/hod/");
-
-  const navContent = (
-    <div className="flex h-full flex-col justify-between p-3.5">
-      <div>
-        {/* Brand Header */}
-        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-border">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white text-xl">
-              🎓
-            </div>
-            {expanded && (
-              <div className="truncate">
-                <span className="font-extrabold text-foreground text-sm tracking-tight block truncate">
-                  Academic Portal
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider block text-indigo-600 dark:text-indigo-400">
-                  {isHod ? (activeInDepartment ? "Dept Workspace" : "Faculty Workspace") : "Faculty Mode"}
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={toggleExpanded}
-            className="rounded-xl p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150 min-h-[36px] min-w-[36px] grid place-items-center"
-            title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+      {/* Middle Navigation Groups (Scrollable container pinned inside view) */}
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-0 custom-scrollbar">
+        {/* Section 1: Faculty Workspace */}
+        <div>
+          <div
+            className={`px-2 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 ${isExpanded ? "max-h-8 opacity-100 py-1 mb-1" : "max-h-0 opacity-0 py-0 mb-0"
+              }`}
           >
-            {expanded ? "◀" : "▶"}
-          </button>
+            Faculty Workspace
+          </div>
+          <div className="space-y-1">
+            {facultyNavItems.map((item) => {
+              const active = isLinkActive(item.href);
+              const IconComponent = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => {
+                    if (isMobileDrawer) setMobileOpen(false);
+                  }}
+                  title={!isExpanded ? item.label : undefined}
+                  className={`group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out h-10 ${active
+                    ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm font-bold"
+                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    }`}
+                >
+                  <IconComponent
+                    className={`w-6 h-6 shrink-0 transition-transform duration-200 group-hover:scale-105 ${active ? "text-white" : "text-muted-foreground group-hover:text-foreground"
+                      }`}
+                  />
+
+                  {/* Label with smooth width + opacity slide transition */}
+                  <span
+                    className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
+                      }`}
+                  >
+                    {item.label}
+                  </span>
+
+                  {/* Badge */}
+                  {item.badge && (
+                    <span
+                      className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${active
+                        ? "bg-white/20 text-white"
+                        : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                        } ${isExpanded ? "max-w-20 opacity-100" : "max-w-0 opacity-0 p-0 border-0"}`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+
+                  {/* Tooltip on Hover when Collapsed */}
+                  {!isExpanded && (
+                    <div className="absolute left-full ml-3 z-50 hidden group-hover:flex items-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap shadow-lg">
+                      {item.label}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Links List */}
-        <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)] pr-1">
-          {isHod ? (
-            hodSections.map((sec) => (
-              <div key={sec.key} className="mb-4">
-                {expanded && (
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(sec.key)}
-                    className="flex w-full items-center justify-between py-1.5 px-2 text-left text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/80 hover:text-foreground rounded-lg transition-colors duration-150"
-                  >
-                    <span>{sec.title}</span>
-                    <span className={`text-[10px] transition-transform duration-150 ${openSections[sec.key] ? "rotate-90" : ""}`}>
-                      ▶
-                    </span>
-                  </button>
-                )}
-
-                <div className={expanded ? (openSections[sec.key] ? "mt-1 space-y-1 border-l-2 border-border pl-2.5 ml-1.5" : "hidden") : "space-y-1"}>
-                  {sec.links.map((link) => {
-                    const active = pathname === link.href || (link.href !== "/faculty/dashboard" && pathname.startsWith(link.href));
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        title={!expanded ? link.label : undefined}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors duration-150 min-h-[42px] ${
-                          active
-                            ? "bg-indigo-600 dark:bg-indigo-500 text-white"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
-                      >
-                        <span className="shrink-0 text-base">{link.icon}</span>
-                        {expanded && <span className="truncate">{link.label}</span>}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          ) : (
+        {/* Section 2: Department Management (HOD) */}
+        {isHod && (
+          <div>
+            <div
+              className={`px-2 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 ${isExpanded ? "max-h-8 opacity-100 py-1 mb-1" : "max-h-0 opacity-0 py-0 mb-0"
+                }`}
+            >
+              Department Management
+            </div>
             <div className="space-y-1">
-              {facultyLinks.map((link) => {
-                const active = pathname === link.href || (link.href !== "/faculty/dashboard" && pathname.startsWith(link.href));
+              {hodNavItems.map((item) => {
+                const active = isLinkActive(item.href);
+                const IconComponent = item.icon;
+
                 return (
                   <Link
-                    key={link.href}
-                    href={link.href}
-                    title={!expanded ? link.label : undefined}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors duration-150 min-h-[42px] ${
-                      active
-                        ? "bg-indigo-600 dark:bg-indigo-500 text-white"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => {
+                      if (isMobileDrawer) setMobileOpen(false);
+                    }}
+                    title={!isExpanded ? item.label : undefined}
+                    className={`group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out h-10 ${active
+                      ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm font-bold"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      }`}
                   >
-                    <span className="shrink-0 text-base">{link.icon}</span>
-                    {expanded && <span className="truncate">{link.label}</span>}
+                    <IconComponent
+                      className={`w-6 h-6 shrink-0 transition-transform duration-200 group-hover:scale-105 ${active ? "text-white" : "text-muted-foreground group-hover:text-foreground"
+                        }`}
+                    />
+
+                    {/* Label with smooth width + opacity slide transition */}
+                    <span
+                      className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
+                        }`}
+                    >
+                      {item.label}
+                    </span>
+
+                    {/* Tooltip on Hover when Collapsed */}
+                    {!isExpanded && (
+                      <div className="absolute left-full ml-3 z-50 hidden group-hover:flex items-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap shadow-lg">
+                        {item.label}
+                      </div>
+                    )}
                   </Link>
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* User Logout Footer */}
-      <div className="pt-3 border-t border-border mt-auto">
+      {/* Footer: User Profile & Sign Out */}
+      <div className="shrink-0 pt-2 mt-2 border-t border-border/70 space-y-1">
+        {/* User Card */}
+        {faculty && (
+          <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl bg-muted/40 border border-border/50 overflow-hidden">
+            <FacultyAvatar
+              firstName={faculty.first_name}
+              lastName={faculty.last_name}
+              photoUrl={faculty.photo_url}
+              size="sm"
+            />
+            <div className={`truncate whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-40 opacity-100" : "max-w-0 opacity-0"}`}>
+              <p className="text-xs font-extrabold text-foreground truncate leading-tight">
+                {faculty.first_name} {faculty.last_name}
+              </p>
+              <p className="text-[10px] font-semibold text-muted-foreground truncate leading-tight">
+                {isHod ? "HOD / Professor" : "Faculty Member"}
+              </p>
+            </div>
+          </div>
+        )}
+
         <Link
           href="/login"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
+          onClick={() => {
+            if (isMobileDrawer) setMobileOpen(false);
+          }}
+          className="group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all duration-300 ease-in-out h-10"
+          title="Sign Out"
         >
-          <span className="text-base">🚪</span>
-          {expanded && <span>Sign Out</span>}
+          <LogoutIcon className="w-6 h-6 shrink-0" />
+          <span
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
+              }`}
+          >
+            Sign Out
+          </span>
         </Link>
       </div>
     </div>
@@ -209,13 +349,13 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          className="flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 text-xs font-extrabold shadow-lg active:scale-95 transition-all duration-150"
+          className="flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 text-xs font-extrabold shadow-xl active:scale-95 transition-all duration-150"
         >
-          <span>☰ Portal Menu</span>
+          <span>☰ Menu</span>
         </button>
       </div>
 
-      {/* Mobile Backdrop */}
+      {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/50 lg:hidden transition-opacity"
@@ -223,22 +363,20 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (Always renders fully expanded with all text & icons visible, Hamburger closes drawer) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 solid-card border-r border-border shadow-xl transition-transform duration-200 ease-out lg:hidden ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
-        {navContent}
+        {renderNavContent(true, true)}
       </aside>
 
-      {/* Desktop Responsive Sidebar */}
+      {/* Desktop Responsive Sidebar below TopHeader */}
       <aside
-        className={`hidden lg:block border-r border-border solid-card transition-all duration-200 ease-out h-screen sticky top-0 shrink-0 ${
-          expanded ? "w-64" : "w-20"
-        }`}
+        className={`hidden lg:block border-r border-border/70 bg-card/90 backdrop-blur-md transition-all duration-300 ease-in-out sticky top-[57px] h-[calc(100vh-57px)] shrink-0 ${expanded ? "w-60" : "w-20"
+          }`}
       >
-        {navContent}
+        {renderNavContent(expanded, false)}
       </aside>
     </>
   );

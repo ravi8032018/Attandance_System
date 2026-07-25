@@ -42,7 +42,7 @@ export default function StudentListPage() {
     {
       header: "Registration No",
       accessor: (item) => (
-        <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+        <span className="font-mono text-sm font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wide">
           {item.registration_no}
         </span>
       ),
@@ -56,12 +56,8 @@ export default function StudentListPage() {
       ),
     },
     {
-      header: "Roll Number",
-      accessor: (item) => <span className="text-xs text-muted-foreground">{item.roll_number || "—"}</span>,
-    },
-    {
       header: "Department",
-      accessor: (item) => <Badge variant="secondary">{item.department}</Badge>,
+      accessor: (item) => <Badge variant="secondary">{item.department || "N/A"}</Badge>,
     },
     {
       header: "Semester",

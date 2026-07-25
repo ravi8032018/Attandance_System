@@ -41,6 +41,7 @@ async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> Mult
                     "reg_no": "$attendance_records.registration_no",
                     "subject_code": "$subject_code",
                 },
+                "subject_name": {"$first": "$subject_name"},
                 "present_count": {
                     "$sum": {
                         "$cond": [
@@ -84,6 +85,15 @@ async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> Mult
     if not result:
         return MultiSubjectReportResponse(reports=[])
 
+    # Fetch curriculum lookup map for missing subject names
+    curriculum_docs = await db.Curriculum.find({}).to_list(None)
+    curr_map = {
+        subj["subject_code"]: subj["subject_name"]
+        for cdoc in curriculum_docs
+        for subj in cdoc.get("subjects", [])
+        if "subject_code" in subj and "subject_name" in subj
+    }
+
     report_data = result[0]
     present = report_data["present_count"]
     absent = report_data["absent_count"]
@@ -94,10 +104,14 @@ async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> Mult
         round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
     )
 
+    subj_code = report_data["_id"]["subject_code"]
+    subj_name = report_data.get("subject_name") or curr_map.get(subj_code)
+
     return MultiSubjectReportResponse(    
         reports=[   
                  StudentSubjectReportResponse(
-                    subject_code=report_data["_id"]["subject_code"],
+                    subject_code=subj_code,
+                    subject_name=subj_name,
                     total_classes=total_classes,
                     present_count=present,
                     absent_count=absent,
@@ -126,6 +140,7 @@ async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiS
                     "reg_no": "$attendance_records.registration_no",
                     "subject_code": "$subject_code",
                 },
+                "subject_name": {"$first": "$subject_name"},
                 "present_count": {
                     "$sum": {
                         "$cond": [
@@ -169,6 +184,15 @@ async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiS
     if not result:
         return MultiSubjectReportResponse(reports=[])
 
+    # Fetch curriculum lookup map for missing subject names
+    curriculum_docs = await db.Curriculum.find({}).to_list(None)
+    curr_map = {
+        subj["subject_code"]: subj["subject_name"]
+        for cdoc in curriculum_docs
+        for subj in cdoc.get("subjects", [])
+        if "subject_code" in subj and "subject_name" in subj
+    }
+
     reports: list[StudentSubjectReportResponse] = []
     for doc in result:
         present = doc["present_count"]
@@ -179,9 +203,13 @@ async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiS
             round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
         )
 
+        subj_code = doc["_id"]["subject_code"]
+        subj_name = doc.get("subject_name") or curr_map.get(subj_code)
+
         reports.append(
             StudentSubjectReportResponse(
-                subject_code=doc["_id"]["subject_code"],
+                subject_code=subj_code,
+                subject_name=subj_name,
                 total_classes=total_classes,
                 present_count=present,
                 absent_count=absent,

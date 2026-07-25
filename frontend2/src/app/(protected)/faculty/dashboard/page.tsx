@@ -126,6 +126,7 @@ export default function FacultyDashboardPage() {
           value="4 Sessions"
           description="Next: CS301 at 10:30 AM"
           icon="📚"
+          variant="indigo"
         />
         <StatCard
           title="Avg Attendance Rate"
@@ -133,12 +134,14 @@ export default function FacultyDashboardPage() {
           trend={{ value: "+2.1%", positive: true }}
           description="vs. previous week"
           icon="📊"
+          variant="emerald"
         />
         <StatCard
           title="Total Enrolled Students"
           value="142"
           description="Across 3 sections"
           icon="🎓"
+          variant="blue"
         />
         <StatCard
           title="Pending Approvals"
@@ -146,6 +149,7 @@ export default function FacultyDashboardPage() {
           trend={{ value: "Action Required", positive: false }}
           description="Submitted by CRs"
           icon="✅"
+          variant="amber"
         />
       </div>
 

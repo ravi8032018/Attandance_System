@@ -141,6 +141,7 @@ class AttendanceSessionResponse(BaseModel):
 
 class StudentSubjectReportResponse(BaseModel):
     subject_code: str | None = Field(None, description="Subject code for this report")
+    subject_name: str | None = Field(None, description="Subject name for this report")
     total_classes: int = Field(0, description="Total number of classes held for this subject")
     present_count: int = Field(0, description="Number of times the student was marked present")
     absent_count: int = Field(0, description="Number of times the student was marked absent")

@@ -183,6 +183,7 @@ class StudentListResponse(BaseModel):
     last_name: Optional[str] = None
     status: str
     semester: Optional[str] = None
+    department: Optional[str] = None
     course: Optional[str] = None
     contact_number: Optional[str] = None
     guardian_email: Optional[EmailStr] = None

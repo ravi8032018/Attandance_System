@@ -3,6 +3,7 @@
 import React from "react";
 import { useFacultyMe } from "@/hooks/useFacultyMe";
 import { Badge } from "@/components/ui/Badge";
+import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 
 export default function FacultyProfilePage() {
   const { faculty, isHod, loading } = useFacultyMe();
@@ -28,9 +29,12 @@ export default function FacultyProfilePage() {
           {/* Main Card */}
           <div className="solid-card rounded-2xl p-6 border border-border space-y-6">
             <div className="flex items-center gap-4 pb-6 border-b border-border">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-white text-2xl font-bold">
-                {faculty?.first_name ? faculty.first_name[0] : "F"}
-              </div>
+              <FacultyAvatar
+                firstName={faculty?.first_name}
+                lastName={faculty?.last_name}
+                photoUrl={faculty?.photo_url}
+                size="3xl"
+              />
               <div>
                 <h2 className="text-xl font-extrabold text-foreground">
                   {faculty ? `${faculty.first_name} ${faculty.last_name}` : "Faculty Member"}

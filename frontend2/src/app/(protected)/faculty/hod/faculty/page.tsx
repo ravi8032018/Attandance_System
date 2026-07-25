@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
+import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
 
 interface FacultyItem {
@@ -13,6 +14,7 @@ interface FacultyItem {
   email: string;
   department: string;
   assigned_count?: number;
+  photo_url?: string;
 }
 
 export default function HODFacultyListPage() {
@@ -37,9 +39,9 @@ export default function HODFacultyListPage() {
       } catch (e) {
         // Fallback demo items
         setFacultyList([
-          { faculty_id: "CSFAC01", first_name: "Alan", last_name: "Turing", email: "turing@cs.edu", department: "CS", assigned_count: 3 },
-          { faculty_id: "CSFAC02", first_name: "Grace", last_name: "Hopper", email: "hopper@cs.edu", department: "CS", assigned_count: 1 },
-          { faculty_id: "CSFAC03", first_name: "Donald", last_name: "Knuth", email: "knuth@cs.edu", department: "CS", assigned_count: 2 },
+          { faculty_id: "CSFAC01", first_name: "Prodipto", last_name: "Das", email: "pd@aus.ac.in", department: "CS", assigned_count: 3 },
+          { faculty_id: "CSFAC02", first_name: "Pankaj Kumar", last_name: "Deva", email: "pankaj@aus.ac.in", department: "CS", assigned_count: 2 },
+          { faculty_id: "CSFAC03", first_name: "Biswa Ranjan", last_name: "Roy", email: "brr@aus.ac.in", department: "CS", assigned_count: 2 },
         ]);
       } finally {
         setLoading(false);
@@ -55,7 +57,17 @@ export default function HODFacultyListPage() {
     },
     {
       header: "Name",
-      accessor: (item) => <span className="font-semibold text-foreground">{item.first_name} {item.last_name}</span>,
+      accessor: (item) => (
+        <div className="flex items-center gap-2.5">
+          <FacultyAvatar
+            firstName={item.first_name}
+            lastName={item.last_name}
+            photoUrl={item.photo_url}
+            size="sm"
+          />
+          <span className="font-semibold text-foreground">{item.first_name} {item.last_name}</span>
+        </div>
+      ),
     },
     {
       header: "Email",
