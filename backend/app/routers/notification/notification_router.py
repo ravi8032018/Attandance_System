@@ -21,7 +21,7 @@ async def list_notifications(
     '''Endpoint to list notifications for the authenticated user, with optional status filter.'''
     query = {"user_id": current_user["id"]}
     if status == "all":
-        pass
+        query["status"] = {"$ne": "archived"}
     else:   
         query["status"] = status
     now = datetime.now(timezone.utc)

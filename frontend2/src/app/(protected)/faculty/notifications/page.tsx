@@ -3,6 +3,6 @@
 import React from "react";
 import { NotificationsView } from "@/components/notifications/NotificationsView";
 
-export default function StudentNotificationsPage() {
-  return <NotificationsView title="Student Notifications & Alerts" />;
+export default function FacultyNotificationsPage() {
+  return <NotificationsView title="Faculty Notifications & Approvals" />;
 }

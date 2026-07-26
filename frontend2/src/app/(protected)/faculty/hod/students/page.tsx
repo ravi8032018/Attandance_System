@@ -38,7 +38,7 @@ export default function HODStudentsPage() {
       accessor: (item) => <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">{item.registration_no}</span>,
     },
     {
-      header: "Student Name",
+      header: "Name",
       accessor: (item) => <span className="font-semibold text-foreground">{item.first_name} {item.last_name}</span>,
     },
     {
@@ -51,7 +51,7 @@ export default function HODStudentsPage() {
     },
     {
       header: "Status",
-      accessor: () => <Badge variant="success">Active Enrolled</Badge>,
+      accessor: () => <Badge variant="success">Active</Badge>,
     },
     {
       header: "Details",
@@ -60,7 +60,7 @@ export default function HODStudentsPage() {
           href={`/faculty/get-student-by-id?reg=${item.registration_no}`}
           className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
         >
-          Attendance Record →
+          View Profile →
         </Link>
       ),
     },

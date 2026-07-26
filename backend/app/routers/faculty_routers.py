@@ -362,10 +362,161 @@ async def delete_faculty(
         {"faculty_id": faculty_id, "status": "active"},
         {"$set": {"status": "inactive", "updated_at": datetime.utcnow(), "updated_by": current_admin.get('name')}}
     )
-    if not updated_faculty:
-        faculty_exists = await db.Faculty.find_one({"faculty_id": faculty_id})
-        if not faculty_exists:
-            raise HTTPException(status_code=404, detail=f"Faculty with ID {faculty_id} not found.")
-        # If they exist but are inactive, the request is fulfilled. No error.
-    return
+@router.get("/faculty-details/{faculty_id}")
+async def get_faculty_details(
+    faculty_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    '''Returns real-time workload, assigned subjects, attendance stats, and recent sessions for a specific faculty member.'''
+    fac_id_upper = faculty_id.upper()
+    fac = await db.Faculty.find_one({"faculty_id": fac_id_upper})
+    if not fac:
+        fac = await db.Faculty.find_one({"faculty_id": {"$regex": f"^{faculty_id}$", "$options": "i"}})
+    
+    if not fac:
+        raise HTTPException(status_code=404, detail=f"Faculty with ID {faculty_id} not found.")
+
+    fn = fac.get("first_name", "").strip()
+    ln = fac.get("last_name", "").strip()
+    raw_name = f"{fn} {ln}".strip()
+    fac_name = raw_name if raw_name.lower().startswith("dr") else f"Dr. {raw_name}" if raw_name else fac_id_upper
+
+    dept = fac.get("department", "")
+
+    # 1. Fetch assigned subjects from Curriculum
+    curr_docs = db.Curriculum.find({"subjects.faculty_id": fac_id_upper})
+    assigned_subjects = []
+
+    subj_session_counts = {}
+    subj_present_totals = {}
+    subj_record_totals = {}
+
+    async for cdoc in curr_docs:
+        c_dept = cdoc.get("department", "")
+        c_sem = cdoc.get("semester", "")
+        for s in cdoc.get("subjects", []):
+            if s.get("faculty_id") == fac_id_upper:
+                assigned_subjects.append({
+                    "subject_code": s.get("subject_code"),
+                    "subject_name": s.get("subject_name"),
+                    "department": c_dept,
+                    "semester": c_sem,
+                })
+
+    # 2. Fetch attendance sessions conducted by or for this faculty
+    now = datetime.now(timezone.utc)
+    date_7_days_ago = now - timedelta(days=7)
+    date_30_days_ago = now - timedelta(days=30)
+
+    att_cursor = db.Attendance.find({
+        "$or": [
+            {"faculty_id": fac_id_upper},
+            {"faculty_id": str(fac.get("_id"))}
+        ]
+    }).sort("date", -1)
+
+    sessions = []
+    total_present = 0
+    total_records = 0
+
+    weekly_classes = 0
+    monthly_classes = 0
+    cr_delegated_count = 0
+    pending_approvals_count = 0
+
+    async for sess in att_cursor:
+        scode = sess.get("subject_code")
+        status_val = sess.get("status", "")
+        submitted_by = sess.get("submission_details", "faculty")
+
+        if status_val == "pending":
+            pending_approvals_count += 1
+        if "cr" in str(submitted_by).lower():
+            cr_delegated_count += 1
+
+        raw_date = sess.get("date")
+        dt_obj = None
+        if isinstance(raw_date, datetime):
+            dt_obj = raw_date
+        elif isinstance(raw_date, str):
+            try:
+                dt_obj = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+            except Exception:
+                dt_obj = None
+
+        if dt_obj:
+            if dt_obj.tzinfo is None:
+                dt_obj = dt_obj.replace(tzinfo=timezone.utc)
+            is_weekly = dt_obj >= date_7_days_ago
+            is_monthly = dt_obj >= date_30_days_ago
+            dt_str = dt_obj.isoformat()
+        else:
+            is_weekly = False
+            is_monthly = False
+            dt_str = str(raw_date or "")
+
+        if is_weekly:
+            weekly_classes += 1
+        if is_monthly:
+            monthly_classes += 1
+
+        recs = sess.get("attendance_records", [])
+        p_count = sum(1 for r in recs if r.get("status") == "present")
+        a_count = sum(1 for r in recs if r.get("status") == "absent")
+
+        total_present += p_count
+        total_records += len(recs)
+
+        if scode:
+            subj_session_counts[scode] = subj_session_counts.get(scode, 0) + 1
+            subj_present_totals[scode] = subj_present_totals.get(scode, 0) + p_count
+            subj_record_totals[scode] = subj_record_totals.get(scode, 0) + len(recs)
+
+        sessions.append({
+            "session_id": sess.get("session_id", ""),
+            "date": dt_str,
+            "subject_code": scode,
+            "subject_name": sess.get("subject_name", scode),
+            "status": status_val,
+            "submitted_by": submitted_by,
+            "present_count": p_count,
+            "absent_count": a_count,
+            "class_size": len(recs)
+        })
+
+    for sub in assigned_subjects:
+        scode = sub["subject_code"]
+        t_sess = subj_session_counts.get(scode, 0)
+        p_tot = subj_present_totals.get(scode, 0)
+        r_tot = subj_record_totals.get(scode, 0)
+        sub["total_sessions"] = t_sess
+        sub["avg_attendance_pct"] = round((p_tot / r_tot * 100), 1) if r_tot > 0 else 0.0
+
+    avg_attendance_pct = round((total_present / total_records * 100), 1) if total_records > 0 else 0.0
+
+    return {
+        "faculty": {
+            "faculty_id": fac_id_upper,
+            "name": fac_name,
+            "email": fac.get("email", ""),
+            "department": dept,
+            "designation": fac.get("designation", "Faculty"),
+            "status": fac.get("status", "active"),
+            "office_location": fac.get("office_location", ""),
+            "contact_number": fac.get("contact_number", ""),
+            "photo_url": fac.get("photo_url", "")
+        },
+        "stats": {
+            "total_assigned_subjects": len(assigned_subjects),
+            "total_classes_conducted": len(sessions),
+            "classes_last_7_days": weekly_classes,
+            "classes_last_30_days": monthly_classes,
+            "avg_attendance_pct": avg_attendance_pct,
+            "pending_approvals_count": pending_approvals_count,
+            "cr_delegated_count": cr_delegated_count,
+            "total_records_marked": total_records
+        },
+        "assigned_subjects": assigned_subjects,
+        "recent_sessions": sessions[:10]
+    }
 

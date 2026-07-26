@@ -26,17 +26,35 @@ export function hasRole(userRoles: string | string[] | undefined | null, targetR
 }
 
 /**
- * Extracts uppercase initials from all components of a name.
- * Example: "Pankaj Kumar Deva" -> "PKD"
+ * Ensures faculty names always have "Dr." prefix when displayed as text.
+ * Example: "Prodipto Das" -> "Dr. Prodipto Das"
+ */
+export function formatFacultyName(name?: string, fallback = "Dr. Faculty"): string {
+  if (!name || !name.trim()) return fallback;
+  const trimmed = name.trim();
+  if (/^dr\.?/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `Dr. ${trimmed}`;
+}
+
+/**
+ * Extracts uppercase initials from a name, ignoring honorific titles (Dr., Prof., Mr., etc.).
+ * Example: "Dr. Prodipto Das" -> "PD"
+ * Example: "Dr. Pankaj Kumar Deva" -> "PKD"
  */
 export function getInitials(name?: string, fallback = "F"): string {
   if (!name || !name.trim()) return fallback;
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter((part) => !/^(dr|prof|mr|mrs|ms)\.?$/i.test(part));
+
   if (parts.length === 0) return fallback;
   return parts.map((part) => part.charAt(0).toUpperCase()).join("");
 }
 
 export function getFacultyInitials(firstName?: string, lastName?: string): string {
-  const fullName = `${firstName || ""} ${lastName || ""}`.trim();
-  return getInitials(fullName, "F");
+  const rawName = `${firstName || ""} ${lastName || ""}`.trim();
+  return getInitials(rawName, "F");
 }

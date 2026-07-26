@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useFacultyMe } from "@/hooks/useFacultyMe";
-import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
+import { useUserMe } from "@/hooks/useUserMe";
+import { useNotifications } from "@/hooks/useNotifications";
+import { apiFetch } from "@/lib/api";
 
 interface NavItem {
   href: string;
@@ -26,6 +27,14 @@ function ProfileIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function NotificationIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   );
 }
@@ -87,14 +96,6 @@ function ReportsIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function LogoutIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={`w-6 h-6 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-    </svg>
-  );
-}
-
 function HamburgerIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={`w-5 h-5 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
@@ -103,17 +104,33 @@ function HamburgerIcon({ className = "" }: { className?: string }) {
   );
 }
 
+const studentNavItems: NavItem[] = [
+  { href: "/student/dashboard", label: "My Dashboard", icon: DashboardIcon },
+  { href: "/student/profile", label: "My Profile", icon: ProfileIcon },
+  { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
+];
+
+const adminNavItems: NavItem[] = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: DashboardIcon },
+  { href: "/admin/departments", label: "Departments", icon: FacultyManagementIcon },
+  { href: "/admin/students", label: "Students", icon: StudentsIcon },
+  { href: "/admin/courses", label: "Courses", icon: CurriculumIcon },
+  { href: "/admin/reports", label: "Reports", icon: ReportsIcon },
+  { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
+];
+
 const facultyNavItems: NavItem[] = [
   { href: "/faculty/dashboard", label: "My Dashboard", icon: DashboardIcon },
   { href: "/faculty/profile", label: "My Profile", icon: ProfileIcon },
   { href: "/faculty/list_students", label: "My Students", icon: StudentsIcon },
   { href: "/faculty/attendance/take", label: "Take Attendance", icon: TakeAttendanceIcon },
-  { href: "/faculty/attendance/approve", label: "Approve Sessions", badge: "2", icon: ApproveAttendanceIcon },
+  { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: ApproveAttendanceIcon },
+  { href: "/faculty/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
 ];
 
 const hodNavItems: NavItem[] = [
-  { href: "/faculty/hod/dashboard", label: "HOD Overview", icon: HodDashboardIcon },
-  { href: "/faculty/hod/faculty", label: "Faculty Roster", icon: FacultyManagementIcon },
+  { href: "/faculty/hod/dashboard", label: "HoD Dashboard", icon: HodDashboardIcon },
+  { href: "/faculty/hod/faculty", label: "Faculty Registry", icon: FacultyManagementIcon },
   { href: "/faculty/hod/students", label: "Student Registry", icon: StudentsIcon },
   { href: "/faculty/hod/curriculum", label: "Curriculum Catalog", icon: CurriculumIcon },
   { href: "/faculty/hod/reports", label: "Reports & Analytics", icon: ReportsIcon },
@@ -121,7 +138,9 @@ const hodNavItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { faculty, isHod } = useFacultyMe();
+  const { isStudent, isFaculty, isHod, isAdmin } = useUserMe();
+  const { unreadCount } = useNotifications(10000);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
 
   const [expanded, setExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -141,6 +160,27 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Fetch pending attendance approvals count for Faculty / HOD
+  useEffect(() => {
+    if (isFaculty || isHod) {
+      async function fetchPendingCount() {
+        try {
+          const res = await apiFetch("/attendance/approvals?status=pending");
+          if (res.ok) {
+            const data = await res.json();
+            setPendingApprovalsCount(data.total || (data.items ? data.items.length : 0));
+          }
+        } catch (e) {
+          // Silent catch
+        }
+      }
+
+      fetchPendingCount();
+      const interval = setInterval(fetchPendingCount, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isFaculty, isHod]);
+
   function toggleExpanded() {
     setExpanded((prev) => {
       const next = !prev;
@@ -155,10 +195,104 @@ export function Sidebar() {
 
   // Check active navigation link
   const isLinkActive = (href: string) => {
-    if (href === "/faculty/dashboard") return pathname === href;
-    if (href === "/faculty/hod/dashboard") return pathname === href;
+    if (
+      href === "/faculty/dashboard" ||
+      href === "/student/dashboard" ||
+      href === "/admin/dashboard" ||
+      href === "/faculty/hod/dashboard"
+    ) {
+      return pathname === href;
+    }
     return pathname.startsWith(href);
   };
+
+  const renderNavSection = (title: string, items: NavItem[], isExpanded: boolean, isMobileDrawer: boolean) => (
+    <div>
+      <div
+        className={`px-2 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 ${isExpanded ? "max-h-8 opacity-100 py-1 mb-1" : "max-h-0 opacity-0 py-0 mb-0"
+          }`}
+      >
+        {title}
+      </div>
+      <div className="space-y-1">
+        {items.map((item) => {
+          const active = isLinkActive(item.href);
+          const IconComponent = item.icon;
+
+          const isNotificationItem = item.href.includes("notifications");
+          const isApproveItem = item.href.includes("/attendance/approve");
+
+          const showNotifDot = isNotificationItem && unreadCount > 0;
+          const showApproveDot = isApproveItem && pendingApprovalsCount > 0;
+          const hasRedDot = showNotifDot || showApproveDot;
+
+          const displayBadge = showNotifDot
+            ? unreadCount > 9 ? "9+" : String(unreadCount)
+            : showApproveDot
+            ? String(pendingApprovalsCount)
+            : item.badge;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => {
+                if (isMobileDrawer) setMobileOpen(false);
+              }}
+              title={!isExpanded ? item.label : undefined}
+              className={`group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out h-10 ${active
+                ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm font-bold"
+                : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                }`}
+            >
+              <div className="relative shrink-0 flex items-center justify-center">
+                <IconComponent
+                  className={`w-6 h-6 transition-transform duration-200 group-hover:scale-105 ${active ? "text-white" : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                />
+                {/* Red Dot indicator on icon when sidebar is collapsed */}
+                {hasRedDot && !isExpanded && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-card animate-pulse" />
+                )}
+              </div>
+
+              <span
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
+                  }`}
+              >
+                {item.label}
+              </span>
+
+              {/* Glowing Red Dot or Count Badge when sidebar is expanded */}
+              {displayBadge && isExpanded && (
+                <span
+                  className={`ml-auto flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                    hasRedDot
+                      ? "bg-rose-500 text-white shadow-xs animate-pulse"
+                      : active
+                      ? "bg-white/20 text-white"
+                      : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                  <span>{displayBadge}</span>
+                </span>
+              )}
+
+              {!isExpanded && (
+                <div className="absolute left-full ml-3 z-50 hidden group-hover:flex items-center gap-2 rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap shadow-lg">
+                  <span>{item.label}</span>
+                  {hasRedDot && (
+                    <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                  )}
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const renderNavContent = (isExpanded: boolean, isMobileDrawer = false) => (
     <div className="flex h-full flex-col justify-between p-3 select-none pb-6">
@@ -181,163 +315,18 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Middle Navigation Groups (Scrollable container pinned inside view) */}
+      {/* Middle Navigation Groups */}
       <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-0 custom-scrollbar">
-        {/* Section 1: Faculty Workspace */}
-        <div>
-          <div
-            className={`px-2 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 ${isExpanded ? "max-h-8 opacity-100 py-1 mb-1" : "max-h-0 opacity-0 py-0 mb-0"
-              }`}
-          >
-            Faculty Workspace
-          </div>
-          <div className="space-y-1">
-            {facultyNavItems.map((item) => {
-              const active = isLinkActive(item.href);
-              const IconComponent = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => {
-                    if (isMobileDrawer) setMobileOpen(false);
-                  }}
-                  title={!isExpanded ? item.label : undefined}
-                  className={`group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out h-10 ${active
-                    ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm font-bold"
-                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                    }`}
-                >
-                  <IconComponent
-                    className={`w-6 h-6 shrink-0 transition-transform duration-200 group-hover:scale-105 ${active ? "text-white" : "text-muted-foreground group-hover:text-foreground"
-                      }`}
-                  />
-
-                  {/* Label with smooth width + opacity slide transition */}
-                  <span
-                    className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
-                      }`}
-                  >
-                    {item.label}
-                  </span>
-
-                  {/* Badge */}
-                  {item.badge && (
-                    <span
-                      className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${active
-                        ? "bg-white/20 text-white"
-                        : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                        } ${isExpanded ? "max-w-20 opacity-100" : "max-w-0 opacity-0 p-0 border-0"}`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-
-                  {/* Tooltip on Hover when Collapsed */}
-                  {!isExpanded && (
-                    <div className="absolute left-full ml-3 z-50 hidden group-hover:flex items-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap shadow-lg">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Section 2: Department Management (HOD) */}
-        {isHod && (
-          <div>
-            <div
-              className={`px-2 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 ${isExpanded ? "max-h-8 opacity-100 py-1 mb-1" : "max-h-0 opacity-0 py-0 mb-0"
-                }`}
-            >
-              Department Management
-            </div>
-            <div className="space-y-1">
-              {hodNavItems.map((item) => {
-                const active = isLinkActive(item.href);
-                const IconComponent = item.icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      if (isMobileDrawer) setMobileOpen(false);
-                    }}
-                    title={!isExpanded ? item.label : undefined}
-                    className={`group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out h-10 ${active
-                      ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm font-bold"
-                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                      }`}
-                  >
-                    <IconComponent
-                      className={`w-6 h-6 shrink-0 transition-transform duration-200 group-hover:scale-105 ${active ? "text-white" : "text-muted-foreground group-hover:text-foreground"
-                        }`}
-                    />
-
-                    {/* Label with smooth width + opacity slide transition */}
-                    <span
-                      className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
-                        }`}
-                    >
-                      {item.label}
-                    </span>
-
-                    {/* Tooltip on Hover when Collapsed */}
-                    {!isExpanded && (
-                      <div className="absolute left-full ml-3 z-50 hidden group-hover:flex items-center rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap shadow-lg">
-                        {item.label}
-                      </div>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+        {isStudent ? (
+          renderNavSection("Student Workspace", studentNavItems, isExpanded, isMobileDrawer)
+        ) : isAdmin ? (
+          renderNavSection("System Administration", adminNavItems, isExpanded, isMobileDrawer)
+        ) : (
+          <>
+            {renderNavSection("Faculty Workspace", facultyNavItems, isExpanded, isMobileDrawer)}
+            {isHod && renderNavSection("Department Management", hodNavItems, isExpanded, isMobileDrawer)}
+          </>
         )}
-      </div>
-
-      {/* Footer: User Profile & Sign Out */}
-      <div className="shrink-0 pt-2 mt-2 border-t border-border/70 space-y-1">
-        {/* User Card */}
-        {faculty && (
-          <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl bg-muted/40 border border-border/50 overflow-hidden">
-            <FacultyAvatar
-              firstName={faculty.first_name}
-              lastName={faculty.last_name}
-              photoUrl={faculty.photo_url}
-              size="sm"
-            />
-            <div className={`truncate whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-40 opacity-100" : "max-w-0 opacity-0"}`}>
-              <p className="text-xs font-extrabold text-foreground truncate leading-tight">
-                {faculty.first_name} {faculty.last_name}
-              </p>
-              <p className="text-[10px] font-semibold text-muted-foreground truncate leading-tight">
-                {isHod ? "HOD / Professor" : "Faculty Member"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <Link
-          href="/login"
-          onClick={() => {
-            if (isMobileDrawer) setMobileOpen(false);
-          }}
-          className="group relative flex items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all duration-300 ease-in-out h-10"
-          title="Sign Out"
-        >
-          <LogoutIcon className="w-6 h-6 shrink-0" />
-          <span
-            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-w-48 opacity-100 ml-3" : "max-w-0 opacity-0 ml-0"
-              }`}
-          >
-            Sign Out
-          </span>
-        </Link>
       </div>
     </div>
   );
@@ -349,9 +338,12 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          className="flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 text-xs font-extrabold shadow-xl active:scale-95 transition-all duration-150"
+          className="flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 text-xs font-extrabold shadow-xl active:scale-95 transition-all duration-150 relative"
         >
           <span>☰ Menu</span>
+          {(unreadCount > 0 || pendingApprovalsCount > 0) && (
+            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
+          )}
         </button>
       </div>
 
@@ -363,7 +355,7 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile Drawer (Always renders fully expanded with all text & icons visible, Hamburger closes drawer) */}
+      {/* Mobile Drawer */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}

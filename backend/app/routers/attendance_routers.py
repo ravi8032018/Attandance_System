@@ -434,6 +434,41 @@ async def initiate_attendance_for_cr(
     )
     return {"message": "Attendance initiated. CR has been notified."}
 
+@router.get("/token-details")
+async def get_cr_token_details(
+    token: str,
+    current_user: dict = Depends(cr_required)
+):
+    """Endpoint for CR to check token validity, session metadata, and remaining time window."""
+    token_doc = await db.AttendanceTokens.find_one({
+        "attendance_token": token,
+        "cr_id": current_user["id"],
+    })
+    if not token_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendance token session not found or access denied.")
+
+    now = datetime.now(timezone.utc)
+    expiry = token_doc["expires_at"]
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    else:
+        expiry = expiry.astimezone(timezone.utc)
+
+    seconds_left = max(0, int((expiry - now).total_seconds()))
+    is_expired = seconds_left <= 0 or token_doc.get("is_used", False)
+
+    return {
+        "attendance_token": token,
+        "subject_code": token_doc.get("subject_code"),
+        "department": token_doc.get("department"),
+        "semester": token_doc.get("semester"),
+        "date": token_doc.get("date").isoformat() if hasattr(token_doc.get("date"), "isoformat") else token_doc.get("date"),
+        "expires_at": expiry.isoformat(),
+        "is_used": token_doc.get("is_used", False),
+        "is_expired": is_expired,
+        "seconds_left": seconds_left,
+    }
+
 @router.post("/submit-by-cr", status_code=status.HTTP_202_ACCEPTED)
 async def submit_attendance_by_cr(
         request_data: MarkAttendanceByCRRequest,
@@ -529,10 +564,27 @@ async def submit_attendance_by_cr(
     session_id = f"{token_doc['subject_code']}-{token_doc['date'].strftime('%Y%m%d%H%M')}"
     # print("--> Session id:", session_id)
 
+    # Lookup subject_name from curriculum
+    subj_name = token_doc.get("subject_code")
+    try:
+        curr_doc = await db.Curriculum.find_one({
+            "department": token_doc["department"],
+            "semester": token_doc["semester"],
+            "subjects.subject_code": token_doc["subject_code"]
+        })
+        if curr_doc and "subjects" in curr_doc:
+            for s in curr_doc["subjects"]:
+                if s.get("subject_code") == token_doc["subject_code"] and s.get("subject_name"):
+                    subj_name = s.get("subject_name")
+                    break
+    except Exception:
+        pass
+
     new_session_doc = {
         "session_id": session_id,
         "faculty_id": token_doc['faculty_id'],
         "subject_code": token_doc["subject_code"],
+        "subject_name": subj_name,
         "department": token_doc["department"],
         "semester": token_doc["semester"],
         "date": token_doc["date"],
@@ -553,24 +605,39 @@ async def submit_attendance_by_cr(
     # 4. Insert the new session document into the database
     print("--> Attempting to insert new attendance session for CR submission...")
     result = await db.Attendance.insert_one(new_session_doc)
-    try:
-        pass
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Failed to mark attendance, Please try again") from e
-    # --- 3. CRUCIAL: Deactivate the token so it cannot be used again ---
-    print("--> Marking token as used to prevent reuse...")
-    notification_message = {
-        "body": f"Attendance for sem {token_doc['semester']}, subject {token_doc['subject_code']}",
-        "title": f"Attendance marked by CR {current_user['id']}",
-        "type": "Attendance marked by CR. Requesting approval.",
-    }
-    await manager.send_personal_message(notification_message, token_doc['faculty_id'])
+
+    # --- 3. CRUCIAL: Save real Notification for Faculty & Deactivate CR Token ---
+    print("--> Saving notification for faculty and deactivating CR token...")
+    cr_display_name = f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip()
+    if not cr_display_name:
+        cr_display_name = current_user.get("registration_no", "CR Student")
+
+    await save_notification(
+        user_id=token_doc['faculty_id'],
+        type="cr_attendance_submitted",
+        title=f"Attendance Marked by CR ({subj_name})",
+        body=f"CR {cr_display_name} has submitted attendance for {subj_name} ({token_doc['subject_code']}), Sem {token_doc['semester']}. Please review and approve.",
+        data={
+            "session_id": session_id,
+            "subject_code": token_doc['subject_code'],
+            "subject_name": subj_name,
+            "department": token_doc['department'],
+            "semester": token_doc['semester']
+        },
+        audience_role=["faculty"],
+        ttl_minutes=1440,
+        send_ws=True,
+    )
 
     try:
         await db.AttendanceTokens.update_one(
             {"_id": token_doc["_id"]},
             {"$set": {"is_used": True}}
+        )
+        # Auto-archive CR's notification for this token so it is removed from CR's feed
+        await db.Notifications.update_many(
+            {"user_id": current_user["id"], "data.token": token_doc["attendance_token"]},
+            {"$set": {"status": "archived", "updated_at": datetime.now(timezone.utc)}}
         )
     except Exception as e:
         raise HTTPException(status_code=400,detail="Attendance marked succesfully.") from e
@@ -600,7 +667,24 @@ async def get_session_for_approval(
             raise HTTPException(status_code=409, detail="Session is not pending for approval.")
 
     # Compute aggregates (or read from session if you already store them)
-    records = session.get("attendance_records", [])
+    raw_records = session.get("attendance_records", [])
+    reg_nos = [r.get("registration_no") for r in raw_records if r.get("registration_no")]
+    students_map = {}
+    if reg_nos:
+        async for s in db.Students.find({"registration_no": {"$in": reg_nos}}, {"registration_no": 1, "first_name": 1, "last_name": 1, "_id": 0}):
+            fn = s.get("first_name") or ""
+            ln = s.get("last_name") or ""
+            full_n = f"{fn} {ln}".strip()
+            if full_n:
+                students_map[s["registration_no"]] = full_n
+
+    records = []
+    for r in raw_records:
+        r_dict = dict(r)
+        reg = r_dict.get("registration_no")
+        r_dict["student_name"] = students_map.get(reg, reg)
+        records.append(r_dict)
+
     aggregates = _compute_aggregates(records)
 
     seen = set()
@@ -804,6 +888,22 @@ async def list_approvals(
     )
 
     items = [doc async for doc in cursor]
+    for item in items:
+        if not item.get("subject_name") or item.get("subject_name") == item.get("subject_code"):
+            try:
+                curr_doc = await db.Curriculum.find_one({
+                    "department": item.get("department"),
+                    "semester": item.get("semester"),
+                    "subjects.subject_code": item.get("subject_code")
+                })
+                if curr_doc and "subjects" in curr_doc:
+                    for s in curr_doc["subjects"]:
+                        if s.get("subject_code") == item.get("subject_code") and s.get("subject_name"):
+                            item["subject_name"] = s.get("subject_name")
+                            break
+            except Exception:
+                pass
+
     aggregates= _compute_aggregates(items)
     
     print(f"--> Returning page {page} with {len(items)} items out of total {total}. \n\nAggregates:  {aggregates}")

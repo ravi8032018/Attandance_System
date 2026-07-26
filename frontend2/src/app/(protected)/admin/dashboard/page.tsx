@@ -36,7 +36,7 @@ export default function AdminDashboardPage() {
           </h2>
           <div className="space-y-2">
             <Link
-              href="/faculty/list_students"
+              href="/faculty/hod/students"
               className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors duration-150"
             >
               <div>

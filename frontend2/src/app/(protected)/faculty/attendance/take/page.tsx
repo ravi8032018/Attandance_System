@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Student, Subject } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
+import { useRouter } from "next/navigation";
 
 export default function TakeAttendancePage() {
+  const router = useRouter();
   const [semester, setSemester] = useState("4");
   const [department, setDepartment] = useState("CS");
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -108,11 +110,17 @@ export default function TakeAttendancePage() {
 
       if (res.ok) {
         setMsg(`Attendance saved successfully • Session ID: ${data.session_id || "N/A"}`);
+        setTimeout(() => {
+          router.push("/faculty/dashboard");
+        }, 3000);
       } else {
         throw new Error(data.detail || "Failed to save attendance session");
       }
     } catch (e: any) {
       setMsg(`Error: ${e?.message || "Failed to save attendance"}`);
+      setTimeout(() => {
+        setMsg("");
+      }, 5000);
     } finally {
       setSaving(false);
     }
@@ -122,6 +130,7 @@ export default function TakeAttendancePage() {
   async function handlePingCR() {
     if (!subjectCode || !department || !semester) {
       setMsg("Error: Please select department, semester, and subject before pinging CR.");
+      setTimeout(() => setMsg(""), 4000);
       return;
     }
 
@@ -146,11 +155,13 @@ export default function TakeAttendancePage() {
 
       if (res.ok) {
         setMsg("Ping request sent to CR successfully! The CR now has 15 minutes to mark attendance.");
+        setTimeout(() => router.push("/faculty/dashboard"), 3000);
       } else {
         throw new Error(data.detail || "Failed to ping CR for attendance.");
       }
     } catch (e: any) {
       setMsg(`Error: ${e?.message || "Could not ping CR"}`);
+      setTimeout(() => setMsg(""), 4000);
     } finally {
       setPinging(false);
     }
@@ -161,7 +172,7 @@ export default function TakeAttendancePage() {
   const presentPct = students.length > 0 ? Math.round((presentCount / students.length) * 100) : 0;
 
   return (
-    <main className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto min-h-screen flex flex-col justify-between">
+    <main className="p-4 sm:p-6 pb-6 space-y-6 max-w-7xl mx-auto min-h-screen flex flex-col justify-between gap-12">
       <div className="space-y-6">
         {/* Header with Title and Ping CR Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -178,10 +189,10 @@ export default function TakeAttendancePage() {
             type="button"
             onClick={handlePingCR}
             disabled={pinging || !subjectCode}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white px-5 py-2.5 text-xs font-bold transition-all duration-150 shadow-sm disabled:opacity-50 shrink-0"
+            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white px-5 py-2.5 text-sm font-bold transition-all duration-150 shadow-sm disabled:opacity-50 shrink-0"
             title="Send attendance marking request to CR (valid for 15 minutes)"
           >
-            <span>{pinging ? "Pinging CR..." : "Ping CR to Mark"}</span>
+            <span>{pinging ? "Pinging CR..." : "Ping CR"}</span>
           </button>
         </div>
 
@@ -246,11 +257,10 @@ export default function TakeAttendancePage() {
 
         {msg && (
           <div
-            className={`rounded-2xl border p-4 text-xs font-bold ${
-              msg.startsWith("Error")
-                ? "border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400"
-                : "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
-            }`}
+            className={`rounded-2xl border p-4 text-xs font-bold ${msg.startsWith("Error")
+              ? "border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400"
+              : "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
+              }`}
           >
             {msg}
           </div>
@@ -300,11 +310,10 @@ export default function TakeAttendancePage() {
                               e.stopPropagation();
                               toggleStudentStatus(st.registration_no);
                             }}
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 ${
-                              isPresent
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                            }`}
+                            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 ${isPresent
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                              }`}
                           >
                             <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
                           </button>
@@ -330,7 +339,7 @@ export default function TakeAttendancePage() {
       </div>
 
       {/* Sleek, Non-Overlapping Footer Bar (contained strictly inside main content container) */}
-      <div className="sticky bottom-0 z-20 mt-6 rounded-2xl border border-border bg-card/95 backdrop-blur-md px-5 py-3 shadow-lg">
+      <div className="sticky bottom-24 z-20 mt-6 rounded-2xl border border-border bg-card/95 backdrop-blur-md px-5 py-3 shadow-lg">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-xs font-medium">
             <div>
