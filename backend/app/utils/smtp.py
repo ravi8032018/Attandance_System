@@ -29,22 +29,22 @@ def send_email_with_link(emails_file: str, subject: str= SUBJECT1, Body: str= BO
         emails = json.load(f)
         # print(emails)
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
-            print("\n \t Batch Processing---> ")
+            # print("\n \t Batch Processing---> ")
             now1 = time.time()
             smtp.ehlo()
-            print("EHLO time: ", time.time() - now1)
+            # print("EHLO time: ", time.time() - now1)
 
             now2 = time.time()
             smtp.starttls()
-            print("StartTLS time: ", time.time() - now2)
+            # print("StartTLS time: ", time.time() - now2)
 
             now3 = time.time()
             smtp.ehlo()
-            print("Second EHLO time: ", time.time() - now3)
+            # print("Second EHLO time: ", time.time() - now3)
 
             now4 = time.time()
             smtp.login(USER, PASSWORD)
-            print("Login time: ", time.time() - now4)
+            # print("Login time: ", time.time() - now4)
 
             for email in emails:
                 if email["is_sent"] is True:
@@ -64,7 +64,7 @@ def send_email_with_link(emails_file: str, subject: str= SUBJECT1, Body: str= BO
 
                 now5 = time.time()
                 smtp.sendmail(USER, email["email_to"], msg.as_string())
-                print("Sendmail time: ", time.time() - now5, "\t", email["email_to"])
+                # print("Sendmail time: ", time.time() - now5, "\t", email["email_to"])
 
                 # print(email['email_to'])
                 email['is_sent'] = True  # Update the value you want
@@ -74,6 +74,6 @@ def send_email_with_link(emails_file: str, subject: str= SUBJECT1, Body: str= BO
         json.dump(emails, f, indent=2)
         f.truncate()  # Remove any leftover data
 
-        print("Final time: ", time.time() - now1)
+        # print("Final time: ", time.time() - now1)
 
     # print("Email sent successfully to {}".format(to_email))

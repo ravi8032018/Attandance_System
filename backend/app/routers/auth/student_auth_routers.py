@@ -75,7 +75,7 @@ async def students_signup(Student: StudentSignUpRequest):
 @router.post("/signin", response_model=SignInResponse)
 async def students_login(student: StudentSignInRequest):
     existing_student = await db.Students.find_one({"email": student.email})
-    print(existing_student)
+    # print(existing_student)
 
     if not existing_student or not varify_hash(student.password, existing_student["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -85,7 +85,7 @@ async def students_login(student: StudentSignInRequest):
 
     token_data = {"sub": str(existing_student["_id"]), "token_role": "student"}
     access_token = create_access_token(token_data)
-    print("--> access_token from /student/signin: ",access_token)
+    # print("--> access_token from /student/signin: ",access_token)
 
     # --- NEW CODE: Set token as a secure HTTP-only cookie --- #
     resp = JSONResponse(

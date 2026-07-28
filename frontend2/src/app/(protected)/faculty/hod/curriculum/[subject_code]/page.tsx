@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
@@ -19,41 +19,46 @@ interface SubjectFullDetails {
     department: string;
   } | null;
   stats: {
+    enrolled_students_count: number;
     total_classes: number;
     classes_last_7_days: number;
     classes_last_30_days: number;
     avg_attendance_pct: number;
-    weekly_attendance_pct: number;
-    monthly_attendance_pct: number;
+    weekly_attendance_pct?: number;
+    monthly_attendance_pct?: number;
     total_records_marked: number;
-    enrolled_students_count: number;
   };
   distribution?: {
     tier1_above_75?: number;
     tier2_above_60?: number;
     tier3_above_40?: number;
     tier4_below_40?: number;
-    excellent: number;
-    good: number;
-    warning: number;
-    critical: number;
+    excellent?: number;
+    good?: number;
+    warning?: number;
+    critical?: number;
+    healthy_75_plus?: number;
+    warning_60_74?: number;
+    at_risk_below_60?: number;
   };
   trend_chart_data?: Array<{
     session_id: string;
     date: string;
-    present_pct: number;
+    present_pct?: number;
     present_count: number;
-    absent_count: number;
-    class_size: number;
+    absent_count?: number;
+    class_size?: number;
+    total_students?: number;
+    attendance_pct?: number;
   }>;
-  sessions: Array<{
-    session_id: string;
+  attendance_trend?: Array<{
     date: string;
-    status: string;
-    submitted_by: string;
+    session_id: string;
     present_count: number;
-    absent_count: number;
-    class_size: number;
+    total_students?: number;
+    attendance_pct?: number;
+    present_pct?: number;
+    class_size?: number;
   }>;
   student_roster: Array<{
     registration_no: string;
@@ -62,6 +67,15 @@ interface SubjectFullDetails {
     total_classes: number;
     attendance_pct: number;
     is_at_risk: boolean;
+  }>;
+  sessions: Array<{
+    session_id: string;
+    date: string;
+    submitted_by: string;
+    present_count: number;
+    absent_count?: number;
+    class_size: number;
+    status: string;
   }>;
 }
 
@@ -75,6 +89,7 @@ function ArrowLeftIcon({ className = "" }: { className?: string }) {
 
 export default function SubjectDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const rawCode = params?.subject_code;
   const subjectCode = Array.isArray(rawCode) ? rawCode[0] : rawCode || "";
 
@@ -83,6 +98,7 @@ export default function SubjectDetailsPage() {
   const [rosterFilter, setRosterFilter] = useState<"all" | "at_risk" | "healthy">("all");
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<number | null>(null);
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
+  const [rosterViewMode, setRosterViewMode] = useState<"table" | "grid">("table");
 
   useEffect(() => {
     async function fetchDetails() {
@@ -92,11 +108,11 @@ export default function SubjectDetailsPage() {
         const res = await apiFetch(`/curriculum/subject-details/${encodeURIComponent(subjectCode)}`);
         if (res.ok) {
           const data = await res.json();
-          console.log("--> Subject Data: ", data);
+          // console.log("--> Subject Data: ", data);
           setDetails(data);
         }
       } catch (e) {
-        console.error("Failed to load subject details", e);
+        // console.error("Failed to load subject details", e);
       } finally {
         setLoading(false);
       }
@@ -114,7 +130,7 @@ export default function SubjectDetailsPage() {
   const totalEnrolled = details?.stats.enrolled_students_count || 1;
 
   const dist = details?.distribution || { excellent: 0, good: 0, warning: 0, critical: 0 };
-  const trendData = details?.trend_chart_data || [];
+  const trendData = details?.trend_chart_data || details?.attendance_trend || [];
 
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -166,24 +182,32 @@ export default function SubjectDetailsPage() {
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block mb-2">
                 Course Instructor
               </span>
-              <div className="flex items-center gap-3">
-                <FacultyAvatar firstName={details.faculty?.name || "Unassigned"} size="md" />
-                <div className="truncate">
-                  <h3 className="text-sm font-extrabold text-foreground truncate">
-                    {details.faculty?.name || "Unassigned"}
-                  </h3>
-                  {details.faculty?.email ? (
-                    <p className="text-xs text-muted-foreground truncate">{details.faculty.email}</p>
-                  ) : (
-                    <p className="text-xs text-amber-500 font-semibold">No Faculty Assigned</p>
-                  )}
-                  {details.faculty?.faculty_id && (
-                    <span className="font-mono text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mt-1 block">
-                      ID: {details.faculty.faculty_id}
+              {details.faculty?.faculty_id ? (
+                <Link
+                  href={`/faculty/hod/faculty/${encodeURIComponent(details.faculty.faculty_id)}`}
+                  className="flex items-center gap-3 group hover:opacity-90 transition-opacity"
+                >
+                  <FacultyAvatar firstName={details.faculty?.name || "Unassigned"} size="md" />
+                  <div className="truncate">
+                    <h3 className="text-lg font-extrabold text-foreground dark:group-hover:text-indigo-400 transition-colors truncate">
+                      {details.faculty?.name || "Unassigned"}
+                    </h3>
+                    <span className="font-mono text-xs font-bold text-indigo-400 dark:text-indigo-300 mt-0.5 block">
+                      {details.faculty?.faculty_id}
                     </span>
-                  )}
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <FacultyAvatar firstName={details.faculty?.name || "Unassigned"} size="md" />
+                  <div className="truncate">
+                    <h3 className="text-sm font-extrabold text-foreground truncate">
+                      {details.faculty?.name || "Unassigned"}
+                    </h3>
+                    <p className="text-xs text-amber-500 font-semibold">No Faculty Assigned</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Overall Attendance Performance Card */}
@@ -263,8 +287,9 @@ export default function SubjectDetailsPage() {
                         const n = trendData.length;
                         const pts = trendData.map((item, i) => {
                           const x = 30 + (n > 1 ? (i / (n - 1)) * 440 : 220);
-                          const y = 140 - (item.present_pct / 100) * 110;
-                          return { x, y, item, i };
+                          const pct = item.present_pct ?? item.attendance_pct ?? 0;
+                          const y = 140 - (pct / 100) * 110;
+                          return { x, y, item, i, pct };
                         });
 
                         if (pts.length === 0) return null;
@@ -316,7 +341,7 @@ export default function SubjectDetailsPage() {
                                     cx={pt.x}
                                     cy={pt.y}
                                     r={isHovered ? "6.5" : "4.5"}
-                                    fill={pt.item.present_pct >= 75 ? "#10b981" : pt.item.present_pct >= 60 ? "#f59e0b" : "#f43f5e"}
+                                    fill={pt.pct >= 75 ? "#10b981" : pt.pct >= 60 ? "#f59e0b" : "#f43f5e"}
                                     stroke="#ffffff"
                                     strokeWidth={isHovered ? "2.5" : "1.5"}
                                     className="transition-all duration-150 pointer-events-none"
@@ -331,7 +356,7 @@ export default function SubjectDetailsPage() {
                                     fontWeight="bold"
                                     className={`font-mono transition-opacity pointer-events-none ${isHovered ? "opacity-100 font-black fill-indigo-600 dark:fill-indigo-400" : "opacity-70"}`}
                                   >
-                                    {pt.item.present_pct}%
+                                    {pt.pct}%
                                   </text>
                                 </g>
                               );
@@ -342,22 +367,35 @@ export default function SubjectDetailsPage() {
                     </svg>
 
                     {/* Floating Tooltip */}
-                    {hoveredTrendPoint !== null && trendData[hoveredTrendPoint] && (
-                      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-[11px] px-3.5 py-2 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-border flex items-center gap-3 pointer-events-none">
-                        <div>
-                          <p className="font-extrabold">{new Date(trendData[hoveredTrendPoint].date).toLocaleDateString()}</p>
-                          <p className="text-[10px] opacity-80">{trendData[hoveredTrendPoint].session_id}</p>
+                    {hoveredTrendPoint !== null && trendData[hoveredTrendPoint] && (() => {
+                      const activeItem = trendData[hoveredTrendPoint];
+                      const activePct = activeItem.present_pct ?? activeItem.attendance_pct ?? 0;
+                      const activeSize = activeItem.class_size ?? activeItem.total_students ?? 0;
+                      return (
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 flex flex-col items-center justify-center text-center pointer-events-none gap-1">
+                          {/* Top Row: Data Points */}
+                          <div className="flex items-center gap-2.5 font-mono text-sm">
+                            <span className="font-extrabold">
+                              {activeItem.present_count} / {activeSize}{" "}
+                              <span className="text-xs font-sans text-slate-600 dark:text-slate-400 font-bold uppercase">Students</span>
+                            </span>
+                            <span className="text-slate-400 dark:text-slate-500 font-sans">|</span>
+                            <span className="font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 text-xs">
+                              {activePct}% Attendance
+                            </span>
+                          </div>
+
+                          {/* Bottom Row: Date Centered Below */}
+                          <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                            {new Date(activeItem.date).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </p>
                         </div>
-                        <div className="border-l border-white/20 dark:border-slate-800/20 pl-3 font-mono font-bold">
-                          <span className="text-emerald-400 dark:text-emerald-600 font-extrabold block">
-                            {trendData[hoveredTrendPoint].present_pct}% Attendance
-                          </span>
-                          <span className="text-[10px] opacity-90 block">
-                            {trendData[hoveredTrendPoint].present_count} / {trendData[hoveredTrendPoint].class_size} Students Present
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground px-2">
@@ -386,10 +424,10 @@ export default function SubjectDetailsPage() {
                     {(() => {
                       const total = totalEnrolled || 1;
                       const tiers = [
-                        { key: "above_75", label: "≥ 75% Target Tier", desc: "Above 75% Attendance", count: dist.tier1_above_75 ?? dist.excellent, color: "#10b981", badgeColor: "text-emerald-500" },
-                        { key: "above_60", label: "60% - 74.9% Target Tier", desc: "Moderate Attendance", count: dist.tier2_above_60 ?? dist.good, color: "#3b82f6", badgeColor: "text-blue-500" },
-                        { key: "above_40", label: "40% - 59.9% Target Tier", desc: "Warning Tier", count: dist.tier3_above_40 ?? dist.warning, color: "#f59e0b", badgeColor: "text-amber-500" },
-                        { key: "below_40", label: "< 40% Target Tier", desc: "Critical Risk Tier", count: dist.tier4_below_40 ?? dist.critical, color: "#f43f5e", badgeColor: "text-rose-500" },
+                        { key: "above_75", label: "More than 75% attendance", desc: "Above 75% Attendance", count: dist.tier1_above_75 ?? dist.excellent ?? dist.healthy_75_plus ?? 0, color: "#10b981", badgeColor: "text-emerald-500" },
+                        { key: "above_60", label: "More than 60% attendance", desc: "Moderate Attendance", count: dist.tier2_above_60 ?? dist.good ?? dist.warning_60_74 ?? 0, color: "#3b82f6", badgeColor: "text-blue-500" },
+                        { key: "above_40", label: "More than 40% attendance", desc: "Warning Tier", count: dist.tier3_above_40 ?? dist.warning ?? 0, color: "#fd9f08ff", badgeColor: "text-amber-500" },
+                        { key: "below_40", label: "Less than 40% attendance", desc: "Critical Risk Tier", count: dist.tier4_below_40 ?? dist.critical ?? dist.at_risk_below_60 ?? 0, color: "#f43f5eff", badgeColor: "text-rose-500" },
                       ].filter((t) => t.count > 0);
 
                       if (tiers.length === 0) {
@@ -398,7 +436,7 @@ export default function SubjectDetailsPage() {
 
                       const outerR = 74;
                       const innerR = 14; // Small center area cutout
-                      const gap = tiers.length > 1 ? 0.04 : 0; // Boundary gap between colors
+                      const gap = tiers.length > 1 ? 0.01 : 0; // Boundary gap between colors
 
                       let currentAngle = 0;
 
@@ -464,10 +502,10 @@ export default function SubjectDetailsPage() {
                   {/* Hover Floating Tooltip Overlay */}
                   {hoveredPieIndex !== null && (() => {
                     const tiers = [
-                      { key: "above_75", label: "≥ 75% Target Tier", count: dist.tier1_above_75 ?? dist.excellent, color: "text-emerald-500" },
-                      { key: "above_60", label: "60% - 74.9% Target Tier", count: dist.tier2_above_60 ?? dist.good, color: "text-blue-500" },
-                      { key: "above_40", label: "40% - 59.9% Target Tier", count: dist.tier3_above_40 ?? dist.warning, color: "text-amber-500" },
-                      { key: "below_40", label: "< 40% Target Tier", count: dist.tier4_below_40 ?? dist.critical, color: "text-rose-500" },
+                      { key: "above_75", label: "More than 75% attendance", count: dist.tier1_above_75 ?? dist.excellent ?? dist.healthy_75_plus ?? 0, color: "text-emerald-500" },
+                      { key: "above_60", label: "More than 60% attendance", count: dist.tier2_above_60 ?? dist.good ?? dist.warning_60_74 ?? 0, color: "text-blue-500" },
+                      { key: "above_40", label: "More than 40% attendance", count: dist.tier3_above_40 ?? dist.warning ?? 0, color: "text-amber-600" },
+                      { key: "below_40", label: "Less than 40% attendance", count: dist.tier4_below_40 ?? dist.critical ?? dist.at_risk_below_60 ?? 0, color: "text-rose-600" },
                     ].filter((t) => t.count > 0);
 
                     const target = tiers[hoveredPieIndex];
@@ -476,13 +514,14 @@ export default function SubjectDetailsPage() {
                     const pct = Math.round((target.count / total) * 100);
 
                     return (
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-[11px] px-3.5 py-2 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-border text-center pointer-events-none">
-                        <p className={`font-black ${target.color}`}>{target.label}</p>
-                        <div className="mt-0.5 font-mono font-bold flex items-center justify-center gap-2">
-                          <span className="text-indigo-400 dark:text-indigo-600 font-extrabold">{pct}%</span>
-                          <span className="opacity-40">•</span>
-                          <span className="text-foreground dark:text-foreground">{target.count} / {totalEnrolled} Students</span>
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-slate-100 text-[16px] px-4 py-2.5 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-slate-200 dark:border-slate-700 text-center pointer-events-none flex flex-col items-center justify-center">
+                        <div className="mt-0.5 font-black font-bold flex items-center justify-center gap-2">
+                          <span className="font-extrabold text-[20px]">{target.count} <span className="text-[13px] text-slate-600 dark:text-slate-400">Students</span></span>
+                          {/* do no change these values in span text-[20px] and text-[13px] */}
+                          <span className="text-lg text-slate-400 dark:text-slate-500">|</span>
+                          <span className="text-[18px]">{pct}%  <span className="text-[13px] text-slate-600 dark:text-slate-400">Class</span></span>
                         </div>
+                        <p className={`font-mono text-[13px] font-bold ${target.color}`}>{target.label}</p>
                       </div>
                     );
                   })()}
@@ -491,7 +530,7 @@ export default function SubjectDetailsPage() {
 
               <div className="pt-2 border-t border-border text-center">
                 <span className="text-[11px] text-muted-foreground font-semibold">
-                  Total Enrolled Roster: <strong className="text-foreground">{totalEnrolled} Students</strong>
+                  Total Students: <strong className="text-foreground">{totalEnrolled} </strong>
                 </span>
               </div>
             </div>
@@ -554,42 +593,68 @@ export default function SubjectDetailsPage() {
                   Enrolled Student Attendance Roster ({details.stats.enrolled_students_count})
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Per-student attendance performance for this subject.
+                  Per-student attendance performance for this subject. Click any student to open profile.
                 </p>
               </div>
 
-              {/* Roster Filter Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRosterFilter("all")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${rosterFilter === "all"
+              <div className="flex flex-wrap items-center gap-3">
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setRosterViewMode("table")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${rosterViewMode === "table"
+                      ? "bg-card text-foreground shadow-xs border border-border"
+                      : "text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRosterViewMode("grid")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${rosterViewMode === "grid"
+                      ? "bg-card text-foreground shadow-xs border border-border"
+                      : "text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    Cards
+                  </button>
+                </div>
+
+                {/* Roster Filter Buttons */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setRosterFilter("all")}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${rosterFilter === "all"
                       ? "bg-indigo-600 text-white shadow-xs"
                       : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  All ({details.stats.enrolled_students_count})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRosterFilter("at_risk")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${rosterFilter === "at_risk"
+                      }`}
+                  >
+                    All ({details.stats.enrolled_students_count})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRosterFilter("at_risk")}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${rosterFilter === "at_risk"
                       ? "bg-rose-600 text-white shadow-xs"
                       : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  At Risk &lt;75% ({atRiskCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRosterFilter("healthy")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${rosterFilter === "healthy"
+                      }`}
+                  >
+                    At Risk ({atRiskCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRosterFilter("healthy")}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${rosterFilter === "healthy"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  Healthy &ge;75% ({details.stats.enrolled_students_count - atRiskCount})
-                </button>
+                      }`}
+                  >
+                    Healthy ({details.stats.enrolled_students_count - atRiskCount})
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -597,41 +662,115 @@ export default function SubjectDetailsPage() {
               <p className="text-xs text-muted-foreground p-6 text-center">
                 No student records match the selected filter.
               </p>
+            ) : rosterViewMode === "grid" ? (
+              /* Roster Cards View */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                {filteredRoster.map((st) => (
+                  <div
+                    key={st.registration_no}
+                    onClick={() => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(st.registration_no)}`)}
+                    className="solid-card rounded-2xl border border-border p-4 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between bg-background/50 space-y-3 group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">
+                          {st.registration_no}
+                        </span>
+                        {(() => {
+                          const pct = st.attendance_pct;
+                          if (pct >= 75) {
+                            return <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">✓ Healthy</span>;
+                          } else if (pct >= 60) {
+                            return <span className="text-[10px] font-extrabold text-blue-600 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-md">⚡ Moderate</span>;
+                          } else if (pct >= 40) {
+                            return <span className="text-[10px] font-extrabold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">⚠️ Warning</span>;
+                          } else {
+                            return <span className="text-[10px] font-extrabold text-rose-600 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md">🚨 Critical</span>;
+                          }
+                        })()}
+                      </div>
+
+                      <h4 className="text-sm font-black text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                        {st.student_name}
+                      </h4>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs font-mono">
+                      <span className="text-muted-foreground font-semibold">Attended:</span>
+                      <strong className="text-foreground font-extrabold">
+                        {st.attended_classes} / {st.total_classes} ({st.attendance_pct}%)
+                      </strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
+              /* Roster Table View */
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-center text-xs">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-extrabold uppercase text-muted-foreground">
-                      <th className="py-2.5 px-3">Student Name</th>
-                      <th className="py-2.5 px-3">Registration No</th>
-                      <th className="py-2.5 px-3">Classes Attended</th>
-                      <th className="py-2.5 px-3">Attendance Rate</th>
-                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-center">Student Name</th>
+                      <th className="py-2.5 px-3 text-center">Registration No</th>
+                      <th className="py-2.5 px-3 text-center">Classes Attended</th>
+                      <th className="py-2.5 px-3 text-center">Attendance Rate</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {filteredRoster.map((st) => (
-                      <tr key={st.registration_no} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3 px-3 font-bold text-foreground">{st.student_name}</td>
-                        <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <tr
+                        key={st.registration_no}
+                        onClick={() => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(st.registration_no)}`)}
+                        className="hover:bg-muted/60 transition-colors cursor-pointer"
+                        title="Click to view detailed student attendance report"
+                      >
+                        <td className="py-3 px-3 font-bold text-foreground text-center">{st.student_name}</td>
+                        <td className="py-3 px-3 font-mono font-black text-sm sm:text-base text-indigo-600 dark:text-indigo-400 text-center">
                           {st.registration_no}
                         </td>
-                        <td className="py-3 px-3 font-mono">
-                          {st.attended_classes} / {st.total_classes}
+                        <td className="py-3 px-3 font-mono text-center">
+                          {st.attended_classes} / {st.total_classes} Classes
                         </td>
-                        <td className="py-3 px-3 font-black text-sm">
+                        <td className={`py-3 px-3 font-black text-sm ${st.attendance_pct >= 75
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : st.attendance_pct >= 60
+                            ? "text-blue-600 dark:text-blue-400"
+                            : st.attendance_pct >= 40
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-rose-600 dark:text-rose-400"
+                          }`}>
                           {st.attendance_pct}%
                         </td>
                         <td className="py-3 px-3">
-                          {st.is_at_risk ? (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 px-2 py-0.5 text-[10px] font-bold">
-                              ⚠️ At-Risk (&lt;75%)
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold">
-                              ✓ Good Standing
-                            </span>
-                          )}
+                          {(() => {
+                            const pct = st.attendance_pct;
+                            if (pct >= 75) {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 text-2xs font-extrabold">
+                                  ✓ Healthy
+                                </span>
+                              );
+                            } else if (pct >= 60) {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2.5 py-1 text-2xs font-extrabold">
+                                  ⚡ Moderate
+                                </span>
+                              );
+                            } else if (pct >= 40) {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2.5 py-1 text-2xs font-extrabold">
+                                  ⚠️ Warning
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 px-2.5 py-1 text-2xs font-extrabold">
+                                  🚨 Critical
+                                </span>
+                              );
+                            }
+                          })()}
                         </td>
                       </tr>
                     ))}
@@ -653,11 +792,11 @@ export default function SubjectDetailsPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-center text-xs">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-extrabold uppercase text-muted-foreground">
-                      <th className="py-2.5 px-3">Class Date & Time</th>
-                      <th className="py-2.5 px-3">Session ID</th>
+                      <th className="py-2.5 px-3 text-center">Class Date & Time</th>
+                      <th className="py-2.5 px-3 text-center">Session ID</th>
                       <th className="py-2.5 px-3">Conducted By</th>
                       <th className="py-2.5 px-3">Present / Class Size</th>
                       <th className="py-2.5 px-3">Approval Status</th>

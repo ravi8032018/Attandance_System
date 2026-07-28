@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
-import { formatFacultyName } from "@/lib/utils";
+import { formatFacultyName, formatDesignation } from "@/lib/utils";
 
 interface FacultyFullDetails {
   faculty: {
@@ -78,7 +78,7 @@ export default function DedicatedFacultyDetailsPage() {
           setDetails(data);
         }
       } catch (e) {
-        console.error("Failed to load faculty details", e);
+        // console.error("Failed to load faculty details", e);
       } finally {
         setLoading(false);
       }
@@ -116,7 +116,7 @@ export default function DedicatedFacultyDetailsPage() {
               {formattedFacultyName}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {details?.faculty.designation || "Faculty Member"} • {details?.faculty.email}
+              {formatDesignation(details?.faculty.designation)} • {details?.faculty.email}
             </p>
           </div>
 
@@ -267,7 +267,8 @@ export default function DedicatedFacultyDetailsPage() {
                   <thead>
                     <tr className="border-b border-border text-[11px] font-extrabold uppercase text-muted-foreground">
                       <th className="py-2.5 px-3">Class Date & Time</th>
-                      <th className="py-2.5 px-3">Subject Name / Code</th>
+                      <th className="py-2.5 px-3">Subject Code</th>
+                      <th className="py-2.5 px-3">Subject Name</th>
                       <th className="py-2.5 px-3">Conducted By</th>
                       <th className="py-2.5 px-3">Present / Class Size</th>
                       <th className="py-2.5 px-3">Approval Status</th>
@@ -279,11 +280,13 @@ export default function DedicatedFacultyDetailsPage() {
                         <td className="py-3 px-3 font-bold text-foreground">
                           {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </td>
-                        <td className="py-3 px-3">
-                          <span className="font-bold text-foreground block">{sess.subject_name}</span>
-                          <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                        <td>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400 font-semibold">
                             {sess.subject_code}
                           </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-foreground block">{sess.subject_name}</span>
                         </td>
                         <td className="py-3 px-3 font-semibold text-foreground">
                           {sess.submitted_by}

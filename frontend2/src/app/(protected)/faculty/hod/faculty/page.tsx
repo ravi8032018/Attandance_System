@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
-import { formatFacultyName } from "@/lib/utils";
+import { formatFacultyName, formatDesignation } from "@/lib/utils";
+import { useUserMe } from "@/hooks/useUserMe";
 
 interface FacultyItem {
   faculty_id: string;
@@ -35,9 +38,28 @@ function UsersIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function GridViewIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  );
+}
+
+function ListViewIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
 export default function HODFacultyListPage() {
+  const router = useRouter();
+  const { user } = useUserMe();
+  const hodDept = user?.department || "CS";
   const [search, setSearch] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [facultyList, setFacultyList] = useState<FacultyItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -69,7 +91,7 @@ export default function HODFacultyListPage() {
   }, [search]);
 
   const filteredFaculty = facultyList.filter((f) => {
-    if (departmentFilter !== "all" && f.department?.toUpperCase() !== departmentFilter.toUpperCase()) {
+    if (f.department && f.department.toUpperCase() !== hodDept.toUpperCase()) {
       return false;
     }
     const q = search.toLowerCase().trim();
@@ -81,6 +103,58 @@ export default function HODFacultyListPage() {
       (f.email && f.email.toLowerCase().includes(q))
     );
   });
+
+  const tableColumns: Column<FacultyItem>[] = [
+    {
+      header: "Faculty ID",
+      accessor: (item) => (
+        <span className="font-mono text-sm sm:text-base font-black text-indigo-600 dark:text-indigo-400">
+          {item.faculty_id}
+        </span>
+      ),
+    },
+    {
+      header: "Faculty Member",
+      accessor: (item) => {
+        const name = formatFacultyName(`${item.first_name || ""} ${item.last_name || ""}`.trim());
+        return (
+          <div className="flex items-center justify-center gap-3">
+            <FacultyAvatar firstName={item.first_name} lastName={item.last_name} photoUrl={item.photo_url} size="sm" />
+            <div>
+              <span className="font-bold text-foreground block">{name}</span>
+              {/* <span className="text-xs text-muted-foreground">{item.email}</span> */}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Designation",
+      accessor: (item) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="text-xs font-semibold text-muted-foreground">{formatDesignation(item.designation)}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: (item) => <Badge variant={item.status === "inactive" ? "error" : "success"}>{item.status || "Active"}</Badge>,
+    },
+    {
+      header: "Action",
+      accessor: (item) => (
+        <div className="flex items-center justify-center gap-3 text-xs font-bold">
+          <Link
+            href={`/faculty/hod/faculty/${encodeURIComponent(item.faculty_id)}`}
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View Details &rarr;
+          </Link>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -96,36 +170,42 @@ export default function HODFacultyListPage() {
           </p>
         </div>
 
-        <Link
-          href="/faculty/hod/faculty/assign-subject"
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95 self-start sm:self-auto"
-        >
-          <span>+ Assign Subjects</span>
-        </Link>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {/* View Mode Switcher */}
+          <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "grid"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <GridViewIcon />
+              <span>Cards</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "table"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <ListViewIcon />
+              <span>Table</span>
+            </button>
+          </div>
+
+          <Link
+            href="/faculty/hod/faculty/assign-subject"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95"
+          >
+            <span>+ Assign Subjects</span>
+          </Link>
+        </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Search Bar */}
       <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div>
-            <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block mb-1">
-              Department
-            </label>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="h-10 w-full sm:w-40 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="all">All Depts</option>
-              <option value="CS">Computer Science (CS)</option>
-              <option value="CSE">CSE</option>
-              <option value="ECE">ECE</option>
-              <option value="AGRI">AGRI</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3.5 top-3 text-muted-foreground" />
           <input
@@ -138,7 +218,7 @@ export default function HODFacultyListPage() {
         </div>
       </div>
 
-      {/* Faculty Cards Grid */}
+      {/* Faculty Cards / Table */}
       {loading ? (
         <div className="p-12 text-center text-xs font-bold text-muted-foreground animate-pulse">
           Loading faculty members directory...
@@ -151,7 +231,7 @@ export default function HODFacultyListPage() {
             No faculty members match your search criteria. Try modifying your filters.
           </p>
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {filteredFaculty.map((f) => {
             const rawFullName = `${f.first_name || ""} ${f.last_name || ""}`.trim();
@@ -160,7 +240,8 @@ export default function HODFacultyListPage() {
             return (
               <div
                 key={f.faculty_id}
-                className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group relative bg-card space-y-4"
+                onClick={() => router.push(`/faculty/hod/faculty/${encodeURIComponent(f.faculty_id)}`)}
+                className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group relative bg-card space-y-4 cursor-pointer"
               >
                 <div className="space-y-3">
                   {/* Top ID & Status */}
@@ -190,7 +271,7 @@ export default function HODFacultyListPage() {
                       </h3>
                       <p className="text-xs text-muted-foreground truncate">{f.email}</p>
                       <span className="text-[11px] font-semibold text-muted-foreground/80 block mt-0.5">
-                        {f.designation || "Assistant Professor"}
+                        {formatDesignation(f.designation)}
                       </span>
                     </div>
                   </div>
@@ -201,13 +282,15 @@ export default function HODFacultyListPage() {
                   <Link
                     href={`/faculty/hod/faculty/${encodeURIComponent(f.faculty_id)}`}
                     className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    View Details & Analytics →
+                    View Details &rarr;
                   </Link>
 
                   <Link
                     href={`/faculty/hod/faculty/assign-subject?faculty_id=${encodeURIComponent(f.faculty_id)}`}
-                    className="text-muted-foreground hover:text-foreground bg-muted px-2.5 py-1 rounded-lg border border-border"
+                    className="text-muted-foreground hover:text-foreground bg-muted px-2.5 py-1 rounded-lg border border-border hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     Assign Subject
                   </Link>
@@ -216,7 +299,17 @@ export default function HODFacultyListPage() {
             );
           })}
         </div>
+      ) : (
+        <DataTable
+          columns={tableColumns}
+          data={filteredFaculty}
+          keyExtractor={(item) => item.faculty_id}
+          loading={loading}
+          emptyMessage="No faculty members found."
+          onRowClick={(item) => router.push(`/faculty/hod/faculty/${encodeURIComponent(item.faculty_id)}`)}
+        />
       )}
     </main>
   );
 }
+

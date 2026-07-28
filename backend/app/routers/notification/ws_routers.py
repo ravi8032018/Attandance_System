@@ -12,7 +12,7 @@ router = APIRouter(prefix="/ws")
 @router.websocket("/notify")
 async def websocket_endpoint(websocket: WebSocket):
     '''WebSocket endpoint for real-time notifications. Clients connect here to receive notifications.'''
-    print("In websocket endpoint")
+    # print("In websocket endpoint")
 
     # 1) Authenticate user from JWT in query param
     try:
@@ -23,7 +23,7 @@ async def websocket_endpoint(websocket: WebSocket):
         return
 
     user_id = str(user["_id"])  # or user.registration_no, etc.
-    print(f"Authenticated user {user_id} for WebSocket connection.")
+    # print(f"Authenticated user {user_id} for WebSocket connection.")
     # 2) Register connection
     await manager.connect(websocket, user_id)
     try:

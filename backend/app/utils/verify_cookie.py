@@ -6,10 +6,10 @@ from backend.app.utils.jwt import verify_token
 
 async def verify_cookie(request: Request, dept_user_token: str | None = Cookie(default=None)):
     
-    print("--> request : ", request.headers, request.body)
-    print("--> dept_user_token", dept_user_token)
-    print("\n--> Cookie header:", request.headers.get("cookie"))
-    print("--> Cookie: ", request.cookies)
+    # print("--> request : ", request.headers, request.body)
+    # print("--> dept_user_token", dept_user_token)
+    # print("\n--> Cookie header:", request.headers.get("cookie"))
+    # print("--> Cookie: ", request.cookies)
 
     if not dept_user_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
@@ -33,7 +33,7 @@ async def verify_cookie(request: Request, dept_user_token: str | None = Cookie(d
     if token_role == 'admin':
         user = await db.Admins.find_one({"_id": ObjectId(sub)})
 
-    print("--> verify coockie,, user", user)
+    # print("--> verify coockie,, user", user)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 

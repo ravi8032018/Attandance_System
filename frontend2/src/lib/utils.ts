@@ -58,3 +58,20 @@ export function getFacultyInitials(firstName?: string, lastName?: string): strin
   const rawName = `${firstName || ""} ${lastName || ""}`.trim();
   return getInitials(rawName, "F");
 }
+
+/**
+ * Normalizes and formats faculty designation to Title Case.
+ * Example: "ASSISTANT PROFESSOR" -> "Assistant Professor"
+ * Example: "Associate PROFESSOR" -> "Associate Professor"
+ * Example: "lab assistant" -> "Lab Assistant"
+ */
+export function formatDesignation(designation?: string, fallback = "Faculty"): string {
+  if (!designation || !designation.trim()) return fallback;
+  return designation
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+

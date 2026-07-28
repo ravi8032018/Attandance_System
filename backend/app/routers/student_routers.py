@@ -40,9 +40,9 @@ async def student_create(
         'course': student_dict['course'],
     }
     docs = await db.Curriculum.find_one(payload)
-    print("--> docs: ", docs)
+    # print("--> docs: ", docs)
     data = docs["subjects"] if docs else None 
-    print("--> data: ", data)
+    # print("--> data: ", data)
     subjects_doc = {
         "subjects": {
             subject["subject_code"]: subject["subject_name"]
@@ -51,7 +51,7 @@ async def student_create(
     }
     now = datetime.utcnow()
     unique_student_id = await generate_unique_student_id(student.course, student.registration_year, student.department)
-    print("Your Unique_Student_ID is ", unique_student_id, " --> ", student.email)
+    # print("Your Unique_Student_ID is ", unique_student_id, " --> ", student.email)
 
     student_dict["registration_no"] = unique_student_id
     student_dict["created_by"] = current_admin["name"]
@@ -63,7 +63,7 @@ async def student_create(
     student_dict['updated_by']= None
     student_dict['subjects']= subjects_doc['subjects'] if subjects_doc else {}
 
-    print("--> Subject_doc: ",subjects_doc)
+    # print("--> Subject_doc: ",subjects_doc)
     created=[]
     try:
         res = await db['Students'].insert_one(student_dict)
@@ -125,7 +125,7 @@ async def student_create(
             message=f"Student account created successfully {student_dict['email']}[{student_dict['registration_no']}]"
         )
     except Exception as e:
-        print("ERROR:", str(e))
+        # print("ERROR:", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bulk-create", response_model=StudentBulkCreateResponse)
@@ -158,7 +158,7 @@ async def bulk_students_create(
     for stu_mail in student_mails:
         # 1. Create the Student doc with inactive status)
         unique_student_id = await generate_unique_student_id(payload.course,payload.registration_year,payload.department)
-        print("Your Unique_Student_ID is ",unique_student_id, "\t",stu_mail)
+        # print("Your Unique_Student_ID is ",unique_student_id, "\t",stu_mail)
 
         default_password = token_urlsafe(10)
         hashed_default = await hash_password(default_password)
@@ -247,7 +247,7 @@ async def get_student_by_id(
     # print("--> testing frontend: ", current_user)
     student = await db['Students'].find_one({"registration_no": registration_no})
     # print("--> testing frontend: ", student)
-    print("Student :", student)
+    # print("Student :", student)
 
     if "admin" not in current_user["role"]:
         if "faculty" not in (current_user["role"]):
@@ -330,7 +330,7 @@ async def complete_profile(
 async def get_current_student_profile(
         current_user: dict = Depends(student_required)
 ):
-    print("current_user--> ", current_user)
+    # print("current_user--> ", current_user)
     student_id = current_user.get("id")
 
     if not student_id:
@@ -448,7 +448,7 @@ async def list_students(
     params: StudentFilterParamsRequest= Depends(),
     current_user: dict = Depends(get_current_user)
 ):
-    print("--> testing frontend : entering list_students")
+    # print("--> testing frontend : entering list_students")
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             raise HTTPException(status_code=403, detail="Access denied. Only admins and faculty can view all students.")
@@ -508,7 +508,7 @@ async def list_students(
     if expr_conditions:
         query_filter["$expr"] = {"$and": expr_conditions}
 
-    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+    # print(f"DEBUG: Final MongoDB query filter = {query_filter}")
 
     mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
     ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
@@ -545,7 +545,7 @@ async def list_my_students(
     params: StudentFilterParamsRequest= Depends(),
     current_user: dict = Depends(get_current_user)
 ):
-    print("--> testing frontend : entering list_students")
+    # print("--> testing frontend : entering list_students")
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             raise HTTPException(status_code=403, detail="Access denied. Only admins and faculty can view all students.")
@@ -575,8 +575,16 @@ async def list_my_students(
     if params.status:
         query_filter["status"] = params.status.lower()
 
-    if params.semester:
-        query_filter["semester"] = params.semester.lower()
+    if params.semester and params.semester.lower() != "all":
+        sem_val = params.semester.lower()
+        if sem_val.isdigit():
+            query_filter["$or"] = [
+                {"semester": sem_val},
+                {"semester": int(sem_val)},
+                {"semester": str(sem_val)}
+            ]
+        else:
+            query_filter["semester"] = sem_val
 
     if params.department:
         query_filter["department"] = {"$regex": params.department, "$options": "i"}
@@ -603,9 +611,10 @@ async def list_my_students(
             ]
         })
         
-    # --- FACULTY SCOPING ---
-    if "faculty" in current_user['role'] and "admin" not in current_user['role']:
-        # This is a faculty (or HOD-as-faculty) view: restrict to their subjects
+    # --- FACULTY SCOPING --- (HOD & Admin have department-wide access)
+    user_roles = [r.lower() for r in current_user.get("role", [])]
+    if "faculty" in user_roles and "admin" not in user_roles and "hod" not in user_roles:
+        # This is a regular faculty view: restrict to their assigned subjects
         faculty_id = current_user.get("unique_id")
         if not faculty_id:
             raise HTTPException(
@@ -619,7 +628,7 @@ async def list_my_students(
             department=params.department,
             semester=params.semester,
         )
-        print(f"DEBUG: Faculty subject codes: {faculty_subject_codes}")
+        # print(f"DEBUG: Faculty subject codes: {faculty_subject_codes}")
         
         if not faculty_subject_codes:
             # Faculty has no assigned subjects → no students
@@ -652,7 +661,7 @@ async def list_my_students(
     if expr_conditions:
         query_filter["$expr"] = {"$and": expr_conditions}
 
-    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+    # print(f"DEBUG: Final MongoDB query filter = {query_filter}")
 
     mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
     ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
@@ -800,11 +809,11 @@ async def list_students_for_cr(
     params: StudentFilterParamsRequest= Depends(),
     current_user: dict = Depends(cr_required)
 ):
-    print("--> testing frontend : entering list_students", current_user)
-    print("--> params: ", params, "\n\ntoken:", token.strip())
+    # print("--> testing frontend : entering list_students", current_user)
+    # print("--> params: ", params, "\n\ntoken:", token.strip())
     # 1) Load and validate session
     session = await db.AttendanceTokens.find_one({"attendance_token": token, "cr_id": current_user["id"]})
-    print("--> testing frontend : session found", session)
+    # print("--> testing frontend : session found", session)
     if not session:
         raise HTTPException(404, "Session not found")
 
@@ -818,13 +827,13 @@ async def list_students_for_cr(
     # optionally normalize to UTC
         expiry = expiry.astimezone(timezone.utc)
 
-    print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {session['is_used']}")
+    # print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {session['is_used']}")
     
     if expiry < now or session['is_used'] != False:
-        print("--> session expired or already used")
+        # print("--> session expired or already used")
         raise HTTPException(410, "Session expired")
     
-    print("--> session is valid, proceeding to list students for CR")
+    # print("--> session is valid, proceeding to list students for CR")
     # check and match the subject code, sem ....
 
 
@@ -883,7 +892,7 @@ async def list_students_for_cr(
     if expr_conditions:
         query_filter["$expr"] = {"$and": expr_conditions}
 
-    print(f"DEBUG: Final MongoDB query filter = {query_filter}")
+    # print(f"DEBUG: Final MongoDB query filter = {query_filter}")
 
     mongo_sort_order = ASCENDING if params.sort_order == SortOrder.ASC else DESCENDING
     ALLOWED_SORT_FIELDS = {"created_at", "first_name", "last_name", "email", "registration_no", "semester"}
@@ -899,7 +908,7 @@ async def list_students_for_cr(
     students_cursor = db["Students"].find(query_filter).collation(collation).sort(params.sort_by, mongo_sort_order).skip(params.skip).limit(params.limit)
 
     students_data = [StudentListResponse(**student) async for student in students_cursor]
-    print("--> testing frontend : students_data fetched", students_data)
+    # print("--> testing frontend : students_data fetched", students_data)
     
     log_event(
         "list students by cr",

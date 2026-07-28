@@ -11,16 +11,23 @@ from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
 from backend.app.utils.dependencies import admin_or_hod_required, admin_required, get_current_user, faculty_required
 from backend.app.utils.unique_faculty_id import generate_unique_faculty_id
+from backend.app.utils.session_aggregator import get_enrolled_class_size
 from backend.my_logger import log_event
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
 from pymongo.collation import Collation
 import json, os
+from datetime import timezone, datetime, timedelta
 
 BACKEND_HOST= os.getenv("BACKEND_HOST")
 
 router = APIRouter(prefix="/faculty", tags=["Faculty"])
+
+def format_designation(designation: str) -> str:
+    if not designation or not designation.strip():
+        return "Faculty"
+    return " ".join(word.capitalize() for word in designation.strip().split())
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 async def faculty_create(
@@ -33,7 +40,7 @@ async def faculty_create(
     unique_faculty_id = await generate_unique_faculty_id(faculty.department)
 
     faculty_dict["faculty_id"] = unique_faculty_id
-    faculty_dict["designation"] = faculty.designation.upper()
+    faculty_dict["designation"] = format_designation(faculty.designation)
     faculty_dict["email"] = faculty.email or None
     faculty_dict["department"] = faculty.department.upper() or None
     faculty_dict["created_by"] = current_admin["name"] or current_admin["email"]
@@ -143,9 +150,9 @@ async def complete_profile(
         "updated_by": current_user["name"] or current_user["email"],
     })
     # print("\nupdate_dict", clean_update)
-    print(clean_update)
+    # print(clean_update)
     clean_update= normalize_dates_for_mongo(clean_update)
-    print("\n\n",clean_update)
+    # print("\n\n",clean_update)
     # Step 6: Update in DB
     result = await db["Faculty"].update_one(
         {"faculty_id": faculty_id, "status": "active"},
@@ -172,7 +179,7 @@ async def get_current_faculty_profile(
 
     try:
         faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id), "status": "active"})
-        print("faculty--> ", faculty)
+        # print("faculty--> ", faculty)
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find faculty.") from e
     # print("Student--> ", Student)
@@ -284,8 +291,8 @@ async def list_faculty(
 ):
     if params.limit < 1:
         raise HTTPException(status_code=400, detail="Limit or skip must be a positive integer.")
-    print(f"DEBUG: Received sort_by = '{params.sort_by}' (type: {type(params.sort_by)})")
-    print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
+    # print(f"DEBUG: Received sort_by = '{params.sort_by}' (type: {type(params.sort_by)})")
+    # print(f"DEBUG: Received sort_order = '{params.sort_order.value}' (type: {type(params.sort_order)})")
 
     query_filter = {}
     if params.faculty_id:  # We'll treat this as faculty_id
@@ -334,6 +341,9 @@ async def update_faculty_by_admin(
 
     update_data["updated_at"] = datetime.utcnow()
     update_data["updated_by"] = current_user.get("name") or current_user["email"]
+
+    if "designation" in update_data and update_data["designation"]:
+        update_data["designation"] = format_designation(update_data["designation"])
 
     update_data = clean_placeholders(update_data)
     update_data = normalize_dates_for_mongo(update_data)
@@ -426,13 +436,17 @@ async def get_faculty_details(
 
     async for sess in att_cursor:
         scode = sess.get("subject_code")
-        status_val = sess.get("status", "")
+        status_val = str(sess.get("status", "")).lower()
         submitted_by = sess.get("submission_details", "faculty")
 
-        if status_val == "pending":
+        if status_val == "pending" or status_val == "pending_approval":
             pending_approvals_count += 1
         if "cr" in str(submitted_by).lower():
             cr_delegated_count += 1
+
+        # Skip rejected or cancelled sessions from attendance stats and totals
+        if status_val in ["rejected", "cancelled"]:
+            continue
 
         raw_date = sess.get("date")
         dt_obj = None
@@ -462,15 +476,19 @@ async def get_faculty_details(
 
         recs = sess.get("attendance_records", [])
         p_count = sum(1 for r in recs if r.get("status") == "present")
-        a_count = sum(1 for r in recs if r.get("status") == "absent")
+
+        c_dept = sess.get("department")
+        c_sem = sess.get("semester")
+        real_class_size = await get_enrolled_class_size(db, subject_code=scode, department=c_dept, semester=c_sem, records_count=len(recs))
+        a_count = max(real_class_size - p_count, 0)
 
         total_present += p_count
-        total_records += len(recs)
+        total_records += real_class_size
 
         if scode:
             subj_session_counts[scode] = subj_session_counts.get(scode, 0) + 1
             subj_present_totals[scode] = subj_present_totals.get(scode, 0) + p_count
-            subj_record_totals[scode] = subj_record_totals.get(scode, 0) + len(recs)
+            subj_record_totals[scode] = subj_record_totals.get(scode, 0) + real_class_size
 
         sessions.append({
             "session_id": sess.get("session_id", ""),
@@ -481,7 +499,7 @@ async def get_faculty_details(
             "submitted_by": submitted_by,
             "present_count": p_count,
             "absent_count": a_count,
-            "class_size": len(recs)
+            "class_size": real_class_size
         })
 
     for sub in assigned_subjects:

@@ -30,7 +30,7 @@ async def get_current_user_from_ws(websocket: WebSocket):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id= payload.get("sub")
         token_role = payload.get("token_role")  # ← This must match what you encode
-        print("--> Token Role:", token_role)
+        # print("--> Token Role:", token_role)
         if user_id is None:
             raise WebSocketException(
                 code=status.WS_1008_POLICY_VIOLATION,
@@ -49,7 +49,7 @@ async def get_current_user_from_ws(websocket: WebSocket):
         user = await db.Faculty.find_one({"_id": ObjectId(user_id)})
     if token_role == 'student' or token_role == 'cr':
         user = await db.Students.find_one({"_id": ObjectId(user_id)})
-    print("--> user: ", user)
+    # print("--> user: ", user)
     if not user:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,

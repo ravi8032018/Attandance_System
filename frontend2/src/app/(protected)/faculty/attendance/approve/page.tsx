@@ -348,7 +348,7 @@ export default function ApproveAttendancePage() {
                                     <h4 className="text-xs font-extrabold text-foreground leading-tight truncate">
                                       {displayName}
                                     </h4>
-                                    <p className="text-[11px] font-mono text-muted-foreground truncate">
+                                    <p className="text-sm font-mono font-black text-indigo-600 dark:text-indigo-400 truncate">
                                       {rec.registration_no}
                                     </p>
                                   </div>

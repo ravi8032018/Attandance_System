@@ -19,28 +19,28 @@
 
 :root {
   color-scheme: light;
-  
+
   /* Modern Executive Light Canvas */
   --background: #f8fafc;
   --foreground: #0f172a;
-  
+
   /* Crisp Solid Card Surfaces */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #475569;
-  
+
   /* Primary Indigo Accent & Secondary */
   --primary: #4f46e5;
   --primary-foreground: #ffffff;
   --secondary: #eef2ff;
   --secondary-foreground: #3730a3;
-  
+
   /* Status Color Tokens */
   --success: #059669;
   --warning: #d97706;
   --error: #e11d48;
-  
+
   /* Sharp 1px Borders & Focus Rings */
   --border: #e2e8f0;
   --input: #cbd5e1;
@@ -52,38 +52,55 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: 0.01em;
-  
+
   /* Deep Obsidian Slate Canvas */
   --background: #090d16;
   --foreground: #f8fafc;
-  
+
   /* Premium Dark Card Surfaces */
   --card: #111827;
   --card-foreground: #f8fafc;
   --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  
+  --muted-foreground: #cbd5e1;
+
   /* Primary Indigo Accent & Secondary */
   --primary: #6366f1;
   --primary-foreground: #ffffff;
   --secondary: #1e1b4b;
   --secondary-foreground: #e0e7ff;
-  
+
   /* Status Color Tokens */
   --success: #10b981;
   --warning: #f59e0b;
   --error: #f43f5e;
-  
+
   /* Crisp Dark Borders & Focus Rings */
   --border: #1f2937;
   --input: #374151;
   --ring: #818cf8;
 }
 
-html, body {
+html,
+body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
+}
+
+/* System-wide Dark Mode Anti-Aliasing & Text Legibility */
+.dark,
+.dark * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* System-wide Table Centering & Alignment Defaults */
+table,
+table th,
+table td {
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 
 body {
@@ -159,6 +176,7 @@ select option {
 
 /* Accessibility: Prefers Reduced Motion Fallback */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   ::before,
   ::after {
@@ -174,13 +192,23 @@ select option {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
+}
+
+/* Print Vacuum Field: Suppress default browser atmospheric headers/footers */
+@media print {
+  @page {
+    margin: 0;
+  }
 }

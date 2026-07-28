@@ -7,7 +7,7 @@ def cache_files_checker():
 
     if not os.path.exists(cache_folder):
         os.makedirs(cache_folder)
-        print(f"Created missing cache folder at: {cache_folder}")
+        # print(f"Created missing cache folder at: {cache_folder}")
 
     required_files = [
         "backend_logs.json",
@@ -20,4 +20,4 @@ def cache_files_checker():
         if not os.path.exists(file_path):
             with open(file_path, "w") as f:
                 json.dump([], f)
-                print(f"Created missing cache file: {filename}")
+                # print(f"Created missing cache file: {filename}")

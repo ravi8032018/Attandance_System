@@ -19,7 +19,7 @@ def set_auth_cookie(response: Response, token: str) -> None:
         "path": "/",
         "max_age": 60 * 60 * 24 * 7,
     }
-    print("--> in set_auth_cookie, cookie : ",cookie_doc)
+    # print("--> in set_auth_cookie, cookie : ",cookie_doc)
     
     response.set_cookie(
         key=COOKIE_NAME,
@@ -31,7 +31,7 @@ def set_auth_cookie(response: Response, token: str) -> None:
         path="/",
         max_age=60 * 60 * 24 * 7,                 # 7 days, adjust as you like
     )
-    print("--> out of set_auth_cookie")
+    # print("--> out of set_auth_cookie")
 
 def clear_auth_cookie(response: Response) -> None:
     cookie_doc= {
@@ -39,11 +39,11 @@ def clear_auth_cookie(response: Response) -> None:
         "domain": COOKIE_DOMAIN if IS_PROD else None,
         "path": "/",
     }
-    print("--> in clear_auth_cookie, cookie : ",cookie_doc)
+    # print("--> in clear_auth_cookie, cookie : ",cookie_doc)
     response.delete_cookie(
         key=COOKIE_NAME,
         domain=COOKIE_DOMAIN if IS_PROD else None,
         path="/",
     )
-    print("--> out of clear_auth_cookie")
+    # print("--> out of clear_auth_cookie")
 

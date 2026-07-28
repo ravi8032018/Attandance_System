@@ -12,6 +12,7 @@ from backend.app.routers.notification.notification_router import router as notif
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.curriculum.curriculum_routers import router as curriculum_router
 from backend.app.routers.notification.ws_routers import router as ws_router
+from backend.app.routers.reports_routers import router as reports_router
 from backend.app.utils.cache_files_checker import cache_files_checker
 import os
 
@@ -110,3 +111,4 @@ fastapi_app.include_router(attendance_router)
 fastapi_app.include_router(notification_router)
 fastapi_app.include_router(curriculum_router)
 fastapi_app.include_router(ws_router)
+fastapi_app.include_router(reports_router)

@@ -21,68 +21,32 @@ BACKEND_HOST= os.getenv("BACKEND_HOST")
 
 # some required helpers for handling
 async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
-    pipeline = [
-        {
-            "$match": {
-                "subject_code": payload.subject_code,
-                "status": {"$in": ["approved", "marked_by_faculty"]},
-                "attendance_records.registration_no": payload.registration_no,
-            }
-        },
-        {"$unwind": "$attendance_records"},
-        {
-            "$match": {
-                "attendance_records.registration_no": payload.registration_no
-            }
-        },
-        {
-            "$group": {
-                "_id": {
-                    "reg_no": "$attendance_records.registration_no",
-                    "subject_code": "$subject_code",
-                },
-                "subject_name": {"$first": "$subject_name"},
-                "present_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "present"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "absent_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "absent"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "excused_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "excused"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "daily_records": {
-                    "$push": {
-                        "date": "$date",
-                        "status": "$attendance_records.status",
-                    }
-                },
-            }
-        },
-    ]
+    reg_no = payload.registration_no
+    subj_code = payload.subject_code
 
-    result = await db.Attendance.aggregate(pipeline).to_list(1)
-    print("--> Aggregation result for single subject report:", result)
-    
-    if not result:
+    # 1. Fetch student info
+    st = await db.Students.find_one({"registration_no": reg_no})
+
+    # 2. Build session query (exclude rejected & cancelled sessions)
+    session_query = {
+        "subject_code": {"$regex": f"^{subj_code}$", "$options": "i"},
+        "status": {"$nin": ["rejected", "cancelled"]}
+    }
+
+    start_dt = getattr(payload, "start_date", None)
+    end_dt = getattr(payload, "end_date", None)
+    if start_dt or end_dt:
+        date_cond = {}
+        if start_dt:
+            date_cond["$gte"] = start_dt
+        if end_dt:
+            date_cond["$lte"] = end_dt
+        session_query["date"] = date_cond
+
+    sessions_cursor = db.Attendance.find(session_query).sort("date", 1)
+    sessions = await sessions_cursor.to_list(None)
+
+    if not sessions:
         return MultiSubjectReportResponse(reports=[])
 
     # Fetch curriculum lookup map for missing subject names
@@ -94,119 +58,44 @@ async def _single_subject_report(payload: SubjectAttendanceReportFilter) -> Mult
         if "subject_code" in subj and "subject_name" in subj
     }
 
-    report_data = result[0]
-    present = report_data["present_count"]
-    absent = report_data["absent_count"]
-    excused = report_data["excused_count"]
-    total_classes = present + absent + excused
+    present = 0
+    absent = 0
+    excused = 0
+    daily_records = []
+    subj_name = None
 
+    for sess in sessions:
+        if not subj_name and sess.get("subject_name"):
+            subj_name = sess.get("subject_name")
+        
+        # Check student in attendance_records
+        records = sess.get("attendance_records", [])
+        st_record = next((r for r in records if r.get("registration_no") == reg_no), None)
+        
+        raw_status = st_record.get("status") if st_record else None
+        if raw_status == "present" or (st_record and not raw_status):
+            st_status = "present"
+            present += 1
+        elif raw_status == "excused":
+            st_status = "excused"
+            excused += 1
+        else:
+            st_status = "absent"
+            absent += 1
+            
+        daily_records.append({
+            "date": sess.get("date"),
+            "status": st_status
+        })
+
+    total_classes = len(sessions)
     attendance_percentage = (
         round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
     )
+    subj_name = subj_name or curr_map.get(subj_code, f"Subject {subj_code}")
 
-    subj_code = report_data["_id"]["subject_code"]
-    subj_name = report_data.get("subject_name") or curr_map.get(subj_code)
-
-    return MultiSubjectReportResponse(    
-        reports=[   
-                 StudentSubjectReportResponse(
-                    subject_code=subj_code,
-                    subject_name=subj_name,
-                    total_classes=total_classes,
-                    present_count=present,
-                    absent_count=absent,
-                    excused_count=excused,
-                    attendance_percentage=attendance_percentage,
-                    daily_records=report_data["daily_records"],
-        )])
-
-async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
-    pipeline = [
-        {
-            "$match": {
-                "status": {"$in": ["approved", "marked_by_faculty"]},
-                "attendance_records.registration_no": payload.registration_no,
-            }
-        },
-        {"$unwind": "$attendance_records"},
-        {
-            "$match": {
-                "attendance_records.registration_no": payload.registration_no
-            }
-        },
-        {
-            "$group": {
-                "_id": {
-                    "reg_no": "$attendance_records.registration_no",
-                    "subject_code": "$subject_code",
-                },
-                "subject_name": {"$first": "$subject_name"},
-                "present_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "present"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "absent_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "absent"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "excused_count": {
-                    "$sum": {
-                        "$cond": [
-                            {"$eq": ["$attendance_records.status", "excused"]},
-                            1,
-                            0,
-                        ]
-                    }
-                },
-                "daily_records": {
-                    "$push": {
-                        "date": "$date",
-                        "status": "$attendance_records.status",
-                    }
-                },
-            }
-        },
-    ]
-
-    result = await db.Attendance.aggregate(pipeline).to_list(None)
-    print("--> Aggregation result for multi-subject report:", result)
-    
-    if not result:
-        return MultiSubjectReportResponse(reports=[])
-
-    # Fetch curriculum lookup map for missing subject names
-    curriculum_docs = await db.Curriculum.find({}).to_list(None)
-    curr_map = {
-        subj["subject_code"]: subj["subject_name"]
-        for cdoc in curriculum_docs
-        for subj in cdoc.get("subjects", [])
-        if "subject_code" in subj and "subject_name" in subj
-    }
-
-    reports: list[StudentSubjectReportResponse] = []
-    for doc in result:
-        present = doc["present_count"]
-        absent = doc["absent_count"]
-        excused = doc["excused_count"]
-        total_classes = present + absent + excused
-        attendance_percentage = (
-            round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
-        )
-
-        subj_code = doc["_id"]["subject_code"]
-        subj_name = doc.get("subject_name") or curr_map.get(subj_code)
-
-        reports.append(
+    return MultiSubjectReportResponse(
+        reports=[
             StudentSubjectReportResponse(
                 subject_code=subj_code,
                 subject_name=subj_name,
@@ -215,7 +104,126 @@ async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiS
                 absent_count=absent,
                 excused_count=excused,
                 attendance_percentage=attendance_percentage,
-                daily_records=doc["daily_records"],
+                daily_records=daily_records,
+            )
+        ]
+    )
+
+async def _all_subjects_report(payload: SubjectAttendanceReportFilter) -> MultiSubjectReportResponse:
+    reg_no = payload.registration_no
+
+    # 1. Fetch student record to determine candidate subject codes
+    st = await db.Students.find_one({"registration_no": reg_no})
+    dept = st.get("department", "") if st else ""
+    sem = st.get("semester", "") if st else ""
+    st_subjects = st.get("subjects", {}) if st else {}
+
+    # Candidate subject codes for this student:
+    subject_codes_set = set()
+    if st_subjects:
+        subject_codes_set.update(st_subjects.keys())
+
+    # Check Curriculum for subjects matching department & semester
+    if dept and sem:
+        sem_list = [sem]
+        if isinstance(sem, int) or (isinstance(sem, str) and str(sem).isdigit()):
+            sem_list = [int(sem), str(sem)]
+        curr_docs = await db.Curriculum.find({
+            "department": {"$regex": f"^{dept}$", "$options": "i"},
+            "semester": {"$in": sem_list}
+        }).to_list(None)
+        for cdoc in curr_docs:
+            for s in cdoc.get("subjects", []):
+                if s.get("subject_code"):
+                    subject_codes_set.add(s.get("subject_code"))
+
+    # Also check Attendance for any session where student is in attendance_records
+    att_subjects = await db.Attendance.distinct("subject_code", {
+        "attendance_records.registration_no": reg_no,
+        "status": {"$nin": ["rejected", "cancelled"]}
+    })
+    if att_subjects:
+        subject_codes_set.update(att_subjects)
+
+    if not subject_codes_set:
+        return MultiSubjectReportResponse(reports=[])
+
+    # Fetch curriculum lookup map for missing subject names
+    curriculum_docs = await db.Curriculum.find({}).to_list(None)
+    curr_map = {}
+    for cdoc in curriculum_docs:
+        for s in cdoc.get("subjects", []):
+            if "subject_code" in s and "subject_name" in s:
+                curr_map[s["subject_code"]] = s["subject_name"]
+
+    reports: list[StudentSubjectReportResponse] = []
+
+    # Process each subject code independently so EVERY student in this subject gets the exact total classes held!
+    for scode in sorted(list(subject_codes_set)):
+        session_query = {
+            "subject_code": {"$regex": f"^{scode}$", "$options": "i"},
+            "status": {"$nin": ["rejected", "cancelled"]}
+        }
+
+        start_dt = getattr(payload, "start_date", None)
+        end_dt = getattr(payload, "end_date", None)
+        if start_dt or end_dt:
+            date_cond = {}
+            if start_dt:
+                date_cond["$gte"] = start_dt
+            if end_dt:
+                date_cond["$lte"] = end_dt
+            session_query["date"] = date_cond
+
+        sessions = await db.Attendance.find(session_query).sort("date", 1).to_list(None)
+        if not sessions:
+            continue
+
+        present = 0
+        absent = 0
+        excused = 0
+        daily_records = []
+        subj_name = None
+
+        for sess in sessions:
+            if not subj_name and sess.get("subject_name"):
+                subj_name = sess.get("subject_name")
+
+            records = sess.get("attendance_records", [])
+            st_record = next((r for r in records if r.get("registration_no") == reg_no), None)
+
+            raw_status = st_record.get("status") if st_record else None
+            if raw_status == "present" or (st_record and not raw_status):
+                st_status = "present"
+                present += 1
+            elif raw_status == "excused":
+                st_status = "excused"
+                excused += 1
+            else:
+                st_status = "absent"
+                absent += 1
+
+            daily_records.append({
+                "date": sess.get("date"),
+                "status": st_status
+            })
+
+        total_classes = len(sessions)
+        attendance_percentage = (
+            round((present / total_classes) * 100, 2) if total_classes > 0 else 0.0
+        )
+        subj_name = subj_name or curr_map.get(scode, f"Subject {scode}")
+
+        reports.append(
+            StudentSubjectReportResponse(
+                subject_code=scode,
+                subject_name=subj_name,
+                total_classes=total_classes,
+                present_count=present,
+                absent_count=absent,
+                excused_count=excused,
+                attendance_percentage=attendance_percentage,
+                daily_records=daily_records,
             )
         )
 
@@ -229,15 +237,15 @@ async def mark_attendance_by_faculty(
     request_data: MarkAttendanceByFacultyRequest,
     current_user: dict = Depends(faculty_required),
 ):
-    print("\ncurrent user : ", current_user)
+    # print("\ncurrent user : ", current_user)
     f_id = current_user.get("id")
-    print("Faculty ID:", f_id)
+    # print("Faculty ID:", f_id)
 
     # 1) Compute list of present students (from payload)
     present_student_ids = [
         str(record.registration_no) for record in request_data.attendance_data
     ]
-    print("\n--> present_student_ids: ", present_student_ids)
+    # print("\n--> present_student_ids: ", present_student_ids)
 
     # 2) Find ABSENT students
     # subjects is an object like: { "CSDSC251": "DBMS", ... }
@@ -253,7 +261,7 @@ async def mark_attendance_by_faculty(
         {"registration_no": 1, "_id": 0},
     )
     absent_students = await absent_students_cursor.to_list(length=None)
-    print("--> absent Student records: ", absent_students)
+    # print("--> absent Student records: ", absent_students)
 
     # 3) Build full attendance list as Pydantic models (present + absent)
     final_attendance_records: List[StudentAttendanceRecord] = [
@@ -268,11 +276,11 @@ async def mark_attendance_by_faculty(
             )
         )
 
-    print("\n--> Final attendance list (Pydantic): ", final_attendance_records)
+    # print("\n--> Final attendance list (Pydantic): ", final_attendance_records)
 
     # 4) Build session id
     session_id = f"{request_data.subject_code}-{request_data.class_date.strftime('%d%m%Y')}"
-    print("--> Session id:", session_id)
+    # print("--> Session id:", session_id)
 
     # 5) Resolve subject_name from any one student doc (optional but needed for schema)
     #    If you have a curriculum collection, prefer that instead.
@@ -314,7 +322,7 @@ async def mark_attendance_by_faculty(
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     }
-    print("--> New session document prepared:", new_session_doc)
+    # print("--> New session document prepared:", new_session_doc)
 
     # 7) Prevent duplicate marking for same session
     existing_session = await db.Attendance.find_one({"session_id": session_id})
@@ -327,9 +335,9 @@ async def mark_attendance_by_faculty(
     # 8) Insert
     try:
         result = await db.Attendance.insert_one(new_session_doc)
-        print("--> Inserted session_id:", session_id)
+        # print("--> Inserted session_id:", session_id)
     except Exception as e:
-        print("--> Insert failed for session_id:", session_id, "error:", e)
+        # print("--> Insert failed for session_id:", session_id, "error:", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to mark attendance",
@@ -345,7 +353,7 @@ async def mark_attendance_by_faculty(
 
     # Convert _id to string for the "id" alias, let Pydantic handle enums & datetime
     created_session["_id"] = str(created_session["_id"])
-    print("--> \nCreated session", created_session)
+    # print("--> \nCreated session", created_session)
 
     return AttendanceSessionResponse(**created_session)
 
@@ -354,12 +362,12 @@ async def get_student_subject_attendance_report(
         payload: SubjectAttendanceReportFilter = Depends(),
         current_user: dict = Depends(get_current_user)
 ):
-    print("--> Report request by user:", current_user)
+    # print("--> Report request by user:", current_user)
     if "admin" not in current_user["role"]:
         if "faculty" not in current_user.get("role", []):
             try:
                 student_cursor = await db.Students.find_one({"_id": ObjectId(current_user["id"])})
-                print("--> Student cursor for report access check:", student_cursor)
+                # print("--> Student cursor for report access check:", student_cursor)
                 if (student_cursor["registration_no"]) != payload.registration_no:
                     raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
             except Exception as e:
@@ -377,7 +385,7 @@ async def initiate_attendance_for_cr(
         initiate_request: FacultyToCRRequest,
         current_user: dict = Depends(faculty_required)
 ):
-    print("--> Initiate attendance for CR request received:", initiate_request)
+    # print("--> Initiate attendance for CR request received:", initiate_request)
     try:
         cr_user = await db.Students.find_one({
             "department": initiate_request.department,
@@ -385,7 +393,7 @@ async def initiate_attendance_for_cr(
             "role": "cr",
             "status": "active"
         })
-        print("--> CR user found for request:", cr_user)
+        # print("--> CR user found for request:", cr_user)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"CR for semester {initiate_request.semester} not found.") from e
     # print("--> cr_user: {}".format(cr_user))
@@ -420,7 +428,7 @@ async def initiate_attendance_for_cr(
     magic_link = f"{base_url}/{token}/take-attendance"
 
     # 4. Save notification to db and Send the real-time notification to the CR
-    print("--> Sending notification to CR (user_id: {})".format(cr_user['registration_no']))
+    # print("--> Sending notification to CR (user_id: {})".format(cr_user['registration_no']))
     
     notif_id= await save_notification(
         user_id=cr_user_id,
@@ -485,7 +493,7 @@ async def submit_attendance_by_cr(
         })
     except Exception as e:
         raise HTTPException(status_code=400,detail="111111Invalid or expired session, or attendance already marked") from e
-    print("--> token_doc: {}".format(token_doc))
+    # print("--> token_doc: {}".format(token_doc))
     
     if not token_doc:
         raise HTTPException(status_code=404, detail="22222Invalid or expired session, or attendance already marked.")
@@ -496,7 +504,7 @@ async def submit_attendance_by_cr(
     if token_doc['subject_code'] != request_data.subject_code or token_doc['department'] != request_data.department or token_doc['semester'] != request_data.semester:
         raise HTTPException(status_code=403, detail="Session details mismatch. Please use the correct attendance link.")
 
-    print("--> Date from token_doc: {}, Date from request: {}".format(token_doc['date'], request_data.class_date))
+    # print("--> Date from token_doc: {}, Date from request: {}".format(token_doc['date'], request_data.class_date))
 
     now = datetime.now(timezone.utc)
     expiry = token_doc['expires_at']
@@ -508,7 +516,7 @@ async def submit_attendance_by_cr(
     # optionally normalize to UTC
         expiry = expiry.astimezone(timezone.utc)
 
-    print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {token_doc['is_used']}")
+    # print(f"--> current time (UTC): {now}, session expires at: {expiry}, is_used: {token_doc['is_used']}")
     
     if now > expiry:
         await db.AttendanceTokens.update_one(
@@ -560,7 +568,7 @@ async def submit_attendance_by_cr(
             "registration_no": student["registration_no"],
             "status": "absent"
         })
-    print("\n--> \n\nFinal attendance list: ",final_attendance_records)
+    # print("\n--> \n\nFinal attendance list: ",final_attendance_records)
     session_id = f"{token_doc['subject_code']}-{token_doc['date'].strftime('%Y%m%d%H%M')}"
     # print("--> Session id:", session_id)
 
@@ -594,7 +602,7 @@ async def submit_attendance_by_cr(
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
-    print("\n--> \n\nNew session doc: ",new_session_doc)
+    # print("\n--> \n\nNew session doc: ",new_session_doc)
     # 3. Check for duplicates to prevent marking the same session twice
     existing_session = await db.Attendance.find_one({"session_id": session_id})
     if existing_session:
@@ -603,11 +611,11 @@ async def submit_attendance_by_cr(
             detail=f"Attendance for this session ({session_id}) has already been marked."
         )
     # 4. Insert the new session document into the database
-    print("--> Attempting to insert new attendance session for CR submission...")
+    # print("--> Attempting to insert new attendance session for CR submission...")
     result = await db.Attendance.insert_one(new_session_doc)
 
     # --- 3. CRUCIAL: Save real Notification for Faculty & Deactivate CR Token ---
-    print("--> Saving notification for faculty and deactivating CR token...")
+    # print("--> Saving notification for faculty and deactivating CR token...")
     cr_display_name = f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip()
     if not cr_display_name:
         cr_display_name = current_user.get("registration_no", "CR Student")
@@ -657,7 +665,7 @@ async def get_session_for_approval(
         "session_id": session_id,
         "faculty_id": current_user["id"]
     })
-    print("--> session: ",session)
+    # print("--> session: ",session)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or not accessible.")
     # Ensure it's CR-submitted and pending
@@ -720,11 +728,11 @@ async def approve_attendance_session(
 ):
     '''Faculty can approve or reject a pending session. Once approved, the session becomes read-only. If rejected, faculty must provide a reason and can then edit the session before resubmitting.'''
     
-    print("-->session id: ", session_id)
-    print("-->update body: ", body)
+    # print("-->session id: ", session_id)
+    # print("-->update body: ", body)
      
     target = body.status.strip().lower()
-    print("--> Target status after normalization: {}".format(target))
+    # print("--> Target status after normalization: {}".format(target))
     if target not in {"approved", "rejected"}:
         raise HTTPException(status_code=422, detail="Status must be updated to 'approved' or 'rejected'.")
     # 1) Ensure session is pending and owned by faculty
@@ -863,7 +871,7 @@ async def list_approvals(
         start_utc, end_utc = compute_period_range(period, tz="Asia/Kolkata")
         filters["date"] = {"$gte": start_utc, "$lt": end_utc}  # half-open [start, end) [2]
 
-    print("--> filters:", filters)
+    # print("--> filters:", filters)
     sort_field = sort.lstrip("-")
     sort_dir = -1 if sort.startswith("-") else 1
     # print("--> filters:", filters)
@@ -906,7 +914,7 @@ async def list_approvals(
 
     aggregates= _compute_aggregates(items)
     
-    print(f"--> Returning page {page} with {len(items)} items out of total {total}. \n\nAggregates:  {aggregates}")
+    # print(f"--> Returning page {page} with {len(items)} items out of total {total}. \n\nAggregates:  {aggregates}")
 
     return {
         "page": page,
@@ -936,7 +944,7 @@ async def get_attendance_session_details(
     if token_doc['cr_id'] != current_user['id']:
         raise HTTPException(status_code=403, detail="an unexpected error occurred")
     
-    print("--> token_doc for session details: {}".format(token_doc))
+    # print("--> token_doc for session details: {}".format(token_doc))
     return {
         "subject_code": token_doc["subject_code"],
         "department": token_doc["department"],

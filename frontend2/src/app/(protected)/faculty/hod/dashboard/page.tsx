@@ -1,11 +1,17 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
+import { useUserMe } from "@/hooks/useUserMe";
 
 export default function HODDashboardPage() {
+  const router = useRouter();
+  const { user } = useUserMe();
+  const deptName = user?.department ? `${user.department} Dept` : "Computer Science Dept";
+
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
@@ -15,7 +21,7 @@ export default function HODDashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               HOD Department Overview
             </h1>
-            <Badge variant="primary">Computer Science Dept</Badge>
+            <Badge variant="primary">{deptName}</Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Departmental faculty workload management and overall student attendance intelligence console.
@@ -69,10 +75,17 @@ export default function HODDashboardPage() {
 
       {/* Workspace Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="solid-card rounded-2xl p-6 border border-border space-y-4">
+        <div 
+          onClick={() => router.push("/faculty/hod/faculty")}
+          className="solid-card rounded-2xl p-6 border border-border space-y-4 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <h2 className="text-base font-bold text-foreground">Faculty Workload Allocation</h2>
-            <Link href="/faculty/hod/faculty" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link 
+              href="/faculty/hod/faculty" 
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
               Assign Subjects →
             </Link>
           </div>

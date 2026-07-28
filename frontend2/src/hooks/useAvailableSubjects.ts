@@ -32,6 +32,15 @@ export function useAvailableSubjects({ semester, department }: UseAvailableSubje
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
+          // Fallback to /curriculum?department=...&semester=...
+          const fallbackRes = await apiFetch(`/curriculum${query}`);
+          const fallbackData = await fallbackRes.json().catch(() => ({}));
+          if (fallbackRes.ok && !cancelled) {
+            const items = Array.isArray(fallbackData?.data) ? fallbackData.data : [];
+            const list = items.flatMap((item: any) => item.subjects || []);
+            setAvailableSubjects(list);
+            return;
+          }
           throw new Error(data?.detail || "Failed to fetch available subjects pool");
         }
 

@@ -17,7 +17,7 @@ async def get_faculty_subject_codes_for_dept_sem(unique_faculty_id: str, departm
         curriculum_filter["department"] = str(department)
     if semester:
         curriculum_filter["semester"] = str(semester)
-    print(f"DEBUG: Curriculum filter for faculty {unique_faculty_id}: {curriculum_filter}")
+    # print(f"DEBUG: Curriculum filter for faculty {unique_faculty_id}: {curriculum_filter}")
     
     cursor = db["Curriculum"].find(curriculum_filter)
 

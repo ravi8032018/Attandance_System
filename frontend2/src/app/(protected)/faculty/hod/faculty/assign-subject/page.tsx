@@ -6,15 +6,17 @@ import { useFacultySubjects } from "@/hooks/useFacultySubjects";
 import { useAvailableSubjects } from "@/hooks/useAvailableSubjects";
 import { Badge } from "@/components/ui/Badge";
 import { apiFetch } from "@/lib/api";
+import { useUserMe } from "@/hooks/useUserMe";
 
 function AssignSubjectWorkspaceContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useUserMe();
+  const department = user?.department || "CS";
   const initialFacultyId = searchParams.get("faculty_id") || "CSFAC01";
 
   const [facultyId, setFacultyId] = useState(initialFacultyId);
   const [semester, setSemester] = useState("4");
-  const [department, setDepartment] = useState("CS");
   const [selectedSubjectCode, setSelectedSubjectCode] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
@@ -170,19 +172,6 @@ function AssignSubjectWorkspaceContent() {
             >
               {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
                 <option key={s} value={s}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Department Filter</label>
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150"
-            >
-              {["CS", "CSE", "ECE", "AGRI"].map((d) => (
-                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>

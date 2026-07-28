@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
+import { useUserMe } from "@/hooks/useUserMe";
 
 interface CurriculumSubject {
   subject_code: string;
@@ -32,10 +35,29 @@ function BookIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function GridViewIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  );
+}
+
+function ListViewIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
 export default function HODCurriculumPage() {
+  const router = useRouter();
+  const { user } = useUserMe();
+  const department = user?.department || "CS";
   const [semester, setSemester] = useState("4");
-  const [department, setDepartment] = useState("CS");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [subjects, setSubjects] = useState<CurriculumSubject[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,7 +79,7 @@ export default function HODCurriculumPage() {
           setSubjects(list);
         }
       } catch (e) {
-        console.error("Failed to load curriculum subjects", e);
+        // console.error("Failed to load curriculum subjects", e);
       } finally {
         setLoading(false);
       }
@@ -75,22 +97,105 @@ export default function HODCurriculumPage() {
     );
   });
 
+  const tableColumns: Column<CurriculumSubject>[] = [
+    {
+      header: "Subject Code",
+      accessor: (item) => (
+        <span className="font-mono text-sm sm:text-base font-black text-indigo-600 dark:text-indigo-400">
+          {item.subject_code}
+        </span>
+      ),
+    },
+    {
+      header: "Subject Title",
+      accessor: (item) => (
+        <span className="font-bold text-foreground block text-left">
+          {item.subject_name}
+        </span>
+      ),
+    },
+    {
+      header: "Department & Sem",
+      accessor: (item) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <Badge variant="primary">{item.department}</Badge>
+          <Badge variant="muted">Sem {item.semester}</Badge>
+        </div>
+      ),
+    },
+    {
+      header: "Assigned Faculty",
+      accessor: (item) => (
+        <div className="flex items-center justify-left gap-2">
+          <FacultyAvatar firstName={item.faculty_name || "Unassigned"} size="sm" />
+          <span className="text-xs font-semibold text-foreground">{item.faculty_name || "Unassigned"}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Conducted Classes",
+      accessor: (item) => (
+        <span className="text-xs font-mono font-bold text-foreground">
+          {item.total_sessions || 0} Sessions
+        </span>
+      ),
+    },
+    {
+      header: "Action",
+      accessor: (item) => (
+        <Link
+          href={`/faculty/hod/curriculum/${encodeURIComponent(item.subject_code)}`}
+          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Open Workspace →
+        </Link>
+      ),
+    },
+  ];
+
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 antialiased subpixel-antialiased dark:antialiased ">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <BookIcon className="text-indigo-600 dark:text-indigo-400" />
-          <span>Curriculum Catalog</span>
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-          Academic department subject pool, assigned faculty workload, and course structure. Click any subject card to open its dedicated analytics workspace.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+            <BookIcon className="text-indigo-600 dark:text-indigo-400" />
+            <span>Curriculum Catalog</span>
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Academic department subject pool, assigned faculty workload, and course structure. Click any subject card to open its dedicated analytics workspace.
+          </p>
+        </div>
+
+        {/* View Switcher */}
+        <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border self-start sm:self-auto">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "grid"
+              ? "bg-card text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <GridViewIcon />
+            <span>Cards</span>
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "table"
+              ? "bg-card text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <ListViewIcon />
+            <span>Table</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
       <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
+        <div className="w-full md:w-auto">
           <div>
             <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block mb-1">
               Semester
@@ -98,25 +203,10 @@ export default function HODCurriculumPage() {
             <select
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="h-10 w-full sm:w-40 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
             >
               {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
                 <option key={s} value={s}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block mb-1">
-              Department
-            </label>
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              {["CS", "CSE", "ECE", "AGRI"].map((d) => (
-                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
@@ -135,10 +225,10 @@ export default function HODCurriculumPage() {
         </div>
       </div>
 
-      {/* Subject Cards Grid - Navigates to dedicated page upon click */}
+      {/* Main Display */}
       {loading ? (
         <div className="p-12 text-center text-xs font-bold text-muted-foreground animate-pulse">
-          Loading curriculum catalog cards...
+          Loading curriculum catalog...
         </div>
       ) : filteredSubjects.length === 0 ? (
         <div className="solid-card rounded-2xl p-12 text-center space-y-2 border border-border">
@@ -148,13 +238,13 @@ export default function HODCurriculumPage() {
             No subjects match your selected filters. Try choosing a different semester or department.
           </p>
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {filteredSubjects.map((subject) => (
-            <Link
+            <div
               key={subject.subject_code}
-              href={`/faculty/hod/curriculum/${encodeURIComponent(subject.subject_code)}`}
-              className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden bg-card"
+              onClick={() => router.push(`/faculty/hod/curriculum/${encodeURIComponent(subject.subject_code)}`)}
+              className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden bg-card space-y-4"
             >
               <div className="space-y-3">
                 {/* Header Badges */}
@@ -163,24 +253,34 @@ export default function HODCurriculumPage() {
                     {subject.subject_code}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="secondary">Sem {subject.semester}</Badge>
+                    <Badge variant="muted">Sem {subject.semester}</Badge>
                     <Badge variant="primary">{subject.department}</Badge>
                   </div>
                 </div>
 
                 {/* Main Subject Title */}
-                <h3 className="text-base font-black text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                <h4 className="text-base font-black text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
                   {subject.subject_name}
-                </h3>
+                </h4>
 
                 {/* Faculty Info & Session Stats */}
                 <div className="pt-2 border-t border-border/60 space-y-2 text-xs">
                   <div className="flex items-center gap-2">
                     <FacultyAvatar firstName={subject.faculty_name || "Unassigned"} size="md" />
                     <div className="truncate">
-                      <span className="font-bold text-sm text-foreground truncate block">
-                        {subject.faculty_name || "Unassigned"}
-                      </span>
+                      {subject.faculty_id ? (
+                        <Link
+                          href={`/faculty/hod/faculty/${encodeURIComponent(subject.faculty_id)}`}
+                          className="font-bold text-sm text-foreground/95 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline truncate block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {subject.faculty_name || "Unassigned"}
+                        </Link>
+                      ) : (
+                        <span className="font-bold text-sm text-foreground truncate block">
+                          {subject.faculty_name || "Unassigned"}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -194,14 +294,24 @@ export default function HODCurriculumPage() {
               </div>
 
               {/* Footer CTA */}
-              <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
+              <div className="pt-3 border-t border-border/80 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
                 <span>Open Subject Workspace</span>
                 <span>→</span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
+      ) : (
+        <DataTable
+          columns={tableColumns}
+          data={filteredSubjects}
+          keyExtractor={(item) => item.subject_code}
+          loading={loading}
+          emptyMessage="No subjects found."
+          onRowClick={(item) => router.push(`/faculty/hod/curriculum/${encodeURIComponent(item.subject_code)}`)}
+        />
       )}
     </main>
   );
 }
+

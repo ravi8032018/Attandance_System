@@ -107,6 +107,7 @@ function HamburgerIcon({ className = "" }: { className?: string }) {
 const studentNavItems: NavItem[] = [
   { href: "/student/dashboard", label: "My Dashboard", icon: DashboardIcon },
   { href: "/student/profile", label: "My Profile", icon: ProfileIcon },
+  { href: "/student/reports", label: "My Reports", icon: ReportsIcon },
   { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
 ];
 
@@ -115,7 +116,7 @@ const adminNavItems: NavItem[] = [
   { href: "/admin/departments", label: "Departments", icon: FacultyManagementIcon },
   { href: "/admin/students", label: "Students", icon: StudentsIcon },
   { href: "/admin/courses", label: "Courses", icon: CurriculumIcon },
-  { href: "/admin/reports", label: "Reports", icon: ReportsIcon },
+  { href: "/admin/reports", label: "Reports & Analytics", icon: ReportsIcon },
   { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
 ];
 
@@ -125,6 +126,7 @@ const facultyNavItems: NavItem[] = [
   { href: "/faculty/list_students", label: "My Students", icon: StudentsIcon },
   { href: "/faculty/attendance/take", label: "Take Attendance", icon: TakeAttendanceIcon },
   { href: "/faculty/attendance/approve", label: "Approve Attendance", icon: ApproveAttendanceIcon },
+  { href: "/faculty/reports", label: "Reports & Analytics", icon: ReportsIcon },
   { href: "/faculty/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
 ];
 

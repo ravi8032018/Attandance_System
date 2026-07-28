@@ -13,6 +13,7 @@ interface DataTableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   className?: string;
+  onRowClick?: (item: T) => void;
 }
 
 export function DataTable<T>({
@@ -22,17 +23,18 @@ export function DataTable<T>({
   loading = false,
   emptyMessage = "No data found.",
   className = "",
+  onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className={`w-full overflow-hidden rounded-2xl solid-card border border-border ${className}`}>
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse min-w-[650px]">
+        <table className="w-full text-center text-sm border-collapse min-w-[650px]">
           <thead>
             <tr className="border-b border-border bg-muted/60">
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`py-3.5 px-4 text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest ${col.className || ""}`}
+                  className={`py-3.5 px-4 text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest text-center ${col.className || ""}`}
                 >
                   {col.header}
                 </th>
@@ -44,8 +46,8 @@ export function DataTable<T>({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
                   {columns.map((_, cIdx) => (
-                    <td key={cIdx} className="py-4 px-4">
-                      <div className="h-4 bg-muted rounded-lg w-3/4" />
+                    <td key={cIdx} className="py-4 px-4 text-center">
+                      <div className="h-4 bg-muted rounded-lg w-3/4 mx-auto" />
                     </td>
                   ))}
                 </tr>
@@ -63,10 +65,12 @@ export function DataTable<T>({
               data.map((item) => (
                 <tr
                   key={keyExtractor(item)}
-                  className="hover:bg-muted/50 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150"
+                  onClick={() => onRowClick && onRowClick(item)}
+                  className={`hover:bg-muted/50 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 ${onRowClick ? "cursor-pointer" : ""
+                    }`}
                 >
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={`py-3.5 px-4 text-foreground font-semibold ${col.className || ""}`}>
+                    <td key={cIdx} className={`py-3.5 px-4 text-foreground font-semibold text-center ${col.className || ""}`}>
                       {col.accessor(item)}
                     </td>
                   ))}

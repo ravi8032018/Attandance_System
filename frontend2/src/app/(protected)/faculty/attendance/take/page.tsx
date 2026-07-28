@@ -41,7 +41,7 @@ export default function TakeAttendancePage() {
           setSubjectCode("");
         }
       } catch (e) {
-        console.error("Failed to load faculty subjects", e);
+        // console.error("Failed to load faculty subjects", e);
         setSubjects([]);
         setSubjectCode("");
       }
@@ -67,7 +67,7 @@ export default function TakeAttendancePage() {
           setAttendanceMap(initialMap);
         }
       } catch (e) {
-        console.error("Failed to load students roster", e);
+        // console.error("Failed to load students roster", e);
       } finally {
         setLoading(false);
       }
@@ -269,21 +269,21 @@ export default function TakeAttendancePage() {
         {/* Roster Table */}
         <div className="rounded-2xl solid-card border border-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse min-w-[650px]">
-              <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            <table className="w-full text-center text-sm border-collapse min-w-[650px]">
+              <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-center">
                 <tr>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Registration No</th>
-                  <th className="py-3.5 px-4">Name</th>
-                  <th className="py-3.5 px-4">Roll No</th>
-                  <th className="py-3.5 px-4">Email</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  <th className="py-3.5 px-4 text-center">Registration No</th>
+                  <th className="py-3.5 px-4 text-center">Name</th>
+                  <th className="py-3.5 px-4 text-center">Roll No</th>
+                  <th className="py-3.5 px-4 text-center">Email</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={5} className="py-4 px-4">
+                      <td colSpan={5} className="py-4 px-4 text-center">
                         <div className="h-4 bg-muted rounded-lg w-full" />
                       </td>
                     </tr>
@@ -301,16 +301,16 @@ export default function TakeAttendancePage() {
                       <tr
                         key={st.registration_no}
                         onClick={() => toggleStudentStatus(st.registration_no)}
-                        className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150"
+                        className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 text-center"
                       >
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 text-center">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleStudentStatus(st.registration_no);
                             }}
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 ${isPresent
+                            className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 mx-auto ${isPresent
                               ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                               : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
                               }`}
@@ -318,7 +318,7 @@ export default function TakeAttendancePage() {
                             <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
                           </button>
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-extrabold text-xs text-indigo-600 dark:text-indigo-400">
+                        <td className="py-3.5 px-4 font-mono font-black text-sm sm:text-base text-indigo-600 dark:text-indigo-400 text-center">
                           {st.registration_no}
                         </td>
                         <td className="py-3.5 px-4 font-semibold text-foreground">

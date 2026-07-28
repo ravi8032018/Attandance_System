@@ -16,7 +16,7 @@ async def generate_unique_student_id(course, registration_year, department, prev
     ).sort("registration_no", DESCENDING).limit(1)
 
     result_list= await cursor.to_list(None)
-    print("\nresult_list: ",result_list)
+    # print("\nresult_list: ",result_list)
 
     if result_list:    # Determine next serial number
         max_serial= int(result_list[0]["registration_no"][-3:])
@@ -33,8 +33,8 @@ async def generate_unique_student_id(course, registration_year, department, prev
 
     unique_id_clean = unique_id.replace(" ", "").replace("-", "").replace(",","").strip().upper()
 
-    print("unique_id_clean: ", unique_id_clean)
-    print(f"department: {department}, course: {course}, registration_year: {registration_year}")
+    # print("unique_id_clean: ", unique_id_clean)
+    # print(f"department: {department}, course: {course}, registration_year: {registration_year}")
 
     cursor1 = db["Students"].find(
         {"registration_no": unique_id_clean}
@@ -52,17 +52,17 @@ async def skip_regitration_no_if_exists(reg_no):
     new_serial_str= max_serial + 1
     reg_no = reg_no[:-3]
 
-    print("max serial: ", max_serial)
-    print("new_reg_no: ", reg_no)
+    # print("max serial: ", max_serial)
+    # print("new_reg_no: ", reg_no)
 
     new_reg_no= str(reg_no) + str(new_serial_str).zfill(3)
-    print("new_reg_no: ", new_reg_no)
+    # print("new_reg_no: ", new_reg_no)
 
     cursor = db["Students"].find(
         {"registration_no": new_reg_no}
     ).sort("registration_no", DESCENDING).limit(1)
     result_list = await cursor.to_list(None)
-    print("result_list: ", result_list)
+    # print("result_list: ", result_list)
 
     if result_list:
         skip_regitration_no_if_exists(new_reg_no)

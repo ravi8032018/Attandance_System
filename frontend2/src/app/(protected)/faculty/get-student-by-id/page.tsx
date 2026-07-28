@@ -60,7 +60,7 @@ function StudentLookupContent() {
           setCurriculumMap(map);
         }
       } catch (e) {
-        console.warn("Could not load curriculum catalog", e);
+        // console.warn("Could not load curriculum catalog", e);
       }
 
       // 3. Fetch Student Attendance Report
@@ -73,7 +73,7 @@ function StudentLookupContent() {
           setReports(Array.isArray(reportData?.reports) ? reportData.reports : []);
         }
       } catch (e) {
-        console.warn("Could not load attendance reports for student", e);
+        // console.warn("Could not load attendance reports for student", e);
       }
     } catch (e: any) {
       setError(e?.message || "Failed to locate student.");
@@ -222,15 +222,15 @@ function StudentLookupContent() {
                 <div className="solid-card rounded-2xl p-6 border border-border space-y-4">
                   <h4 className="text-sm font-bold text-foreground">Subject Breakdown</h4>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-center text-xs">
                       <thead>
-                        <tr className="border-b border-border text-muted-foreground font-bold uppercase tracking-wider">
-                          <th className="pb-3 px-2">Subject Code</th>
-                          <th className="pb-3 px-2">Subject Name</th>
+                        <tr className="border-b border-border text-muted-foreground font-bold uppercase tracking-wider text-center">
+                          <th className="pb-3 px-2 text-center">Subject Code</th>
+                          <th className="pb-3 px-2 text-center">Subject Name</th>
                           <th className="pb-3 px-2 text-center">Total Classes</th>
                           <th className="pb-3 px-2 text-center">Present</th>
                           <th className="pb-3 px-2 text-center">Absent</th>
-                          <th className="pb-3 px-2 text-right">Percentage</th>
+                          <th className="pb-3 px-2 text-center">Percentage</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">

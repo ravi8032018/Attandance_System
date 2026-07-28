@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, Column } from "@/components/ui/DataTable";
@@ -18,6 +19,7 @@ interface RecentSession {
 }
 
 export default function FacultyDashboardPage() {
+  const router = useRouter();
   const { faculty, isHod } = useFacultyMe();
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<RecentSession[]>([]);
@@ -169,6 +171,7 @@ export default function FacultyDashboardPage() {
             keyExtractor={(item) => item.id}
             loading={loading}
             emptyMessage="No recent attendance sessions found."
+            onRowClick={() => router.push("/faculty/attendance/take")}
           />
         </div>
 

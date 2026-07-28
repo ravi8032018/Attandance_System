@@ -78,6 +78,8 @@ class AttendanceReportFiltersRequest(BaseModel):
 class SubjectAttendanceReportFilter(BaseModel):
     registration_no: str
     subject_code: Optional[str] = Field(None, description="Subject code. If omitted, return report for all subjects.")
+    start_date: Optional[datetime] = Field(None, description="Optional start date for report filtering.")
+    end_date: Optional[datetime] = Field(None, description="Optional end date for report filtering.")
     
 class MarkAttendanceByCRRequest(BaseModel):
     attendance_token: str

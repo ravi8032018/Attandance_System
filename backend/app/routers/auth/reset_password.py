@@ -69,7 +69,7 @@ async def reset_fac_password(req:  SetPasswordRequest, token: str =Query(...)):
         )
         return {"message": "Password reset successful. You may now log in."}
     except Exception as e:
-        print()
+        # print()
         raise HTTPException(status_code=500, detail="Error in resetting faculty password:" + str(e))
 
 
@@ -91,13 +91,13 @@ async def request_password_otp(
         user = await db.Admins.find_one({"email": email, "status": "active"}, {"_id": 1, "email": 1})
         coll = "Admin"
 
-    print(f"--> user {user} coll {coll}")
+    # print(f"--> user {user} coll {coll}")
     OTP= _gen_otp()
     expiry= now + timedelta(minutes=10)
     hash_pw= await hash_password(OTP)
-    print("--> hash_pw ", hash_pw)
+    # print("--> hash_pw ", hash_pw)
     await db.PasswordResetDB.delete_many({"email": email, "type": "forgot_password"})
-    print("--> after hash_pw ")
+    # print("--> after hash_pw ")
     await db["PasswordResetDB"].insert_one({
         "email": email,
         "type": "forgot_password",

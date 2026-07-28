@@ -26,7 +26,7 @@ async def list_curriculum(
                     raise HTTPException(status_code=403, detail="Access denied. Only admins, faculties and Student can see his Student reports.")
                 student_dept = student.get("department")
                 student_sem = student.get("semester")
-                print(f"Student dept: {student_dept}, sem: {student_sem}")
+                # print(f"Student dept: {student_dept}, sem: {student_sem}")
                 if (department and department != student_dept) or (semester and semester != student_sem):
                     raise HTTPException(status_code=403, detail="Access denied.")
 
@@ -37,9 +37,9 @@ async def list_curriculum(
     if semester:
         query_filter["semester"] = semester
 
-    # Build faculty lookup map
+    # Build faculty lookup map (active faculty only)
     faculty_map = {}
-    async for fac in db.Faculty.find({}, {"faculty_id": 1, "first_name": 1, "last_name": 1, "_id": 0}):
+    async for fac in db.Faculty.find({"status": "active"}, {"faculty_id": 1, "first_name": 1, "last_name": 1, "_id": 0}):
         fid = fac.get("faculty_id")
         if fid:
             fn = fac.get("first_name", "").strip()
@@ -51,9 +51,9 @@ async def list_curriculum(
                 fname = fid
             faculty_map[fid] = fname
 
-    # Build attendance sessions count lookup map
+    # Build attendance sessions count lookup map (non-rejected sessions only)
     sessions_count_map = {}
-    async for att in db.Attendance.find({}, {"subject_code": 1, "_id": 0}):
+    async for att in db.Attendance.find({"status": {"$nin": ["rejected", "cancelled"]}}, {"subject_code": 1, "_id": 0}):
         scode = att.get("subject_code")
         if scode:
             sessions_count_map[scode] = sessions_count_map.get(scode, 0) + 1
@@ -85,8 +85,34 @@ async def list_curriculum(
                 subjects=subjs,
             )
         )
-    print("--> subject list returned from /curriculum : ", items)
+    # print("--> subject list returned from /curriculum : ", items)
     return CurriculumListResponse(data=items)
+
+@router.get("/subjects")
+async def get_subjects_pool(
+    department: Optional[str] = Query(None, description="Filter by department, e.g. CS"),
+    semester: Optional[str] = Query(None, description="Filter by semester, e.g. 4"),
+    current_user: dict = Depends(get_current_user),
+):
+    '''Returns pool of subjects for a given department and semester.'''
+    query_filter: dict = {}
+    if department:
+        query_filter["department"] = str(department)
+    if semester:
+        query_filter["semester"] = str(semester)
+
+    cursor = db["Curriculum"].find(query_filter)
+    subjects_list = []
+    async for doc in cursor:
+        for s in doc.get("subjects", []):
+            subjects_list.append(
+                SubjectItem(
+                    subject_code=s.get("subject_code"),
+                    subject_name=s.get("subject_name", s.get("subject_code")),
+                    faculty_id=s.get("faculty_id"),
+                )
+            )
+    return {"data": subjects_list}
 
 @router.get("/subject-details/{subject_code}")
 async def get_subject_details(
@@ -126,7 +152,7 @@ async def get_subject_details(
     faculty_info = None
     fac_id = subj_data.get("faculty_id")
     if fac_id:
-        fac = await db.Faculty.find_one({"faculty_id": fac_id})
+        fac = await db.Faculty.find_one({"faculty_id": fac_id, "status": "active"})
         if fac:
             fn = fac.get("first_name", "").strip()
             ln = fac.get("last_name", "").strip()
@@ -143,9 +169,10 @@ async def get_subject_details(
     date_7_days_ago = now - timedelta(days=7)
     date_30_days_ago = now - timedelta(days=30)
 
-    # 2. Attendance Sessions Query (case-insensitive subject_code)
+    # 2. Attendance Sessions Query (case-insensitive subject_code, excluding rejected & cancelled sessions)
     session_query = {
-        "subject_code": {"$regex": f"^{subject_code}$", "$options": "i"}
+        "subject_code": {"$regex": f"^{subject_code}$", "$options": "i"},
+        "status": {"$nin": ["rejected", "cancelled"]}
     }
 
     sessions = []
@@ -167,40 +194,41 @@ async def get_subject_details(
 
     enrolled_students_map = {}
 
-    # Query active students with subjects.<subject_code>
+    sem_list = []
+    if sem:
+        sem_list = [sem]
+        if isinstance(sem, int) or (isinstance(sem, str) and str(sem).isdigit()):
+            sem_list = [int(sem), str(sem)]
+
+    # Query active students belonging to this semester and department
     student_query = {
-        "status": "active",
-        "$or": [
-            {f"subjects.{subject_code}": {"$exists": True}},
-            {"$expr": {
-                "$gt": [
-                    {"$size": {
-                        "$filter": {
-                            "input": {"$objectToArray": {"$ifNull": ["$subjects", {}]}},
-                            "as": "subj",
-                            "cond": {"$regexMatch": {"input": "$$subj.k", "regex": f"^{subject_code}$", "options": "i"}}
-                        }
-                    }},
-                    0
-                ]
-            }}
-        ]
+        "status": "active"
     }
     if dept:
-        student_query["department"] = dept
-    if sem:
-        student_query["semester"] = sem
+        student_query["department"] = {"$regex": f"^{dept}$", "$options": "i"}
+    if sem_list:
+        student_query["semester"] = {"$in": sem_list}
 
-    student_cursor = db.Students.find(student_query, {"registration_no": 1, "first_name": 1, "last_name": 1, "_id": 0})
+    student_cursor = db.Students.find(student_query, {"registration_no": 1, "first_name": 1, "last_name": 1, "semester": 1, "department": 1, "_id": 0})
     async for st in student_cursor:
         reg = st.get("registration_no")
         if reg:
             enrolled_students_map[reg] = st
 
+    # Also check att_reg_nos if any student is explicitly marked, but MUST strictly match semester and department
     if att_reg_nos:
+        extra_query = {
+            "registration_no": {"$in": list(att_reg_nos)},
+            "status": "active"
+        }
+        if dept:
+            extra_query["department"] = {"$regex": f"^{dept}$", "$options": "i"}
+        if sem_list:
+            extra_query["semester"] = {"$in": sem_list}
+
         extra_cursor = db.Students.find(
-            {"registration_no": {"$in": list(att_reg_nos)}},
-            {"registration_no": 1, "first_name": 1, "last_name": 1, "_id": 0}
+            extra_query,
+            {"registration_no": 1, "first_name": 1, "last_name": 1, "semester": 1, "department": 1, "_id": 0}
         )
         async for st in extra_cursor:
             reg = st.get("registration_no")
@@ -437,23 +465,23 @@ async def update_curriculum():
         "course": "BSC"
     }
     cursor =  await db["Curriculum"].find_one(pay)
-    print("--> docs: ",cursor)
+    # print("--> docs: ",cursor)
     # docs = await cursor.to_list(length=None)  # await here
 
     data = docs[0]["subjects"] if docs else None
-    print("--> data: ",data)
+    # print("--> data: ",data)
     subject_doc = {
         "subjects": {
             subject["subject_code"]: subject["subject_name"]
             for subject in data
         }
     }
-    print("--> subject_doc: ",subject_doc)
+    # print("--> subject_doc: ",subject_doc)
     result = await db["Students"].update_many(
         {},  # filter: all documents
         {"$set": subject_doc}
     )
-    print("Matched:", result.matched_count, "Modified:", result.modified_count)
+    # print("Matched:", result.matched_count, "Modified:", result.modified_count)
 
 
 '''
@@ -511,13 +539,13 @@ async def insert_curriculum_in_DB():
     for data in json_data:
         try:
             result = await db["Curriculum"].insert_one(data)
-            print("Inserted Curriculum with id:", result)
+            # print("Inserted Curriculum with id:", result)
         except Exception as e:
-            print("Exception occurred while inserting data into Curriculum collection:", e)
+            # print("Exception occurred while inserting data into Curriculum collection:", e)
             result = None
-        print(result)
+        # print(result)
         if not result:
-            print("Error!!! Cannot insert data into database")
-        print("successfully inserted data into database")
+            # print("Error!!! Cannot insert data into database")
+        # print("successfully inserted data into database")
 
 '''
