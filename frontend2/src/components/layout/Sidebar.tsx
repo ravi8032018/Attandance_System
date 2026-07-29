@@ -140,12 +140,17 @@ const hodNavItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isStudent, isFaculty, isHod, isAdmin } = useUserMe();
+  const { isStudent, isFaculty, isHod, isAdmin, isCr } = useUserMe();
   const { unreadCount } = useNotifications(10000);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
 
   const [expanded, setExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const activeStudentNavItems: NavItem[] = [
+    ...studentNavItems,
+    ...(isCr ? [{ href: "/student/cr", label: "CR Console", icon: TakeAttendanceIcon, badge: "CR" }] : []),
+  ];
 
   useEffect(() => {
     try {
@@ -231,8 +236,8 @@ export function Sidebar() {
           const displayBadge = showNotifDot
             ? unreadCount > 9 ? "9+" : String(unreadCount)
             : showApproveDot
-            ? String(pendingApprovalsCount)
-            : item.badge;
+              ? String(pendingApprovalsCount)
+              : item.badge;
 
           return (
             <Link
@@ -268,13 +273,12 @@ export function Sidebar() {
               {/* Glowing Red Dot or Count Badge when sidebar is expanded */}
               {displayBadge && isExpanded && (
                 <span
-                  className={`ml-auto flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                    hasRedDot
+                  className={`ml-auto flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${hasRedDot
                       ? "bg-rose-500 text-white shadow-xs animate-pulse"
                       : active
-                      ? "bg-white/20 text-white"
-                      : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                  }`}
+                        ? "bg-white/20 text-white"
+                        : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                    }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
                   <span>{displayBadge}</span>
@@ -320,7 +324,7 @@ export function Sidebar() {
       {/* Middle Navigation Groups */}
       <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-0 custom-scrollbar">
         {isStudent ? (
-          renderNavSection("Student Workspace", studentNavItems, isExpanded, isMobileDrawer)
+          renderNavSection("Student Workspace", activeStudentNavItems, isExpanded, isMobileDrawer)
         ) : isAdmin ? (
           renderNavSection("System Administration", adminNavItems, isExpanded, isMobileDrawer)
         ) : (

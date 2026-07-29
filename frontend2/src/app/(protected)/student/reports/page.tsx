@@ -197,6 +197,45 @@ export default function StudentReportsPage() {
               </div>
             )}
           </div>
+
+          {/* Session History Log Table */}
+          {report.session_history && report.session_history.length > 0 && (
+            <div className="solid-card rounded-2xl p-6 border border-border space-y-4 bg-card">
+              <h3 className="text-base font-extrabold text-foreground border-b border-border pb-3 flex items-center justify-between">
+                <span>📅 Class-by-Class Attendance Log</span>
+                <Badge variant="muted" className="font-mono">Last {Math.min(10, report.session_history.length)} Sessions Logged</Badge>
+              </h3>
+
+              <div className="overflow-x-auto max-h-[350px]">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40 text-muted-foreground uppercase text-[10px] font-extrabold tracking-wider">
+                      <th className="p-3">Session ID</th>
+                      <th className="p-3">Subject Code</th>
+                      <th className="p-3">Date</th>
+                      <th className="p-3 text-right">Attendance Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {report.session_history.slice(0, 10).map((sess, idx) => (
+                      <tr key={sess.session_id || idx} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                          {sess.session_id || `SESS_${idx + 1}`}
+                        </td>
+                        <td className="p-3 font-extrabold text-foreground">{sess.subject_code}</td>
+                        <td className="p-3 text-muted-foreground font-medium">{sess.date ? String(sess.date).slice(0, 10) : "N/A"}</td>
+                        <td className="p-3 text-right">
+                          <Badge variant={sess.status === "present" ? "success" : "error"}>
+                            {sess.status === "present" ? "✓ Present" : "✕ Absent"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </main>

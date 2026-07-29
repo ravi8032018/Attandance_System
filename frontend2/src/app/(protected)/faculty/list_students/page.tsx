@@ -51,22 +51,68 @@ function StudentAvatar({ firstName = "", lastName = "" }: { firstName?: string; 
   );
 }
 
+interface CurriculumGroup {
+  department: string;
+  semester: string;
+  subjects: any[];
+}
+
 export default function StudentListPage() {
   const router = useRouter();
-  const [semester, setSemester] = useState("4");
-  const [department, setDepartment] = useState("CS");
+  const [curriculumGroups, setCurriculumGroups] = useState<CurriculumGroup[]>([]);
+  const [semester, setSemester] = useState("");
+  const [department, setDepartment] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // 1. Fetch assigned curriculum groups on mount
+  useEffect(() => {
+    async function loadAssignedCurriculum() {
+      try {
+        const res = await apiFetch(`/curriculum/my-subjects-for-sem`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const items: CurriculumGroup[] = Array.isArray(data?.data) ? data.data : [];
+          setCurriculumGroups(items);
+
+          if (items.length > 0) {
+            const firstDept = items[0].department || "CS";
+            const firstSem = String(items[0].semester || "4");
+            setDepartment(firstDept);
+            setSemester(firstSem);
+          }
+        }
+      } catch (e) {
+        setCurriculumGroups([]);
+      }
+    }
+    loadAssignedCurriculum();
+  }, []);
+
+  // Compute assigned departments and semesters dynamically
+  const assignedDepts = Array.from(
+    new Set(curriculumGroups.map((g) => g.department).filter(Boolean))
+  );
+
+  const assignedSems = Array.from(
+    new Set(
+      curriculumGroups
+        .filter((g) => !department || department === "all" || g.department.toUpperCase() === department.toUpperCase())
+        .map((g) => String(g.semester))
+        .filter(Boolean)
+    )
+  );
+
+  // 2. Load student roster based on selected assigned department & semester
   useEffect(() => {
     async function loadStudents() {
       setLoading(true);
       try {
         const params = new URLSearchParams({
-          ...(semester !== "all" ? { semester } : {}),
-          ...(department !== "all" ? { department } : {}),
+          ...(semester && semester !== "all" ? { semester } : {}),
+          ...(department && department !== "all" ? { department } : {}),
           limit: "100",
         });
         const res = await apiFetch(`/student/my/?${params.toString()}`);
@@ -75,13 +121,28 @@ export default function StudentListPage() {
           setStudents(Array.isArray(data?.data) ? data.data : []);
         }
       } catch (e) {
-        // console.error("Failed to load students", e);
+        // Silent catch
       } finally {
         setLoading(false);
       }
     }
-    loadStudents();
+    if (department || semester) {
+      loadStudents();
+    } else {
+      setLoading(false);
+    }
   }, [semester, department]);
+
+  function handleDepartmentChange(newDept: string) {
+    setDepartment(newDept);
+    const matchingGroups = curriculumGroups.filter(
+      (g) => newDept === "all" || g.department.toUpperCase() === newDept.toUpperCase()
+    );
+    const sems = Array.from(new Set(matchingGroups.map((g) => String(g.semester)).filter(Boolean)));
+    if (sems.length > 0 && !sems.includes(semester)) {
+      setSemester(sems[0]);
+    }
+  }
 
   const filteredStudents = students.filter((s) => {
     const q = search.toLowerCase().trim();
@@ -192,12 +253,19 @@ export default function StudentListPage() {
             <select
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full sm:w-36 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+              disabled={assignedSems.length === 0}
+              className="h-10 w-full sm:w-44 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50"
             >
-              <option value="all">All Semesters</option>
-              {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
-                <option key={s} value={s}>Semester {s}</option>
-              ))}
+              {assignedSems.length === 0 ? (
+                <option value="">No Assigned Semesters</option>
+              ) : (
+                <>
+                  {assignedSems.length > 1 && <option value="all">All Assigned Semesters</option>}
+                  {assignedSems.map((s) => (
+                    <option key={s} value={s}>Semester {s}</option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 
@@ -207,14 +275,20 @@ export default function StudentListPage() {
             </label>
             <select
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 w-full sm:w-40 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+              onChange={(e) => handleDepartmentChange(e.target.value)}
+              disabled={assignedDepts.length === 0}
+              className="h-10 w-full sm:w-44 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50"
             >
-              <option value="all">All Depts</option>
-              <option value="CS">Computer Science (CS)</option>
-              <option value="CSE">CSE</option>
-              <option value="ECE">ECE</option>
-              <option value="AGRI">AGRI</option>
+              {assignedDepts.length === 0 ? (
+                <option value="">No Assigned Depts</option>
+              ) : (
+                <>
+                  {assignedDepts.length > 1 && <option value="all">All Assigned Depts</option>}
+                  {assignedDepts.map((d) => (
+                    <option key={d} value={d}>Department {d}</option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
         </div>

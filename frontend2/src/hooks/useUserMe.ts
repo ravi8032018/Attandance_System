@@ -101,6 +101,7 @@ export function useUserMe() {
   const isHod = hasRole(roles, "hod");
   const isAdmin = pathname?.startsWith("/admin") || hasRole(roles, "admin");
   const isFaculty = hasRole(roles, "faculty") || isHod;
+  const isCr = hasRole(roles, "cr");
 
   return {
     user,
@@ -109,6 +110,7 @@ export function useUserMe() {
     isFaculty,
     isHod,
     isAdmin,
+    isCr,
     loading,
     error,
   };

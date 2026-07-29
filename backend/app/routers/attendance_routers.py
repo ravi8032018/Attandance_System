@@ -978,4 +978,62 @@ async def list_pending_cr_sessions(
     ]
 
 
+@router.get("/my-sessions", status_code=status.HTTP_200_OK)
+async def get_my_recent_sessions(
+    limit: int = Query(5, ge=1, le=50),
+    current_user: dict = Depends(get_current_user),
+):
+    '''Returns recent attendance sessions conducted by or for the logged in faculty.'''
+    user_roles = [r.lower() for r in current_user.get("role", [])]
+    fac_id = current_user.get("faculty_id") or current_user.get("unique_id")
+    
+    if not fac_id and "faculty" in user_roles:
+        fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": current_user.get("email")})
+        if fac_doc:
+            fac_id = fac_doc.get("faculty_id")
+
+    query: dict = {}
+    if "admin" not in user_roles and "hod" not in user_roles:
+        if fac_id:
+            curriculum_docs = await db.Curriculum.find({"subjects.faculty_id": fac_id}).to_list(None)
+            assigned_codes = {
+                s.get("subject_code")
+                for cdoc in curriculum_docs
+                for s in cdoc.get("subjects", [])
+                if s.get("faculty_id") == fac_id and s.get("subject_code")
+            }
+            if assigned_codes:
+                query["$or"] = [
+                    {"faculty_id": str(current_user["id"])},
+                    {"faculty_id": fac_id},
+                    {"subject_code": {"$in": list(assigned_codes)}}
+                ]
+            else:
+                query["faculty_id"] = str(current_user["id"])
+
+    effective_limit = min(limit, 10)
+    cursor = db.Attendance.find(query).sort("date", -1).limit(effective_limit)
+    sessions = []
+    async for doc in cursor:
+        records = doc.get("attendance_records", [])
+        total = len(records)
+        present = sum(1 for r in records if r.get("status") in ["present", "completed"])
+        dt_str = doc.get("date")
+        if isinstance(dt_str, datetime):
+            dt_str = dt_str.strftime("%Y-%m-%d")
+        else:
+            dt_str = str(dt_str or "")[:10]
+
+        sessions.append({
+            "id": doc.get("session_id", str(doc.get("_id"))),
+            "subject_code": doc.get("subject_code", "N/A"),
+            "date": dt_str or "N/A",
+            "present_count": present,
+            "total_students": total,
+            "status": "completed" if doc.get("status") in ["completed", "approved", "marked_by_faculty"] else "pending"
+        })
+    return {"data": sessions}
+
+
+
 

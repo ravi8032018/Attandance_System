@@ -4,8 +4,8 @@ from typing import Optional, List
 from backend.app.schemas.curriculum_schema import CurriculumListResponse, CurriculumItem, SubjectItem
 from backend.app.utils.dependencies import get_current_user
 from bson import ObjectId
-router = APIRouter(prefix="/curriculum", tags=["curriculum"])
 from datetime import datetime, timedelta, timezone
+router = APIRouter(prefix="/curriculum", tags=["curriculum"])
 
 @router.get("/", response_model=CurriculumListResponse)
 async def list_curriculum(
@@ -405,17 +405,20 @@ async def faculty_subjects_for_sem(
     # if not department or not semester:
     #     raise HTTPException(status_code=400, detail="Department and semester are required.")
     
-    faculty_id = str(current_user.get("unique_id")).upper()
+    fac_id_raw = current_user.get("faculty_id") or current_user.get("unique_id")
+    if not fac_id_raw and "faculty" in [r.lower() for r in current_user.get("role", [])]:
+        fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": current_user.get("email")})
+        if fac_doc:
+            fac_id_raw = fac_doc.get("faculty_id")
+    faculty_id = str(fac_id_raw or "").upper()
+
     if Faculty_id:
         if "admin" not in current_user["role"] and "hod" not in current_user["role"]:
             pass  # faculty can provide their own id or leave blank to get their subjects
         else:
-            # admin and hod can provide any faculty id, but validate it exists
-            faculty_id = ""  # reset to empty, will validate below
             faculty_id = Faculty_id.upper()
               
     # Build Mongo filter
-  
     query_filter: dict = {}
     if department:
         query_filter["department"] = str(department)
@@ -429,22 +432,24 @@ async def faculty_subjects_for_sem(
 
     items: list[CurriculumItem] = []
     async for doc in cursor:
-        # Optionally filter subjects in Python to only return the ones for this faculty
         faculty_subjects = [
             s for s in doc.get("subjects", [])
-            if s.get("faculty_id") == faculty_id
+            if not faculty_id or str(s.get("faculty_id", "")).upper() == faculty_id
         ]
-        items.append(
-            CurriculumItem(
-                subjects=[
-                    SubjectItem(
-                        subject_code=s["subject_code"],
-                        subject_name=s["subject_name"],
-                    )
-                    for s in faculty_subjects
-                ]
+        if faculty_subjects:
+            items.append(
+                CurriculumItem(
+                    department=doc.get("department", department),
+                    semester=str(doc.get("semester", semester or "")),
+                    subjects=[
+                        SubjectItem(
+                            subject_code=s["subject_code"],
+                            subject_name=s["subject_name"],
+                        )
+                        for s in faculty_subjects
+                    ]
+                )
             )
-        )
 
     return CurriculumListResponse(data=items)
 

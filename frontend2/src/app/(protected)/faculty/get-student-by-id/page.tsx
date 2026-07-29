@@ -203,18 +203,32 @@ function StudentLookupContent() {
             {totalClasses > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <StatCard title="Total Classes" value={String(totalClasses)} icon="📚" />
                   <StatCard
-                    title="Attended"
-                    value={String(totalPresent)}
-                    trend={{ value: `${overallPercentage}%`, positive: Number(overallPercentage) >= 75 }}
-                    icon="✓"
+                    title="Classes Attended"
+                    value={`${totalPresent} / ${totalClasses}`}
+                    description="Total Conducted Sessions"
+                    icon="📚"
+                    variant="indigo"
+                  />
+                  <StatCard
+                    title="Average Attendance"
+                    value={`${overallPercentage}%`}
+                    trend={{
+                      value: Number(overallPercentage) >= 75 ? "Eligible (≥75%)" : "Shortfall (<75%)",
+                      positive: Number(overallPercentage) >= 75,
+                    }}
+                    icon="📊"
+                    variant={Number(overallPercentage) >= 75 ? "emerald" : "amber"}
                   />
                   <StatCard
                     title="Absences"
                     value={`${totalAbsent} Sessions`}
-                    trend={{ value: Number(overallPercentage) >= 75 ? "Satisfactory" : "Low Attendance", positive: Number(overallPercentage) >= 75 }}
+                    trend={{
+                      value: Number(overallPercentage) >= 75 ? "Satisfactory" : "Low Attendance",
+                      positive: Number(overallPercentage) >= 75,
+                    }}
                     icon="✕"
+                    variant="rose"
                   />
                 </div>
 

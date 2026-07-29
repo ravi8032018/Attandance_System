@@ -202,13 +202,47 @@ function CRAttendanceContent() {
 
   if (!token || !tokenDetails) {
     return (
-      <main className="p-4 sm:p-8 max-w-3xl mx-auto">
-        <div className="solid-card rounded-2xl p-8 border border-border text-center space-y-4">
-          <div className="text-4xl">⚠️</div>
-          <h1 className="text-xl font-extrabold text-foreground">Invalid Attendance Session Link</h1>
-          <p className="text-xs text-muted-foreground">
-            The attendance token is missing, invalid, or expired. Please request a new ping from your subject faculty.
-          </p>
+      <main className="p-4 sm:p-8 max-w-3xl mx-auto space-y-6">
+        <div className="solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-6 bg-card text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🔑</div>
+            <div>
+              <h1 className="text-xl font-extrabold text-foreground">CR Attendance Marking Console</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {msg ? msg.text : "Enter your active attendance session token provided by your faculty."}
+              </p>
+            </div>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const inputEl = (e.currentTarget.elements.namedItem("inputToken") as HTMLInputElement)?.value?.trim();
+              if (inputEl) {
+                router.push(`/student/cr/attendance/take?token=${encodeURIComponent(inputEl)}`);
+              }
+            }}
+            className="space-y-4 pt-2"
+          >
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1.5 text-left">
+                Session Token / Passcode
+              </label>
+              <input
+                name="inputToken"
+                type="text"
+                placeholder="Enter or paste token e.g. 550e8400-e29b-41d4-a716-446655440000"
+                className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs font-mono text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs active:scale-[0.99]"
+            >
+              Launch Attendance Roster →
+            </button>
+          </form>
         </div>
       </main>
     );

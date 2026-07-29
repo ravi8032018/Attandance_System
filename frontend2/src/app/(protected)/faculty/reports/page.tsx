@@ -38,10 +38,11 @@ interface FacultyWorkload {
 
 export default function FacultyReportsPage() {
   const { user } = useUserMe();
-  const facultyId = user?.unique_id || "CSFAC01";
+  const facultyId = user?.faculty_id || user?.unique_id || user?.id || "";
   const department = user?.department || "CS";
 
   const [threshold, setThreshold] = useState<number>(75.0);
+  const [subjectCode, setSubjectCode] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"defaulters" | "workload">("defaulters");
 
   const [defaulters, setDefaulters] = useState<DefaulterStudent[]>([]);
@@ -50,11 +51,17 @@ export default function FacultyReportsPage() {
 
   useEffect(() => {
     async function loadFacultyReports() {
+      if (!user) return;
       setLoading(true);
       try {
+        const currentFacId = user?.faculty_id || user?.unique_id || user?.id || "";
+        const dept = user?.department || "CS";
+
         const [defRes, workRes] = await Promise.all([
-          apiFetch(`/reports/defaulters?department=${encodeURIComponent(department)}&threshold=${threshold}`),
-          apiFetch(`/reports/workload?department=${encodeURIComponent(department)}`),
+          apiFetch(
+            `/reports/defaulters?department=${encodeURIComponent(dept)}&faculty_id=${encodeURIComponent(currentFacId)}&subject_code=${encodeURIComponent(subjectCode)}&threshold=${threshold}`
+          ),
+          apiFetch(`/reports/workload?department=${encodeURIComponent(dept)}`),
         ]);
 
         if (defRes.ok) {
@@ -65,7 +72,14 @@ export default function FacultyReportsPage() {
         if (workRes.ok) {
           const workData = await workRes.json();
           const items: FacultyWorkload[] = workData?.data || [];
-          const myWorkload = items.find((w) => w.faculty_id.toUpperCase() === facultyId.toUpperCase()) || items[0] || null;
+          let myWorkload = currentFacId
+            ? items.find((w) => w.faculty_id.toUpperCase() === currentFacId.toUpperCase())
+            : null;
+
+          if (!myWorkload && items.length > 0) {
+            myWorkload = items[0];
+          }
+
           setWorkload(myWorkload);
         }
       } catch (e) {
@@ -76,7 +90,7 @@ export default function FacultyReportsPage() {
     }
 
     loadFacultyReports();
-  }, [department, facultyId, threshold]);
+  }, [user, threshold, subjectCode]);
 
   const defaulterColumns: ReportColumn[] = [
     { key: "registration_no", label: "Registration No" },
@@ -104,35 +118,19 @@ export default function FacultyReportsPage() {
     );
   }
 
+  const assignedSubs = workload?.assigned_subjects || [];
+
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-            <span>📈 Faculty Attendance & Teaching Analytics</span>
-            <Badge variant="primary" className="text-xs font-mono">{facultyId}</Badge>
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Personal teaching metrics, course attendance breakdown, and low attendance warning rosters.
-          </p>
-        </div>
-
-        {/* Warning Threshold Selector */}
-        <div className="flex items-center gap-2 bg-muted p-2 rounded-2xl border border-border">
-          <label className="text-xs font-bold text-muted-foreground whitespace-nowrap">
-            Warning Cutoff:
-          </label>
-          <select
-            value={threshold}
-            onChange={(e) => setThreshold(Number(e.target.value))}
-            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-          >
-            <option value={75.0}>Below 75% (Mandatory)</option>
-            <option value={60.0}>Below 60% (Moderate Risk)</option>
-            <option value={50.0}>Below 50% (Severe Risk)</option>
-          </select>
-        </div>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <span>📈 Faculty Attendance & Teaching Analytics</span>
+          <Badge variant="primary" className="text-xs font-mono">{workload?.faculty_id || facultyId}</Badge>
+        </h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          Personal teaching metrics, course attendance breakdown, and low attendance warning rosters.
+        </p>
       </div>
 
       {/* Stat Cards */}
@@ -205,6 +203,51 @@ export default function FacultyReportsPage() {
           </div>
         ) : activeTab === "defaulters" ? (
           <div className="space-y-4">
+            {/* Defaulter Roster Enclosure Filters Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-foreground">Defaulter Warning Controls</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Subject Filter Dropdown */}
+                <div className="flex items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
+                  <label className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider pl-1 whitespace-nowrap">
+                    Subject:
+                  </label>
+                  <select
+                    value={subjectCode}
+                    onChange={(e) => setSubjectCode(e.target.value)}
+                    className="h-8 max-w-[220px] truncate rounded-lg border border-border bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="all">
+                      {assignedSubs.length <= 1 ? "All Assigned Subjects" : `All Assigned Subjects (${assignedSubs.length})`}
+                    </option>
+                    {assignedSubs.map((sub) => (
+                      <option key={sub.subject_code} value={sub.subject_code}>
+                        {sub.subject_code} - {sub.subject_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Warning Cutoff Dropdown */}
+                <div className="flex items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
+                  <label className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider pl-1 whitespace-nowrap">
+                    Warning Cutoff:
+                  </label>
+                  <select
+                    value={threshold}
+                    onChange={(e) => setThreshold(Number(e.target.value))}
+                    className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value={75.0}>Below 75% (Mandatory)</option>
+                    <option value={60.0}>Below 60% (Moderate Risk)</option>
+                    <option value={50.0}>Below 50% (Severe Risk)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             {defaulters.length === 0 ? (
               <div className="p-8 text-center border border-dashed border-border rounded-xl">
                 <div className="text-2xl">🎉</div>

@@ -18,34 +18,87 @@ interface RecentSession {
   status: "completed" | "pending";
 }
 
+interface AssignedSubjectItem {
+  subject_code: string;
+  subject_name: string;
+  semester: string;
+  department: string;
+}
+
 export default function FacultyDashboardPage() {
   const router = useRouter();
   const { faculty, isHod } = useFacultyMe();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<RecentSession[]>([]);
+  const [assignedSubjects, setAssignedSubjects] = useState<AssignedSubjectItem[]>([]);
+  const [workload, setWorkload] = useState<any>(null);
+  const [enrolledStudentCount, setEnrolledStudentCount] = useState<number>(0);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState<number>(0);
 
   useEffect(() => {
     async function loadDashboardData() {
+      if (!faculty) return;
       setLoading(true);
       try {
-        const res = await apiFetch("/attendance/my-sessions?limit=5");
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setSessions(Array.isArray(data?.data) ? data.data : []);
+        // 1. Fetch assigned subjects for this faculty
+        const currRes = await apiFetch("/curriculum/my-subjects-for-sem");
+        let flatSubjects: AssignedSubjectItem[] = [];
+        if (currRes.ok) {
+          const currData = await currRes.json().catch(() => ({}));
+          const items = Array.isArray(currData?.data) ? currData.data : [];
+          flatSubjects = items.flatMap((item: any) =>
+            (item.subjects || []).map((s: any) => ({
+              subject_code: s.subject_code,
+              subject_name: s.subject_name || s.subject_code,
+              semester: String(item.semester || "N/A"),
+              department: item.department || faculty?.department || "CS",
+            }))
+          );
+          setAssignedSubjects(flatSubjects);
+        }
+
+        // 2. Fetch workload stats for this faculty
+        const dept = faculty?.department || "CS";
+        const wlRes = await apiFetch(`/reports/workload?department=${encodeURIComponent(dept)}`);
+        if (wlRes.ok) {
+          const wlData = await wlRes.json().catch(() => ({}));
+          const list = Array.isArray(wlData?.data) ? wlData.data : [];
+          const myWl = list.find((f: any) => f.faculty_id === faculty.faculty_id) || list[0] || null;
+          setWorkload(myWl);
+        }
+
+        // 3. Fetch enrolled student count for assigned semesters
+        if (flatSubjects.length > 0) {
+          const sems = Array.from(new Set(flatSubjects.map((s) => s.semester)));
+          const stuRes = await apiFetch(`/student/my/?department=${encodeURIComponent(dept)}&semester=${encodeURIComponent(sems[0])}&limit=100`);
+          if (stuRes.ok) {
+            const stuData = await stuRes.json().catch(() => ({}));
+            const list = Array.isArray(stuData?.data) ? stuData.data : [];
+            setEnrolledStudentCount(list.length);
+          }
+        }
+
+        // 4. Fetch pending session approval count
+        const appRes = await apiFetch("/attendance/approvals?status=pending");
+        if (appRes.ok) {
+          const appData = await appRes.json().catch(() => ({}));
+          setPendingApprovalsCount(appData?.total ?? appData?.items?.length ?? 0);
+        }
+
+        // 5. Fetch recent attendance sessions marked for this faculty (max 10)
+        const sessRes = await apiFetch("/attendance/my-sessions?limit=10");
+        if (sessRes.ok) {
+          const sessData = await sessRes.json().catch(() => ({}));
+          setSessions(Array.isArray(sessData?.data) ? sessData.data : []);
         }
       } catch (e) {
-        // Fallback demo items if backend endpoint is loading
-        setSessions([
-          { id: "SESS_101", subject_code: "CS301", date: "2026-07-22", present_count: 42, total_students: 45, status: "completed" },
-          { id: "SESS_102", subject_code: "CS304", date: "2026-07-21", present_count: 38, total_students: 40, status: "completed" },
-          { id: "SESS_103", subject_code: "CS308", date: "2026-07-20", present_count: 40, total_students: 45, status: "completed" },
-        ]);
+        // Silent catch
       } finally {
         setLoading(false);
       }
     }
     loadDashboardData();
-  }, []);
+  }, [faculty]);
 
   const columns: Column<RecentSession>[] = [
     {
@@ -63,9 +116,9 @@ export default function FacultyDashboardPage() {
     {
       header: "Attendance Ratio",
       accessor: (item) => {
-        const pct = Math.round((item.present_count / item.total_students) * 100);
+        const pct = item.total_students > 0 ? Math.round((item.present_count / item.total_students) * 100) : 0;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-center">
             <span className="font-bold text-xs">{item.present_count} / {item.total_students}</span>
             <Badge variant={pct >= 75 ? "success" : pct >= 60 ? "warning" : "error"}>
               {pct}%
@@ -94,13 +147,15 @@ export default function FacultyDashboardPage() {
               Welcome back, {faculty ? `${faculty.first_name} ${faculty.last_name}` : "Faculty"}
             </h1>
             {isHod && (
-              <Badge variant="primary" className="ml-1">
-                HOD Workspace Access
-              </Badge>
+              <Link href="/faculty/hod/dashboard">
+                <Badge variant="primary" className="ml-1 hover:underline cursor-pointer">
+                  HOD Workspace Access →
+                </Badge>
+              </Link>
             )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Academic Attendance & Workload Console Overview
+            Personal teaching metrics, attendance rosters, and class session activity.
           </p>
         </div>
 
@@ -116,7 +171,7 @@ export default function FacultyDashboardPage() {
             href="/faculty/attendance/approve"
             className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2.5 text-xs font-bold transition-colors duration-150"
           >
-            Approve Sessions
+            Approve Sessions ({pendingApprovalsCount})
           </Link>
         </div>
       </div>
@@ -124,31 +179,31 @@ export default function FacultyDashboardPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Today's Classes"
-          value="4 Sessions"
-          description="Next: CS301 at 10:30 AM"
+          title="Assigned Courses"
+          value={`${assignedSubjects.length} Courses`}
+          description={assignedSubjects.length > 0 ? `${assignedSubjects[0].subject_code} (${assignedSubjects[0].department})` : "Active load"}
           icon="📚"
           variant="indigo"
         />
         <StatCard
           title="Avg Attendance Rate"
-          value="88.4%"
-          trend={{ value: "+2.1%", positive: true }}
-          description="vs. previous week"
+          value={workload ? `${workload.avg_class_attendance_pct}%` : "74.4%"}
+          trend={{ value: workload ? `${workload.total_classes_conducted} Sessions` : "32 Sessions", positive: (workload?.avg_class_attendance_pct ?? 74.4) >= 75 }}
+          description="Across assigned courses"
           icon="📊"
           variant="emerald"
         />
         <StatCard
-          title="Total Enrolled Students"
-          value="142"
-          description="Across 3 sections"
+          title="Enrolled Students"
+          value={`${enrolledStudentCount}`}
+          description="In active sections"
           icon="🎓"
           variant="blue"
         />
         <StatCard
           title="Pending Approvals"
-          value="2 Requests"
-          trend={{ value: "Action Required", positive: false }}
+          value={`${pendingApprovalsCount} Requests`}
+          trend={{ value: pendingApprovalsCount > 0 ? "Action Required" : "Up to date", positive: pendingApprovalsCount === 0 }}
           description="Submitted by CRs"
           icon="✅"
           variant="amber"
@@ -160,7 +215,10 @@ export default function FacultyDashboardPage() {
         {/* Recent Sessions Table */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-foreground">Recent Lecture Sessions</h2>
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <span>Recent Lecture Sessions</span>
+              <Badge variant="muted" className="font-mono">{sessions.length}</Badge>
+            </h2>
             <Link href="/faculty/attendance/take" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
               View All →
             </Link>
@@ -170,36 +228,31 @@ export default function FacultyDashboardPage() {
             data={sessions}
             keyExtractor={(item) => item.id}
             loading={loading}
-            emptyMessage="No recent attendance sessions found."
+            emptyMessage="No recent attendance sessions found for your assigned subjects."
             onRowClick={() => router.push("/faculty/attendance/take")}
           />
         </div>
 
-        {/* Quick Schedule & Info Panel */}
+        {/* Course Load & Schedule Panel */}
         <div className="space-y-4">
-          <h2 className="text-base font-bold text-foreground">Today's Schedule</h2>
-          <div className="solid-card rounded-2xl p-4 border border-border space-y-3">
-            <div className="flex items-start justify-between pb-3 border-b border-border">
-              <div>
-                <p className="text-xs font-bold text-foreground">CS301 • Data Structures</p>
-                <p className="text-[11px] text-muted-foreground">09:00 AM – 10:00 AM • Room 302</p>
-              </div>
-              <Badge variant="success">Completed</Badge>
-            </div>
-            <div className="flex items-start justify-between pb-3 border-b border-border">
-              <div>
-                <p className="text-xs font-bold text-foreground">CS304 • Database Management</p>
-                <p className="text-[11px] text-muted-foreground">10:30 AM – 11:30 AM • Lab 04</p>
-              </div>
-              <Badge variant="primary">Next Up</Badge>
-            </div>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold text-foreground">CS308 • Operating Systems</p>
-                <p className="text-[11px] text-muted-foreground">02:00 PM – 03:00 PM • Room 105</p>
-              </div>
-              <Badge variant="muted">Scheduled</Badge>
-            </div>
+          <h2 className="text-base font-bold text-foreground">Teaching Assignments</h2>
+          <div className="solid-card rounded-2xl p-5 border border-border space-y-3 bg-card">
+            {assignedSubjects.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-4 text-center">No subjects currently assigned to your profile.</p>
+            ) : (
+              assignedSubjects.map((sub) => (
+                <div key={sub.subject_code} className="flex items-start justify-between pb-3 border-b border-border last:border-0 last:pb-0">
+                  <div className="space-y-1">
+                    <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 block">
+                      {sub.subject_code}
+                    </span>
+                    <p className="text-xs font-extrabold text-foreground">{sub.subject_name}</p>
+                    <span className="text-[10px] text-muted-foreground block font-medium">Department {sub.department}</span>
+                  </div>
+                  <Badge variant="primary">Sem {sub.semester}</Badge>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

@@ -6,11 +6,17 @@ import { Student, Subject } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { useRouter } from "next/navigation";
 
+interface CurriculumGroup {
+  department: string;
+  semester: string;
+  subjects: Subject[];
+}
+
 export default function TakeAttendancePage() {
   const router = useRouter();
-  const [semester, setSemester] = useState("4");
-  const [department, setDepartment] = useState("CS");
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [curriculumGroups, setCurriculumGroups] = useState<CurriculumGroup[]>([]);
+  const [department, setDepartment] = useState("");
+  const [semester, setSemester] = useState("");
   const [subjectCode, setSubjectCode] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, "present" | "absent">>({});
@@ -19,61 +25,122 @@ export default function TakeAttendancePage() {
   const [pinging, setPinging] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // 1. Fetch ONLY subjects assigned to the logged-in faculty for dept & sem
+  // 1. Fetch ALL assigned curriculum items for this faculty on mount
   useEffect(() => {
-    async function loadFacultySubjects() {
+    async function loadFacultyCurriculum() {
+      setLoading(true);
       try {
-        const res = await apiFetch(
-          `/curriculum/my-subjects-for-sem?department=${encodeURIComponent(department)}&semester=${encodeURIComponent(semester)}`
-        );
-        const data = await res.json().catch(() => ({}));
+        const res = await apiFetch(`/curriculum/my-subjects-for-sem`);
         if (res.ok) {
-          const items = Array.isArray(data?.data) ? data.data : [];
-          const list = items.flatMap((item: any) => item.subjects || []);
-          setSubjects(list);
-          if (list.length > 0) {
-            setSubjectCode(list[0].subject_code);
+          const data = await res.json().catch(() => ({}));
+          const items: CurriculumGroup[] = Array.isArray(data?.data) ? data.data : [];
+          setCurriculumGroups(items);
+
+          if (items.length > 0) {
+            const firstGroup = items[0];
+            const initDept = firstGroup.department || "CS";
+            const initSem = String(firstGroup.semester || "4");
+            const firstSubj = firstGroup.subjects?.[0]?.subject_code || "";
+
+            setDepartment(initDept);
+            setSemester(initSem);
+            setSubjectCode(firstSubj);
           } else {
+            setDepartment("");
+            setSemester("");
             setSubjectCode("");
           }
-        } else {
-          setSubjects([]);
-          setSubjectCode("");
         }
       } catch (e) {
-        // console.error("Failed to load faculty subjects", e);
-        setSubjects([]);
-        setSubjectCode("");
+        setCurriculumGroups([]);
+      } finally {
+        setLoading(false);
       }
     }
-    loadFacultySubjects();
-  }, [semester, department]);
+    loadFacultyCurriculum();
+  }, []);
 
-  // 2. Fetch students roster when semester & dept changes
+  // Compute options strictly based on assigned curriculumGroups
+  const assignedDepts = Array.from(
+    new Set(curriculumGroups.map((g) => g.department).filter(Boolean))
+  );
+
+  const assignedSems = Array.from(
+    new Set(
+      curriculumGroups
+        .filter((g) => g.department.toUpperCase() === department.toUpperCase())
+        .map((g) => String(g.semester))
+        .filter(Boolean)
+    )
+  );
+
+  const availableSubjects = curriculumGroups
+    .filter(
+      (g) =>
+        g.department.toUpperCase() === department.toUpperCase() &&
+        String(g.semester) === String(semester)
+    )
+    .flatMap((g) => g.subjects || []);
+
+  // 2. Fetch student roster whenever department, semester, or subjectCode changes
   useEffect(() => {
     async function loadStudents() {
+      if (!department || !semester || !subjectCode) {
+        setStudents([]);
+        setAttendanceMap({});
+        return;
+      }
       setLoading(true);
       try {
         const params = new URLSearchParams({ semester, department, limit: "100" });
-        const res = await apiFetch(`/student/my/?${params.toString()}`);
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          const list = Array.isArray(data?.data) ? data.data : [];
-          setStudents(list);
+        const stuRes = await apiFetch(`/student/my/?${params.toString()}`);
+        if (stuRes.ok) {
+          const stuData = await stuRes.json().catch(() => ({}));
+          const stuList = Array.isArray(stuData?.data) ? stuData.data : [];
+          setStudents(stuList);
           const initialMap: Record<string, "present" | "absent"> = {};
-          list.forEach((st: Student) => {
+          stuList.forEach((st: Student) => {
             initialMap[st.registration_no] = "present";
           });
           setAttendanceMap(initialMap);
+        } else {
+          setStudents([]);
         }
       } catch (e) {
-        // console.error("Failed to load students roster", e);
+        setStudents([]);
+        setAttendanceMap({});
       } finally {
         setLoading(false);
       }
     }
     loadStudents();
-  }, [semester, department]);
+  }, [department, semester, subjectCode]);
+
+  function handleDepartmentChange(newDept: string) {
+    setDepartment(newDept);
+    const matchingGroups = curriculumGroups.filter(
+      (g) => g.department.toUpperCase() === newDept.toUpperCase()
+    );
+    const newSem = matchingGroups[0]?.semester ? String(matchingGroups[0].semester) : "";
+    setSemester(newSem);
+
+    const subjs = matchingGroups
+      .filter((g) => String(g.semester) === newSem)
+      .flatMap((g) => g.subjects || []);
+    setSubjectCode(subjs[0]?.subject_code || "");
+  }
+
+  function handleSemesterChange(newSem: string) {
+    setSemester(newSem);
+    const subjs = curriculumGroups
+      .filter(
+        (g) =>
+          g.department.toUpperCase() === department.toUpperCase() &&
+          String(g.semester) === newSem
+      )
+      .flatMap((g) => g.subjects || []);
+    setSubjectCode(subjs[0]?.subject_code || "");
+  }
 
   function toggleStudentStatus(regNo: string) {
     setAttendanceMap((prev) => ({
@@ -204,14 +271,19 @@ export default function TakeAttendancePage() {
             </label>
             <select
               value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150"
+              onChange={(e) => handleSemesterChange(e.target.value)}
+              disabled={assignedSems.length === 0}
+              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-bold disabled:opacity-50"
             >
-              {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
-                <option key={s} value={s}>
-                  Semester {s}
-                </option>
-              ))}
+              {assignedSems.length === 0 ? (
+                <option value="">No Assigned Semesters</option>
+              ) : (
+                assignedSems.map((s) => (
+                  <option key={s} value={s}>
+                    Semester {s}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -221,14 +293,19 @@ export default function TakeAttendancePage() {
             </label>
             <select
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150"
+              onChange={(e) => handleDepartmentChange(e.target.value)}
+              disabled={assignedDepts.length === 0}
+              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-bold disabled:opacity-50"
             >
-              {["CS", "CSE", "ECE", "AGRI"].map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
+              {assignedDepts.length === 0 ? (
+                <option value="">No Assigned Departments</option>
+              ) : (
+                assignedDepts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -239,13 +316,13 @@ export default function TakeAttendancePage() {
             <select
               value={subjectCode}
               onChange={(e) => setSubjectCode(e.target.value)}
-              disabled={subjects.length === 0}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 disabled:opacity-50"
+              disabled={availableSubjects.length === 0}
+              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 disabled:opacity-50 font-bold"
             >
-              {subjects.length === 0 ? (
-                <option value="">No subjects assigned to you for Sem {semester}</option>
+              {availableSubjects.length === 0 ? (
+                <option value="">No Assigned Subjects</option>
               ) : (
-                subjects.map((subj) => (
+                availableSubjects.map((subj) => (
                   <option key={subj.subject_code} value={subj.subject_code}>
                     {`${subj.subject_code} • ${subj.subject_name}`}
                   </option>
@@ -266,76 +343,88 @@ export default function TakeAttendancePage() {
           </div>
         )}
 
-        {/* Roster Table */}
-        <div className="rounded-2xl solid-card border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-center text-sm border-collapse min-w-[650px]">
-              <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-center">
-                <tr>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4 text-center">Registration No</th>
-                  <th className="py-3.5 px-4 text-center">Name</th>
-                  <th className="py-3.5 px-4 text-center">Roll No</th>
-                  <th className="py-3.5 px-4 text-center">Email</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan={5} className="py-4 px-4 text-center">
-                        <div className="h-4 bg-muted rounded-lg w-full" />
+        {/* Roster Table or Empty State */}
+        {availableSubjects.length === 0 ? (
+          <div className="rounded-2xl solid-card border border-border p-10 text-center space-y-3">
+            <div className="text-4xl">📚</div>
+            <h3 className="text-base font-extrabold text-foreground">
+              No Teaching Assignments Found
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto font-medium">
+              You currently do not have any subjects assigned in the system. Class attendance marking is only available for assigned subjects.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl solid-card border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-sm border-collapse min-w-[650px]">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-center">
+                  <tr>
+                    <th className="py-3.5 px-4 text-center">Status</th>
+                    <th className="py-3.5 px-4 text-center">Registration No</th>
+                    <th className="py-3.5 px-4 text-center">Name</th>
+                    <th className="py-3.5 px-4 text-center">Roll No</th>
+                    <th className="py-3.5 px-4 text-center">Email</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={5} className="py-4 px-4 text-center">
+                          <div className="h-4 bg-muted rounded-lg w-full" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : students.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-sm font-medium text-muted-foreground">
+                        No active students enrolled in this section.
                       </td>
                     </tr>
-                  ))
-                ) : students.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-10 text-center text-sm font-medium text-muted-foreground">
-                      No students enrolled in this section.
-                    </td>
-                  </tr>
-                ) : (
-                  students.map((st) => {
-                    const isPresent = attendanceMap[st.registration_no] === "present";
-                    return (
-                      <tr
-                        key={st.registration_no}
-                        onClick={() => toggleStudentStatus(st.registration_no)}
-                        className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 text-center"
-                      >
-                        <td className="py-3.5 px-4 text-center">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleStudentStatus(st.registration_no);
-                            }}
-                            className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 mx-auto ${isPresent
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                              }`}
-                          >
-                            <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-black text-sm sm:text-base text-indigo-600 dark:text-indigo-400 text-center">
-                          {st.registration_no}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-foreground">
-                          {st.first_name} {st.last_name}
-                        </td>
-                        <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground">
-                          {st.roll_number || st.registration_no || "—"}
-                        </td>
-                        <td className="py-3.5 px-4 text-xs text-muted-foreground">{st.email}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    students.map((st) => {
+                      const isPresent = attendanceMap[st.registration_no] === "present";
+                      return (
+                        <tr
+                          key={st.registration_no}
+                          onClick={() => toggleStudentStatus(st.registration_no)}
+                          className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 text-center"
+                        >
+                          <td className="py-3.5 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleStudentStatus(st.registration_no);
+                              }}
+                              className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 mx-auto ${isPresent
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                                }`}
+                            >
+                              <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
+                            </button>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-black text-sm sm:text-base text-indigo-600 dark:text-indigo-400 text-center">
+                            {st.registration_no}
+                          </td>
+                          <td className="py-3.5 px-4 font-semibold text-foreground">
+                            {st.first_name} {st.last_name}
+                          </td>
+                          <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground">
+                            {st.roll_number || st.registration_no || "—"}
+                          </td>
+                          <td className="py-3.5 px-4 text-xs text-muted-foreground">{st.email}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Sleek, Non-Overlapping Footer Bar (contained strictly inside main content container) */}
