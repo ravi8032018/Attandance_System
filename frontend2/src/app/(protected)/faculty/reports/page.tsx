@@ -80,7 +80,7 @@ export default function FacultyReportsPage() {
             myWorkload = items[0];
           }
 
-          setWorkload(myWorkload);
+          setWorkload(myWorkload || null);
         }
       } catch (e) {
         // Silent catch

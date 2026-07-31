@@ -105,11 +105,9 @@ export default function StudentProfilePage() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs font-mono font-extrabold text-indigo-600 dark:text-indigo-400">{regNo}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="primary">Department of {dept}</Badge>
-                  <Badge variant="secondary">Semester {sem}</Badge>
-                  <Badge variant="muted">Degree Track: B.Sc</Badge>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="primary">{regNo}</Badge>
+                  <Badge variant="secondary">Degree Track: B.Sc</Badge>
                 </div>
               </div>
             </div>
@@ -136,7 +134,7 @@ export default function StudentProfilePage() {
                 <>
                   <div>
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Overall Attendance Rate</span>
-                    <span className="text-sm font-black font-mono text-indigo-600 dark:text-indigo-400">
+                    <span className="text-md font-black font-mono text-indigo-600 dark:text-indigo-400">
                       {summary.overall_attendance_pct}% ({summary.overall_attended} / {summary.overall_total_classes} Classes)
                     </span>
                   </div>
@@ -161,12 +159,18 @@ export default function StudentProfilePage() {
 
               <div className="space-y-3">
                 {summary.subject_breakdown.map((sub) => (
-                  <div key={sub.subject_code} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl border border-border bg-background">
+                  <Link
+                    key={sub.subject_code}
+                    href={`/student/courses/${encodeURIComponent(sub.subject_code)}`}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl border border-border bg-background hover:border-indigo-500/50 hover:bg-muted/40 transition-all group"
+                  >
                     <div>
-                      <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 block mb-0.5">
+                      <h4 className="text-sm font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {sub.subject_name}
+                      </h4>
+                      <span className="mt-1 font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 block">
                         {sub.subject_code}
                       </span>
-                      <h4 className="text-xs font-extrabold text-foreground">{sub.subject_name}</h4>
                     </div>
                     <div className="flex items-center gap-3 self-end sm:self-auto">
                       <span className="text-xs font-mono text-muted-foreground font-semibold">
@@ -175,8 +179,11 @@ export default function StudentProfilePage() {
                       <Badge variant={sub.is_eligible ? "success" : "error"}>
                         {sub.attendance_pct}%
                       </Badge>
+                      <span className="text-muted-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-transform group-hover:translate-x-1 font-bold text-xs">
+                        →
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

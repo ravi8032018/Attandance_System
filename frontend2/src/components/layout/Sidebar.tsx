@@ -106,6 +106,7 @@ function HamburgerIcon({ className = "" }: { className?: string }) {
 
 const studentNavItems: NavItem[] = [
   { href: "/student/dashboard", label: "My Dashboard", icon: DashboardIcon },
+  { href: "/student/courses", label: "My Courses", icon: CurriculumIcon },
   { href: "/student/profile", label: "My Profile", icon: ProfileIcon },
   { href: "/student/reports", label: "My Reports", icon: ReportsIcon },
   { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },

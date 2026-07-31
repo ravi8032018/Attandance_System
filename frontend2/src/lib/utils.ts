@@ -17,7 +17,7 @@ export function normalizeRoles(rolesInput: string | string[] | undefined | null)
     .map((r) => r.trim().toLowerCase());
 }
 
-export function hasRole(userRoles: string | string[] | undefined | null, targetRole: "faculty" | "hod" | "student" | "admin"): boolean {
+export function hasRole(userRoles: string | string[] | undefined | null, targetRole: "faculty" | "hod" | "student" | "admin" | "cr"): boolean {
   const normalized = normalizeRoles(userRoles);
   if (targetRole === "faculty") {
     return normalized.includes("faculty") || normalized.includes("hod");

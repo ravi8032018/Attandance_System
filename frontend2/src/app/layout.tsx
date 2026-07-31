@@ -3,8 +3,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export const metadata = {
-  title: "Academic Attendance & Workload Portal",
-  description: "Role-based academic management and attendance system",
+  title: "SAMS | AUS - Student Attendance & Management System",
+  description: "Student Attendance & Management System - Department of Computer Science, Assam University",
 };
 
 // Inline script to prevent FOUC (Flash of Unstyled Content) before React mounts

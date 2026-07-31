@@ -162,7 +162,8 @@ async def get_subject_details(
                 "faculty_id": fac_id,
                 "name": fac_name,
                 "email": fac.get("email", ""),
-                "department": fac.get("department", dept)
+                "department": fac.get("department", dept),
+                "photo_url": fac.get("photo_url") or fac.get("profile_image") or fac.get("avatar") or None
             }
 
     now = datetime.now(timezone.utc)

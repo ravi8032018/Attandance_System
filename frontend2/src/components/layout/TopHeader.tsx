@@ -27,19 +27,17 @@ export function TopHeader() {
   const homeHref = isStudent
     ? "/student/dashboard"
     : isAdmin
-    ? "/admin/dashboard"
-    : "/faculty/dashboard";
+      ? "/admin/dashboard"
+      : "/faculty/dashboard";
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full bg-card/95 backdrop-blur-md transition-all duration-300 ease-in-out ${
-        scrolled ? "border-b border-border shadow-xs" : "border-b border-border/40"
-      }`}
+      className={`sticky top-0 z-40 w-full bg-card/95 backdrop-blur-md transition-all duration-300 ease-in-out ${scrolled ? "border-b border-border shadow-xs" : "border-b border-border/40"
+        }`}
     >
       <div
-        className={`w-full max-w-full px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-in-out ${
-          scrolled ? "py-2" : "py-3"
-        }`}
+        className={`w-full max-w-full px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-in-out ${scrolled ? "py-2" : "py-3"
+          }`}
       >
         <div className="flex items-center justify-between gap-4">
           {/* Logo & Department Branding */}
@@ -48,31 +46,30 @@ export function TopHeader() {
               key={logoSrc}
               src={logoSrc}
               alt="Assam University Logo"
-              className={`w-auto object-contain transition-all duration-300 ease-in-out ${
-                scrolled ? "h-9" : "h-12 sm:h-14"
-              } ${isDark ? "brightness-110 drop-shadow-sm" : ""}`}
+              className={`w-auto object-contain transition-all duration-300 ease-in-out ${scrolled ? "h-9" : "h-12 sm:h-14"
+                } ${isDark ? "brightness-110 drop-shadow-sm" : ""}`}
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   "https://upload.wikimedia.org/wikipedia/en/6/6e/Assam_University_Logo.png";
               }}
             />
-            <div className="flex flex-col">
+            <div className="flex flex-col justify-center">
               <div
-                className={`font-black tracking-tight text-foreground transition-all duration-300 ease-in-out ${
-                  scrolled ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
-                }`}
+                className={`font-extrabold tracking-tight transition-all duration-300 ease-in-out flex items-center gap-1.5 ${scrolled ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+                  }`}
               >
-                AUS&nbsp;<span className="text-indigo-600 dark:text-indigo-400">CS</span>
+                <span className="text-primary dark:text-primary">SAMS</span>
+                <span className="pb-1 font-semibold text-muted-foreground/70 text-[0.90em]">&nbsp;|&nbsp;</span>
+                <span className="text-foreground/90 dark:text-foreground/90">AUS</span>
               </div>
 
               <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  scrolled ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
-                }`}
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${scrolled ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
+                  }`}
               >
-                <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-muted-foreground tracking-tight">
-                  <span>Assam University, Silchar</span>
-                  <span className="text-muted-foreground/40">•</span>
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-[11.5px] font-medium text-muted-foreground tracking-normal">
+                  <span>Student Attendance &amp; Management System</span>
+                  <span className="font-semibold text-[1.1em] text-muted-foreground/70">•</span>
                   <span>Dept. of Computer Science</span>
                 </div>
               </div>
@@ -80,10 +77,32 @@ export function TopHeader() {
           </Link>
 
           {/* Right Header Actions Order: ThemeToggle -> NotificationPopover -> UserProfileMenu */}
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <NotificationPopover />
-            <UserProfileMenu />
+          <div
+            className={`flex items-center transition-all duration-300 ease-in-out ${
+              scrolled ? "gap-2 sm:gap-3" : "gap-5"
+            }`}
+          >
+            <div
+              className={`transition-all duration-300 ease-in-out transform origin-center ${
+                scrolled ? "scale-85 sm:scale-90" : "scale-100"
+              }`}
+            >
+              <ThemeToggle />
+            </div>
+            <div
+              className={`transition-all duration-300 ease-in-out transform origin-center ${
+                scrolled ? "scale-85 sm:scale-90" : "scale-100"
+              }`}
+            >
+              <NotificationPopover />
+            </div>
+            <div
+              className={`transition-all duration-300 ease-in-out transform origin-center ${
+                scrolled ? "scale-85 sm:scale-90" : "scale-100"
+              }`}
+            >
+              <UserProfileMenu />
+            </div>
           </div>
         </div>
       </div>

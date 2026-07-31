@@ -20,17 +20,17 @@ export default function CRConsolePage() {
   }
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="primary">CR Console</Badge>
             <Badge variant="secondary">Class Representative</Badge>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            CR Attendance Marking Console
+          <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight">
+            CR's Attendance Marking Console
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm sm:text-sm text-muted-foreground mt-0.5">
             Enter the attendance ping session token issued by your subject faculty to mark class attendance.
           </p>
         </div>
