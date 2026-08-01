@@ -75,3 +75,27 @@ export function formatDesignation(designation?: string, fallback = "Faculty"): s
     .join(" ");
 }
 
+/**
+ * Formats a date/time string, Date object, or timestamp into India Standard Time (IST, GMT+5:30).
+ * Example output: "1 Aug 2026, 02:46 PM"
+ */
+export function formatDateTimeIST(dateInput: string | Date | number | null | undefined): string {
+  if (!dateInput) return "—";
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return String(dateInput);
+
+    return d.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return String(dateInput);
+  }
+}
+

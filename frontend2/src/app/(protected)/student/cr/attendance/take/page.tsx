@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { Student } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
+import { formatDateTimeIST } from "@/lib/utils";
 
 interface TokenDetails {
   attendance_token: string;
@@ -33,6 +34,14 @@ function CRAttendanceContent() {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // 5-Second Auto-Dismiss for Messages System-Wide
+  useEffect(() => {
+    if (msg) {
+      const timer = setTimeout(() => setMsg(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [msg]);
 
   // 1. Fetch Session Metadata and Student Roster
   useEffect(() => {
@@ -139,13 +148,11 @@ function CRAttendanceContent() {
     setMsg(null);
 
     try {
-      // Build present records (backend auto-populates absentees)
-      const attendance_data = Object.entries(attendanceMap)
-        .filter(([_, status]) => status === "present" || status === "leave")
-        .map(([registration_no, status]) => ({
-          registration_no,
-          status,
-        }));
+      // Send complete attendance records for all enrolled students
+      const attendance_data = Object.entries(attendanceMap).map(([registration_no, status]) => ({
+        registration_no,
+        status,
+      }));
 
       const payload = {
         attendance_token: tokenDetails.attendance_token,
@@ -202,7 +209,7 @@ function CRAttendanceContent() {
 
   if (!token || !tokenDetails) {
     return (
-      <main className="p-4 sm:p-8 max-w-3xl mx-auto space-y-6">
+      <main className="p-4 sm:p-8 mx-auto space-y-6">
         <div className="solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-6 bg-card text-center sm:text-left">
           <div className="flex items-center gap-3">
             <div className="text-3xl">🔑</div>
@@ -249,7 +256,7 @@ function CRAttendanceContent() {
   }
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-full mx-auto space-y-6">
       {/* Header & Session Info */}
       <div className="solid-card rounded-2xl p-6 border border-border space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">

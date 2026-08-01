@@ -385,62 +385,66 @@ async def initiate_attendance_for_cr(
         initiate_request: FacultyToCRRequest,
         current_user: dict = Depends(faculty_required)
 ):
-    # print("--> Initiate attendance for CR request received:", initiate_request)
     try:
-        cr_user = await db.Students.find_one({
+        cr_users_cursor = db.Students.find({
             "department": initiate_request.department,
             "semester": initiate_request.semester,
             "role": "cr",
             "status": "active"
         })
-        # print("--> CR user found for request:", cr_user)
+        cr_users = await cr_users_cursor.to_list(None)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"CR for semester {initiate_request.semester} not found.") from e
-    # print("--> cr_user: {}".format(cr_user))
-    cr_user_id = str(cr_user["_id"])
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error finding CRs for semester {initiate_request.semester}.") from e
 
-    # 1. Generate a secure token and set expiration
-    token = secrets.token_hex(20)
+    if not cr_users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No active CR found for semester {initiate_request.semester} in department {initiate_request.department}.")
+
     now = datetime.now(timezone.utc)
     expires = now + timedelta(minutes=15)
+    notified_crs_count = 0
 
+    for cr_user in cr_users:
+        cr_user_id = str(cr_user["_id"])
 
-    # 2. Save the token to the database
-    token_doc = {
-        "attendance_token": token,
-        "subject_code": initiate_request.subject_code,
-        "department": initiate_request.department,
-        "semester": initiate_request.semester,
-        "faculty_id": current_user["id"],
-        "cr_id": cr_user_id,
-        "cr_registration_no": cr_user["registration_no"],
-        "date": initiate_request.class_date,
-        "created_at": now,
-        "expires_at": expires,
-        "is_used": False,
-    }
-    try:
-        await db.AttendanceTokens.insert_one(token_doc)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Cannot request CR at the moment, Please try again") from e
-    # 3. Construct the "Magic Link"
-    base_url = f"{BACKEND_HOST}/student/cr/"
-    magic_link = f"{base_url}/{token}/take-attendance"
+        # 1. Generate a secure token and set expiration per CR
+        token = secrets.token_hex(20)
 
-    # 4. Save notification to db and Send the real-time notification to the CR
-    # print("--> Sending notification to CR (user_id: {})".format(cr_user['registration_no']))
-    
-    notif_id= await save_notification(
-        user_id=cr_user_id,
-        type="cr_attendance_session_started",
-        title=f"Attendance Request for {initiate_request.subject_code} - {cr_user['subjects'][initiate_request.subject_code]}",
-        body="Please take attendance. You have 15 minutes.",
-        data={"token": token},
-        audience_role= ["cr"],
-        ttl_minutes=15,
-        send_ws=True,
-    )
-    return {"message": "Attendance initiated. CR has been notified."}
+        # 2. Save the token to the database
+        token_doc = {
+            "attendance_token": token,
+            "subject_code": initiate_request.subject_code,
+            "department": initiate_request.department,
+            "semester": initiate_request.semester,
+            "faculty_id": current_user["id"],
+            "cr_id": cr_user_id,
+            "cr_registration_no": cr_user.get("registration_no"),
+            "date": initiate_request.class_date,
+            "created_at": now,
+            "expires_at": expires,
+            "is_used": False,
+        }
+        try:
+            await db.AttendanceTokens.insert_one(token_doc)
+        except Exception:
+            continue
+
+        # Lookup subject name safely
+        subject_name = cr_user.get("subjects", {}).get(initiate_request.subject_code, initiate_request.subject_code)
+
+        # 3. Save notification and send WS to each CR
+        await save_notification(
+            user_id=cr_user_id,
+            type="cr_attendance_session_started",
+            title=f"Attendance Request for {initiate_request.subject_code} - {subject_name}",
+            body="Please take attendance. You have 15 minutes.",
+            data={"token": token},
+            audience_role=["cr"],
+            ttl_minutes=15,
+            send_ws=True,
+        )
+        notified_crs_count += 1
+
+    return {"message": f"Attendance initiated. {notified_crs_count} CR(s) notified."}
 
 @router.get("/token-details")
 async def get_cr_token_details(
@@ -528,49 +532,54 @@ async def submit_attendance_by_cr(
     # --- 2. If token is valid, proceed with your existing "auto-absent" logic ---
     # ... (Your logic to find absentees and create final_attendance_records) ...
     # ... (Your logic to create the new_session_doc with status 'pending_approval') ...
-    present_student_ids = [str(attandance_data.registration_no) for attandance_data in request_data.attendance_data]
-    # print("\n--> present_student_ids: ", present_student_ids)
+    # Build submitted student IDs
+    submitted_student_ids = [str(att.registration_no) for att in request_data.attendance_data if getattr(att, "registration_no", None)]
 
+    # Fetch names for submitted students
+    students_name_map = {}
+    if submitted_student_ids:
+        async for st in db.Students.find({"registration_no": {"$in": submitted_student_ids}}, {"registration_no": 1, "first_name": 1, "last_name": 1, "_id": 0}):
+            fn = st.get("first_name") or ""
+            ln = st.get("last_name") or ""
+            full_n = f"{fn} {ln}".strip()
+            if full_n:
+                students_name_map[st["registration_no"]] = full_n
+
+    # Query absentees in department & semester not in submitted list
     absent_students_cursor = db.Students.find(
         {
             "status": "active",
             "semester": token_doc["semester"],
             "department": token_doc["department"],
-            "subjects": {
-                "$elemMatch": {
-                    "subject_code": token_doc["subject_code"]
-                }
-            },
-            # --- The crucial part: find students NOT IN the present list ---
-            "registration_no": {"$nin": present_student_ids}
+            "registration_no": {"$nin": submitted_student_ids}
         },
-        # --- Projection: We only need their registration numbers ---
-        {"registration_no": 1, "_id": 0}
+        {"registration_no": 1, "first_name": 1, "last_name": 1, "_id": 0}
     )
-    # absent_students =
-    # print("--> absent Student records: ", absent_students_cursor)
 
-    # 1) Start from CR‑submitted records, but convert to dicts
+    # 1) Start from CR‑submitted records, convert to dicts and attach student_name
     final_attendance_records: list[dict] = []
 
     for rec in request_data.attendance_data:
-        # rec is StudentAttendanceRecord
         rec_dict = rec.model_dump() if hasattr(rec, "model_dump") else rec.dict()
-        # Ensure status is a plain string, not Enum
-        status = rec_dict.get("status")
-        if isinstance(status, Enum):
-            rec_dict["status"] = status.value
+        st_status = rec_dict.get("status")
+        if isinstance(st_status, Enum):
+            rec_dict["status"] = st_status.value
+        reg_no = rec_dict.get("registration_no")
+        if reg_no and not rec_dict.get("student_name"):
+            rec_dict["student_name"] = students_name_map.get(reg_no, reg_no)
         final_attendance_records.append(rec_dict)
-    # print("\n--> final_attendance_records: ", final_attendance_records)
 
     async for student in absent_students_cursor:
+        fn = student.get("first_name") or ""
+        ln = student.get("last_name") or ""
+        full_n = f"{fn} {ln}".strip() or student.get("registration_no")
         final_attendance_records.append({
             "registration_no": student["registration_no"],
+            "student_name": full_n,
             "status": "absent"
         })
-    # print("\n--> \n\nFinal attendance list: ",final_attendance_records)
+
     session_id = f"{token_doc['subject_code']}-{token_doc['date'].strftime('%Y%m%d%H%M')}"
-    # print("--> Session id:", session_id)
 
     # Lookup subject_name from curriculum
     subj_name = token_doc.get("subject_code")
@@ -588,6 +597,13 @@ async def submit_attendance_by_cr(
     except Exception:
         pass
 
+    # Extract CR details from current_user
+    cr_first_name = current_user.get("first_name") or ""
+    cr_last_name = current_user.get("last_name") or ""
+    cr_name = f"{cr_first_name} {cr_last_name}".strip() or current_user.get("name") or "CR Student"
+    cr_reg_no = current_user.get("registration_no", "")
+    cr_display_info = f"{cr_name} ({cr_reg_no})" if cr_reg_no else cr_name
+
     new_session_doc = {
         "session_id": session_id,
         "faculty_id": token_doc['faculty_id'],
@@ -596,8 +612,11 @@ async def submit_attendance_by_cr(
         "department": token_doc["department"],
         "semester": token_doc["semester"],
         "date": token_doc["date"],
-        "status": "pending",  # waiting for approval by faculty
-        "submission_details": "marked_by_cr",  # CR submission
+        "status": "pending",
+        "submission_details": cr_display_info,
+        "submitted_by": cr_display_info,
+        "cr_name": cr_name,
+        "cr_registration_no": cr_reg_no,
         "attendance_records": final_attendance_records,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -856,20 +875,47 @@ async def list_approvals(
 ):
     '''Faculty can view a paginated list of all sessions that are pending their approval. They can filter by subject, date range (e.g., last week, last month), and submission status (e.g., pending, marked_by_cr). Sorting options allow them to prioritize recent submissions or specific subjects. This helps them manage their approval workload effectively.'''
     status = status.strip().lower()
-    status_filters= ["pending", "marked_by_faculty"]
+    status_filters = ["pending", "marked_by_faculty"]
 
-    filters = {
-        "faculty_id": current_user["id"],
-    }
+    fac_id = current_user.get("faculty_id") or current_user.get("unique_id")
+    user_id_str = str(current_user["id"])
+    email = current_user.get("email", "").lower()
+
+    if not fac_id:
+        fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": email})
+        if fac_doc:
+            fac_id = fac_doc.get("faculty_id")
+
+    assigned_codes = set()
+    if fac_id:
+        curriculum_docs = await db.Curriculum.find({"subjects.faculty_id": fac_id}).to_list(None)
+        for cdoc in curriculum_docs:
+            for s in cdoc.get("subjects", []):
+                if str(s.get("faculty_id", "")).upper() == str(fac_id).upper() and s.get("subject_code"):
+                    assigned_codes.add(s.get("subject_code"))
+
+    fac_or: list = [
+        {"faculty_id": user_id_str},
+        {"created_by": user_id_str},
+        {"created_by": email},
+    ]
+    if fac_id:
+        fac_or.append({"faculty_id": fac_id})
+        fac_or.append({"created_by": fac_id})
+    if assigned_codes:
+        fac_or.append({"subject_code": {"$in": list(assigned_codes)}})
+
+    filters: dict = {"$or": fac_or}
+
     if status == "marked_by_cr":
         filters["submission_details"] = status
     if status in status_filters:
-        filters["status"]= status
+        filters["status"] = status
     if subject_code:
         filters["subject_code"] = subject_code
     if period:
         start_utc, end_utc = compute_period_range(period, tz="Asia/Kolkata")
-        filters["date"] = {"$gte": start_utc, "$lt": end_utc}  # half-open [start, end) [2]
+        filters["date"] = {"$gte": start_utc, "$lt": end_utc}
 
     # print("--> filters:", filters)
     sort_field = sort.lstrip("-")
@@ -889,6 +935,9 @@ async def list_approvals(
             "date": 1,
             "status": 1,
             "submission_details": 1,
+            "submitted_by": 1,
+            "cr_name": 1,
+            "cr_registration_no": 1,
         })
         .sort(sort_field, sort_dir)
         .skip((page - 1) * size)
@@ -980,38 +1029,46 @@ async def list_pending_cr_sessions(
 
 @router.get("/my-sessions", status_code=status.HTTP_200_OK)
 async def get_my_recent_sessions(
-    limit: int = Query(5, ge=1, le=50),
+    limit: int = Query(10, ge=1, le=50),
     current_user: dict = Depends(get_current_user),
 ):
-    '''Returns recent attendance sessions conducted by or for the logged in faculty.'''
+    '''Returns recent attendance sessions conducted by or for the logged in faculty member.'''
     user_roles = [r.lower() for r in current_user.get("role", [])]
     fac_id = current_user.get("faculty_id") or current_user.get("unique_id")
-    
-    if not fac_id and "faculty" in user_roles:
-        fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": current_user.get("email")})
+    user_id_str = str(current_user["id"])
+    email = current_user.get("email", "").lower()
+
+    if not fac_id:
+        fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": email})
         if fac_doc:
             fac_id = fac_doc.get("faculty_id")
 
-    query: dict = {}
-    if "admin" not in user_roles and "hod" not in user_roles:
-        if fac_id:
-            curriculum_docs = await db.Curriculum.find({"subjects.faculty_id": fac_id}).to_list(None)
-            assigned_codes = {
-                s.get("subject_code")
-                for cdoc in curriculum_docs
-                for s in cdoc.get("subjects", [])
-                if s.get("faculty_id") == fac_id and s.get("subject_code")
-            }
-            if assigned_codes:
-                query["$or"] = [
-                    {"faculty_id": str(current_user["id"])},
-                    {"faculty_id": fac_id},
-                    {"subject_code": {"$in": list(assigned_codes)}}
-                ]
-            else:
-                query["faculty_id"] = str(current_user["id"])
+    # Gather assigned subjects for this faculty member from Curriculum
+    assigned_codes = set()
+    if fac_id:
+        curriculum_docs = await db.Curriculum.find({"subjects.faculty_id": fac_id}).to_list(None)
+        for cdoc in curriculum_docs:
+            for s in cdoc.get("subjects", []):
+                if str(s.get("faculty_id", "")).upper() == str(fac_id).upper() and s.get("subject_code"):
+                    assigned_codes.add(s.get("subject_code"))
 
-    effective_limit = min(limit, 10)
+    query_or: list = [
+        {"faculty_id": user_id_str},
+        {"created_by": user_id_str},
+        {"created_by": email},
+    ]
+    if fac_id:
+        query_or.append({"faculty_id": fac_id})
+        query_or.append({"created_by": fac_id})
+    if assigned_codes:
+        query_or.append({"subject_code": {"$in": list(assigned_codes)}})
+
+    query = {
+        "$or": query_or,
+        "status": {"$in": ["completed", "approved", "marked_by_faculty"]}
+    }
+
+    effective_limit = min(limit, 20)
     cursor = db.Attendance.find(query).sort("date", -1).limit(effective_limit)
     sessions = []
     async for doc in cursor:
@@ -1030,7 +1087,7 @@ async def get_my_recent_sessions(
             "date": dt_str or "N/A",
             "present_count": present,
             "total_students": total,
-            "status": "completed" if doc.get("status") in ["completed", "approved", "marked_by_faculty"] else "pending"
+            "status": "completed"
         })
     return {"data": sessions}
 

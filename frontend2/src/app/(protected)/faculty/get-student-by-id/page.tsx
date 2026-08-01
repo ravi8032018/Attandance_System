@@ -6,6 +6,8 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { apiFetch } from "@/lib/api";
 
+import { useUserMe } from "@/hooks/useUserMe";
+
 interface SubjectReport {
   subject_code: string;
   subject_name?: string;
@@ -19,11 +21,114 @@ interface SubjectReport {
 function StudentLookupContent() {
   const searchParams = useSearchParams();
   const regParam = searchParams.get("reg") || "";
+  const { isHod, isAdmin } = useUserMe();
   const [regNo, setRegNo] = useState(regParam);
   const [student, setStudent] = useState<any>(null);
   const [reports, setReports] = useState<SubjectReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [crActionMsg, setCrActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [crSubmitting, setCrSubmitting] = useState(false);
+  const [showCrModal, setShowCrModal] = useState(false);
+  const [activeCrsList, setActiveCrsList] = useState<any[]>([]);
+  const [loadingActiveCrs, setLoadingActiveCrs] = useState(false);
+  const [modalActionMsg, setModalActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // 5-Second Auto-Dismiss for Messages System-Wide
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (crActionMsg) {
+      const timer = setTimeout(() => setCrActionMsg(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [crActionMsg]);
+
+  useEffect(() => {
+    if (modalActionMsg) {
+      const timer = setTimeout(() => setModalActionMsg(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [modalActionMsg]);
+
+  const fetchActiveCrs = async (dept?: string, sem?: string) => {
+    if (!dept || !sem) return;
+    setLoadingActiveCrs(true);
+    try {
+      const res = await apiFetch(`/student/active-crs?department=${encodeURIComponent(dept)}&semester=${encodeURIComponent(sem)}`);
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setActiveCrsList(data.raw_crs || []);
+      }
+    } catch {
+      setActiveCrsList([]);
+    } finally {
+      setLoadingActiveCrs(false);
+    }
+  };
+
+  const openCrManagementModal = async () => {
+    setModalActionMsg(null);
+    setShowCrModal(true);
+    if (student?.department && student?.semester) {
+      await fetchActiveCrs(student.department, String(student.semester));
+    }
+  };
+
+  // Automatically clear CR action notification message after 5 seconds (5000ms)
+  useEffect(() => {
+    if (crActionMsg) {
+      const timer = setTimeout(() => {
+        setCrActionMsg(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [crActionMsg]);
+
+  const handleModalToggleCR = async (targetRegNo: string, isRevoke: boolean) => {
+    setCrSubmitting(true);
+    setModalActionMsg(null);
+    try {
+      const endpoint = isRevoke
+        ? `/student/${encodeURIComponent(targetRegNo)}/revoke-cr`
+        : `/student/${encodeURIComponent(targetRegNo)}/promote-to-cr`;
+      const res = await apiFetch(endpoint, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const msgText = data.message || `CR status updated for ${targetRegNo}.`;
+        setModalActionMsg({ type: "success", text: msgText });
+        setCrActionMsg({ type: "success", text: msgText });
+        if (student?.department && student?.semester) {
+          await fetchActiveCrs(student.department, String(student.semester));
+        }
+        if (targetRegNo === student?.registration_no) {
+          setShowCrModal(false);
+          setStudent((prev: any) => {
+            if (!prev) return prev;
+            const roles: string[] = Array.isArray(prev.role) ? [...prev.role] : [];
+            if (isRevoke) {
+              return { ...prev, role: roles.filter((r) => r !== "cr"), is_cr: false };
+            } else {
+              return { ...prev, role: [...roles, "cr"], is_cr: true };
+            }
+          });
+        }
+      } else {
+        throw new Error(data.detail || "Operation failed.");
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || "Operation failed.";
+      setModalActionMsg({ type: "error", text: errMsg });
+      setCrActionMsg({ type: "error", text: errMsg });
+    } finally {
+      setCrSubmitting(false);
+    }
+  };
 
   const [curriculumMap, setCurriculumMap] = useState<Record<string, string>>({});
 
@@ -96,7 +201,7 @@ function StudentLookupContent() {
     totalClasses > 0 ? ((totalPresent / totalClasses) * 100).toFixed(1) : null;
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
           Student Profile & Attendance Record
@@ -162,6 +267,9 @@ function StudentLookupContent() {
                 {student.department && <Badge variant="primary">{student.department}</Badge>}
                 {student.course && <Badge variant="secondary">{student.course}</Badge>}
                 {student.semester && <Badge variant="secondary">Semester {student.semester}</Badge>}
+                {(Boolean(student.is_cr) || (Array.isArray(student.role) ? student.role.includes("cr") : String(student.role || "").includes("cr"))) && (
+                  <Badge variant="warning">Class Representative (CR)</Badge>
+                )}
                 <Badge variant={student.status === "active" ? "success" : "warning"}>
                   {(student.status || "active").toUpperCase()}
                 </Badge>
@@ -169,9 +277,9 @@ function StudentLookupContent() {
             </div>
 
             {/* Information Grid based on backend fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Email Address</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
+              <div className="overflow-hidden">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block ">Email Address</span>
                 <span className="text-sm font-semibold text-foreground">{student.email || "—"}</span>
               </div>
               <div>
@@ -195,6 +303,48 @@ function StudentLookupContent() {
                 <span className="text-sm font-semibold text-foreground">{student.batch_name || "—"}</span>
               </div>
             </div>
+
+            {/* CR Management Actions (for Admin & HOD ONLY - hidden from regular faculty) */}
+            {(isAdmin || isHod) && (
+              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Class Representative (CR) Status Management</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Designate or revoke CR privileges for this student (Max 2 CRs per semester/department rule applies).
+                  </p>
+                </div>
+                {(() => {
+                  const isCurrentCr = Boolean(student.is_cr) || (Array.isArray(student.role) ? student.role.includes("cr") : String(student.role || "").includes("cr"));
+                  return (
+                    <button
+                      type="button"
+                      disabled={crSubmitting}
+                      onClick={openCrManagementModal}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5 ${isCurrentCr
+                        ? "bg-rose-600 hover:bg-rose-700 text-white"
+                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        }`}
+                    >
+                      {crSubmitting
+                        ? "Processing..."
+                        : isCurrentCr
+                          ? "Revoke CR Role"
+                          : "Appoint Class Representative (CR)"}
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
+            {crActionMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-bold border ${crActionMsg.type === "success"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
+                  }`}
+              >
+                {crActionMsg.text}
+              </div>
+            )}
           </div>
 
           {/* Attendance Stats section from real backend aggregates */}
@@ -287,6 +437,159 @@ function StudentLookupContent() {
                 No attendance sessions recorded yet for this student.
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Onscreen CR Management Interactive Window Modal */}
+      {showCrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="solid-card rounded-3xl p-6 sm:p-8 border border-border max-w-2xl w-full bg-card shadow-2xl space-y-6 my-8 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div>
+                <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+                  <span>🎓 Class Representative (CR) Management</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Cohort: <strong className="text-foreground">Dept {student?.department}</strong> • <strong className="text-foreground">Semester {student?.semester}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCrModal(false)}
+                className="h-8 w-8 rounded-full bg-muted hover:bg-border text-muted-foreground hover:text-foreground flex items-center justify-center font-bold text-sm transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target Student Identity Card */}
+            {student && (
+              <div className="p-4 rounded-2xl border border-border bg-muted/30 flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Target Student</span>
+                  <h4 className="text-base font-extrabold text-foreground">
+                    {student.first_name} {student.last_name}
+                  </h4>
+                  <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                    {student.registration_no}
+                  </span>
+                </div>
+                <div>
+                  {Boolean(student.is_cr) || (Array.isArray(student.role) ? student.role.includes("cr") : String(student.role || "").includes("cr")) ? (
+                    <Badge variant="warning">Current CR</Badge>
+                  ) : (
+                    <Badge variant="secondary">Regular Student</Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Active Cohort CRs Capacity Overview */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
+                  Active Cohort CRs ({activeCrsList.length} / 2 Max Limit)
+                </h4>
+                <Badge variant={activeCrsList.length >= 2 ? "error" : "success"}>
+                  {activeCrsList.length >= 2 ? "Capacity Full (2/2)" : `${2 - activeCrsList.length} Slot Available`}
+                </Badge>
+              </div>
+
+              {loadingActiveCrs ? (
+                <p className="text-xs text-muted-foreground animate-pulse p-4 text-center">Loading active cohort CRs...</p>
+              ) : activeCrsList.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-4 rounded-xl border border-dashed border-border text-center">
+                  No active Class Representatives appointed yet in Department {student?.department}, Sem {student?.semester}.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {activeCrsList.map((crItem) => (
+                    <div
+                      key={crItem.registration_no}
+                      className="p-3.5 rounded-xl border border-border bg-background flex items-center justify-between gap-3"
+                    >
+                      <div className="truncate">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold text-foreground">{crItem.name}</span>
+                          <Badge variant="warning" className="text-[9px] py-0 px-1">CR</Badge>
+                        </div>
+                        <span className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 block">
+                          {crItem.registration_no} ({crItem.email})
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={crSubmitting}
+                        onClick={() => handleModalToggleCR(crItem.registration_no, true)}
+                        className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shrink-0 active:scale-95 disabled:opacity-50"
+                      >
+                        {crSubmitting ? "..." : "Revoke CR"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* System CR Rules Box */}
+            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-xs space-y-1.5 text-amber-800 dark:text-amber-300">
+              <h5 className="font-extrabold flex items-center gap-1.5">
+                <span>📌 System CR Capacity Rules</span>
+              </h5>
+              <p className="text-[11px] opacity-90 leading-relaxed">
+                1. Exactly <strong>2 Class Representatives (CRs)</strong> maximum allowed per semester & department.
+                <br />
+                2. If 2 CRs are active, click <strong>Revoke CR</strong> on one of the active CRs above before appointing a new student.
+                <br />
+                3. Access granted to <strong>Admin and HOD</strong> users.
+              </p>
+            </div>
+
+            {modalActionMsg && (
+              <div
+                className={`p-3.5 rounded-xl text-xs font-bold border ${modalActionMsg.type === "success"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
+                  }`}
+              >
+                {modalActionMsg.text}
+              </div>
+            )}
+
+            {/* Footer Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowCrModal(false)}
+                className="px-4 py-2 rounded-xl bg-card hover:bg-muted text-foreground border border-border text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+
+              {(() => {
+                const isCurrentCr = Boolean(student?.is_cr) || (Array.isArray(student?.role) ? student.role.includes("cr") : String(student?.role || "").includes("cr"));
+                return (
+                  <button
+                    type="button"
+                    disabled={crSubmitting}
+                    onClick={() => handleModalToggleCR(student.registration_no, isCurrentCr)}
+                    className={`px-5 py-2 rounded-xl text-xs font-extrabold text-white transition-all shadow-md active:scale-95 ${isCurrentCr
+                      ? "bg-rose-600 hover:bg-rose-700"
+                      : "bg-indigo-600 hover:bg-indigo-700"
+                      }`}
+                  >
+                    {crSubmitting
+                      ? "Processing..."
+                      : isCurrentCr
+                        ? `Confirm Revoke CR for ${student?.registration_no}`
+                        : `Confirm Appoint CR for ${student?.registration_no}`}
+                  </button>
+                );
+              })()}
+            </div>
           </div>
         </div>
       )}

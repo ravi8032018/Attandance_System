@@ -89,7 +89,17 @@ export default function FacultyDashboardPage() {
         const sessRes = await apiFetch("/attendance/my-sessions?limit=10");
         if (sessRes.ok) {
           const sessData = await sessRes.json().catch(() => ({}));
-          setSessions(Array.isArray(sessData?.data) ? sessData.data : []);
+          const rawSessions = Array.isArray(sessData?.data) ? sessData.data : [];
+          // Filter to only include approved/completed sessions and assigned subjects
+          const approvedSessions = rawSessions.filter(
+            (s: any) => s.status === "completed" || s.status === "approved" || s.status === "marked_by_faculty"
+          );
+          if (flatSubjects.length > 0) {
+            const assignedSet = new Set(flatSubjects.map((s) => s.subject_code.toUpperCase()));
+            setSessions(approvedSessions.filter((s: any) => assignedSet.has(String(s.subject_code || "").toUpperCase())));
+          } else {
+            setSessions(approvedSessions);
+          }
         }
       } catch (e) {
         // Silent catch
@@ -219,7 +229,7 @@ export default function FacultyDashboardPage() {
               <span>Recent Lecture Sessions</span>
               <Badge variant="muted" className="font-mono">{sessions.length}</Badge>
             </h2>
-            <Link href="/faculty/attendance/take" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link href="/faculty/reports" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
               View All →
             </Link>
           </div>
@@ -229,7 +239,6 @@ export default function FacultyDashboardPage() {
             keyExtractor={(item) => item.id}
             loading={loading}
             emptyMessage="No recent attendance sessions found for your assigned subjects."
-            onRowClick={() => router.push("/faculty/attendance/take")}
           />
         </div>
 

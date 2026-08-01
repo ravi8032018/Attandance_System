@@ -6,6 +6,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   description?: string;
+  subtitle?: string;
   icon?: React.ReactNode;
   variant?: StatCardVariant;
   trend?: {
@@ -28,12 +29,14 @@ export function StatCard({
   title,
   value,
   description,
+  subtitle,
   icon,
   variant = "indigo",
   trend,
   className = "",
 }: StatCardProps) {
   const iconStyle = iconVariantStyles[variant] || iconVariantStyles.indigo;
+  const subText = description || subtitle;
 
   return (
     <div
@@ -57,20 +60,20 @@ export function StatCard({
         )}
       </div>
 
-      {(description || trend) && (
+      {(subText || trend) && (
         <div className="mt-4 flex items-center gap-2 text-xs">
           {trend && (
             <span
               className={`inline-flex items-center font-extrabold px-2.5 py-0.5 rounded-full text-[11px] border ${trend.positive
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/80"
-                  : "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/80"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/80"
+                : "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/80"
                 }`}
             >
               {trend.positive ? "↑" : "↓"} {trend.value}
             </span>
           )}
-          {description && (
-            <span className="text-muted-foreground font-semibold">{description}</span>
+          {subText && (
+            <span className="text-muted-foreground font-semibold">{subText}</span>
           )}
         </div>
       )}

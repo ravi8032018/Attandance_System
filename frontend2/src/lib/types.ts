@@ -26,6 +26,8 @@ export interface Student {
   semester: string | number;
   department: string;
   status: string;
+  role?: string[];
+  is_cr?: boolean;
   roll_number?: string;
   guardian_email?: string;
   contact_number?: string;

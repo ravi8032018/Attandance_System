@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Student, Subject } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { useRouter } from "next/navigation";
 
 interface CurriculumGroup {
@@ -24,6 +25,14 @@ export default function TakeAttendancePage() {
   const [saving, setSaving] = useState(false);
   const [pinging, setPinging] = useState(false);
   const [msg, setMsg] = useState("");
+
+  // 5-Second Auto-Dismiss for Messages System-Wide
+  useEffect(() => {
+    if (msg) {
+      const timer = setTimeout(() => setMsg(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [msg]);
 
   // 1. Fetch ALL assigned curriculum items for this faculty on mount
   useEffect(() => {
@@ -265,71 +274,42 @@ export default function TakeAttendancePage() {
 
         {/* Control Bar */}
         <div className="rounded-2xl solid-card p-5 border border-border grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-              Semester
-            </label>
-            <select
-              value={semester}
-              onChange={(e) => handleSemesterChange(e.target.value)}
-              disabled={assignedSems.length === 0}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-bold disabled:opacity-50"
-            >
-              {assignedSems.length === 0 ? (
-                <option value="">No Assigned Semesters</option>
-              ) : (
-                assignedSems.map((s) => (
-                  <option key={s} value={s}>
-                    Semester {s}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+          <CustomSelect
+            label="Semester"
+            value={semester}
+            onChange={(val) => handleSemesterChange(val)}
+            disabled={assignedSems.length === 0}
+            placeholder={assignedSems.length === 0 ? "No Assigned Semesters" : "Select Semester..."}
+            options={assignedSems.map((s) => ({
+              value: s,
+              label: `Semester ${s}`,
+            }))}
+          />
 
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-              Department
-            </label>
-            <select
-              value={department}
-              onChange={(e) => handleDepartmentChange(e.target.value)}
-              disabled={assignedDepts.length === 0}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-bold disabled:opacity-50"
-            >
-              {assignedDepts.length === 0 ? (
-                <option value="">No Assigned Departments</option>
-              ) : (
-                assignedDepts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+          <CustomSelect
+            label="Department"
+            value={department}
+            onChange={(val) => handleDepartmentChange(val)}
+            disabled={assignedDepts.length === 0}
+            placeholder={assignedDepts.length === 0 ? "No Assigned Departments" : "Select Department..."}
+            options={assignedDepts.map((d) => ({
+              value: d,
+              label: d,
+            }))}
+          />
 
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-              Assigned Subject
-            </label>
-            <select
-              value={subjectCode}
-              onChange={(e) => setSubjectCode(e.target.value)}
-              disabled={availableSubjects.length === 0}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 disabled:opacity-50 font-bold"
-            >
-              {availableSubjects.length === 0 ? (
-                <option value="">No Assigned Subjects</option>
-              ) : (
-                availableSubjects.map((subj) => (
-                  <option key={subj.subject_code} value={subj.subject_code}>
-                    {`${subj.subject_code} • ${subj.subject_name}`}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+          <CustomSelect
+            label="Assigned Subject"
+            value={subjectCode}
+            onChange={setSubjectCode}
+            disabled={availableSubjects.length === 0}
+            placeholder={availableSubjects.length === 0 ? "No Assigned Subjects" : "Select Subject..."}
+            options={availableSubjects.map((subj) => ({
+              value: subj.subject_code,
+              label: `${subj.subject_code} • ${subj.subject_name}`,
+              badge: subj.subject_code,
+            }))}
+          />
         </div>
 
         {msg && (

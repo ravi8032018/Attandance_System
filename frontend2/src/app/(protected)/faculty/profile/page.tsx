@@ -62,7 +62,7 @@ export default function FacultyProfilePage() {
   const isLoading = meLoading || loadingExtra;
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">

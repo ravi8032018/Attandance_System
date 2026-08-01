@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
+import { formatDateTimeIST } from "@/lib/utils";
 
 interface PendingSessionItem {
   session_id: string;
@@ -275,12 +276,19 @@ export default function ApproveAttendancePage() {
                     <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-3 pt-0.5">
                       <span>Department: <strong className="text-foreground">{sess.department}</strong></span>
                       <span>•</span>
-                      <span>Submitted By: <strong className="text-foreground">{sess.submission_details || "marked_by_cr"}</strong></span>
+                      <span>
+                        Submitted By:{" "}
+                        <strong className="text-foreground">
+                          {sess.submission_details && sess.submission_details !== "marked_by_cr"
+                            ? sess.submission_details
+                            : "Class Representative"}
+                        </strong>
+                      </span>
                       <span>•</span>
                       <span>
                         Class Date:{" "}
                         <strong className="text-foreground">
-                          {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {formatDateTimeIST(sess.date)}
                         </strong>
                       </span>
                     </div>
@@ -323,14 +331,20 @@ export default function ApproveAttendancePage() {
                       <p className="text-xs font-bold text-muted-foreground animate-pulse">Loading student roster details...</p>
                     ) : (
                       <>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
-                            Class Attendance Roster ({sessionDetails.aggregates?.present_count} Present / {sessionDetails.aggregates?.absent_count} Absent)
-                          </h4>
-                          <span className="text-[11px] text-muted-foreground">
-                            Click any student status to modify before final approval.
-                          </span>
-                        </div>
+                        {(() => {
+                          const pCount = sessionDetails.attendance_records?.filter((r) => r.status === "present").length || 0;
+                          const aCount = sessionDetails.attendance_records?.filter((r) => r.status === "absent").length || 0;
+                          return (
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                                CLASS ATTENDANCE ROSTER ({pCount} PRESENT / {aCount} ABSENT)
+                              </h4>
+                              <span className="text-[11px] text-muted-foreground">
+                                Click any student status to modify before final approval.
+                              </span>
+                            </div>
+                          );
+                        })()}
 
                         {/* Student Cards: Main Focus on Student Name, Reg No below */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

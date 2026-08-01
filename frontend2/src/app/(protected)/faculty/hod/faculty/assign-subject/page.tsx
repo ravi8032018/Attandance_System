@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useFacultySubjects } from "@/hooks/useFacultySubjects";
 import { useAvailableSubjects } from "@/hooks/useAvailableSubjects";
 import { Badge } from "@/components/ui/Badge";
+import { CustomSelect, CustomSelectOption } from "@/components/ui/CustomSelect";
 import { apiFetch } from "@/lib/api";
 import { useUserMe } from "@/hooks/useUserMe";
 
@@ -21,11 +22,68 @@ function AssignSubjectWorkspaceContent() {
   const [assigning, setAssigning] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
 
+  // 5-Second Auto-Dismiss for Status Messages System-Wide
+  useEffect(() => {
+    if (statusMsg) {
+      const timer = setTimeout(() => setStatusMsg(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusMsg]);
+
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [currentFaculty, setCurrentFaculty] = useState<any>(null);
+  const [reassignConflict, setReassignConflict] = useState<{ message: string; subjectCode: string } | null>(null);
+  const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
+  const [facultySearchQuery, setFacultySearchQuery] = useState("");
+
   // Hook 1: Current faculty assigned subjects
   const { subjects: assignedSubjects, subjectsLoading: loadingAssigned, setSubjects: setAssignedSubjects } = useFacultySubjects(facultyId);
 
   // Hook 2: Available subjects pool filtered by semester & department
   const { availableSubjects, availableLoading: loadingAvailable } = useAvailableSubjects({ semester, department });
+
+  const filteredFacultyList = facultyList.filter((fac) => {
+    const q = facultySearchQuery.toLowerCase();
+    const fullName = `${fac.first_name || ""} ${fac.last_name || ""}`.toLowerCase();
+    const fid = String(fac.faculty_id || "").toLowerCase();
+    return fullName.includes(q) || fid.includes(q);
+  });
+
+  useEffect(() => {
+    async function loadFacultyList() {
+      try {
+        const res = await apiFetch("/faculty");
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const list = data.data || data.faculty || (Array.isArray(data) ? data : []);
+          setFacultyList(list);
+        }
+      } catch {
+        setFacultyList([]);
+      }
+    }
+    loadFacultyList();
+  }, []);
+
+  useEffect(() => {
+    async function loadTargetFaculty() {
+      if (!facultyId) return;
+      try {
+        const res = await apiFetch(`/faculty/get-faculty-by-id?id=${encodeURIComponent(facultyId)}`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setCurrentFaculty(data);
+        } else {
+          const match = facultyList.find((f) => String(f.faculty_id).toUpperCase() === facultyId.toUpperCase());
+          setCurrentFaculty(match || null);
+        }
+      } catch {
+        const match = facultyList.find((f) => String(f.faculty_id).toUpperCase() === facultyId.toUpperCase());
+        setCurrentFaculty(match || null);
+      }
+    }
+    loadTargetFaculty();
+  }, [facultyId, facultyList]);
 
   useEffect(() => {
     if (availableSubjects.length > 0) {
@@ -40,27 +98,43 @@ function AssignSubjectWorkspaceContent() {
     router.push(`/faculty/hod/faculty/assign-subject?faculty_id=${encodeURIComponent(id)}`);
   }
 
-  async function handleAssignSubject() {
+  async function handleAssignSubject(override = false) {
     if (!facultyId || !selectedSubjectCode) return;
     setAssigning(true);
     setStatusMsg("");
+    setReassignConflict(null);
 
     try {
       const res = await apiFetch("/curriculum/assign-subject", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ faculty_id: facultyId, subject_code: selectedSubjectCode }),
+        body: JSON.stringify({
+          faculty_id: facultyId,
+          subject_code: selectedSubjectCode,
+          override: override
+        }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        setStatusMsg(`Successfully assigned subject ${selectedSubjectCode} to ${facultyId}`);
+        const targetName = currentFaculty?.first_name ? `${currentFaculty.first_name} ${currentFaculty.last_name || ""}` : facultyId;
+        setStatusMsg(data.message || `Successfully assigned subject ${selectedSubjectCode} to ${targetName} (${facultyId})`);
         const found = availableSubjects.find((s) => s.subject_code === selectedSubjectCode);
         if (found) {
-          setAssignedSubjects((prev) => [...prev, found]);
+          setAssignedSubjects((prev) => {
+            if (prev.some((s) => s.subject_code === selectedSubjectCode)) return prev;
+            return [...prev, found];
+          });
         }
+      } else if (res.status === 409) {
+        const detailMsg = typeof data.detail === "string" ? data.detail : data.detail?.message || "Subject is currently assigned to another faculty member. Reassignment confirmation required.";
+        setReassignConflict({
+          message: detailMsg,
+          subjectCode: selectedSubjectCode
+        });
       } else {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.detail || "Failed to assign subject");
+        throw new Error(data.detail || "Failed to assign subject");
       }
     } catch (e: any) {
       setStatusMsg(`Error: ${e?.message || "Assignment failed"}`);
@@ -91,6 +165,57 @@ function AssignSubjectWorkspaceContent() {
 
   const isAlreadyAssigned = assignedSubjects.some((s) => s.subject_code === selectedSubjectCode);
 
+  // Workload indicator calculation
+  const count = assignedSubjects.length;
+  let workloadBadge: {
+    label: string;
+    variant: "primary" | "success" | "warning" | "error" | "muted";
+    color: string;
+    bg: string;
+  } = {
+    label: "Optimal Capacity",
+    variant: "success",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10 border-emerald-500/30"
+  };
+
+  if (count === 0) {
+    workloadBadge = {
+      label: "0 Subjects (No Load)",
+      variant: "muted",
+      color: "text-slate-400",
+      bg: "bg-slate-500/10 border-slate-500/30"
+    };
+  } else if (count <= 2) {
+    workloadBadge = {
+      label: `${count} Subjects (Normal Load)`,
+      variant: "success",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10 border-emerald-500/30"
+    };
+  } else if (count === 3) {
+    workloadBadge = {
+      label: `${count} Subjects (Moderate Load)`,
+      variant: "primary",
+      color: "text-indigo-500",
+      bg: "bg-indigo-500/10 border-indigo-500/30"
+    };
+  } else if (count === 4) {
+    workloadBadge = {
+      label: `${count} Subjects (High Load)`,
+      variant: "warning",
+      color: "text-amber-500",
+      bg: "bg-amber-500/10 border-amber-500/30"
+    };
+  } else {
+    workloadBadge = {
+      label: `${count} Subjects (Overloaded!)`,
+      variant: "error",
+      color: "text-rose-500",
+      bg: "bg-rose-500/10 border-rose-500/30"
+    };
+  }
+
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
@@ -108,142 +233,310 @@ function AssignSubjectWorkspaceContent() {
         </div>
       )}
 
-      {/* 4-Panel Grid Architecture */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Panel 1 (FacultyPicker) & Panel 4 (WorkloadSummaryCard) */}
-        <div className="space-y-6">
-          {/* Panel 1: FacultyPicker */}
-          <div className="solid-card rounded-2xl p-5 border border-border space-y-4">
-            <h2 className="text-base font-bold text-foreground pb-2 border-b border-border">
-              1. Target Faculty Context
-            </h2>
-            <div>
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                Faculty ID
+      {/* 2-Column High-Productivity Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* Left Column (5 Cols): Target Faculty Context + Assign Subject Controls */}
+        <div className="lg:col-span-5 space-y-6">
+
+          {/* Panel 1: Target Faculty Context */}
+          <div className="solid-card rounded-2xl p-6 border border-border space-y-4 bg-card">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="text-base font-extrabold text-foreground">
+                1. Target Faculty Context
+              </h2>
+            </div>
+
+            {/* Custom Modern Interactive Searchable Dropdown */}
+            <div className="relative space-y-1">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">
+                Select Faculty Member
               </label>
-              <input
-                type="text"
-                value={facultyId}
-                onChange={(e) => handleFacultyChange(e.target.value)}
-                placeholder="Enter Faculty ID (e.g. CSFAC01)"
-                className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground font-mono font-bold outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150"
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-muted-foreground">Active Faculty:</span>
-              <Badge variant="primary">{facultyId || "None"}</Badge>
-            </div>
-          </div>
 
-          {/* Panel 4: WorkloadSummaryCard */}
-          <div className="solid-card rounded-2xl p-5 border border-border space-y-3">
-            <h2 className="text-base font-bold text-foreground pb-2 border-b border-border">
-              4. Workload Summary
-            </h2>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Target Faculty ID:</span>
-              <span className="font-mono text-xs font-bold text-foreground">{facultyId}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Assigned Subjects Count:</span>
-              <span className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                {assignedSubjects.length}
-              </span>
-            </div>
-            <p className="text-[11px] text-muted-foreground pt-1">
-              Recommended maximum workload: 4 subjects per semester.
-            </p>
-          </div>
-        </div>
-
-        {/* Middle Column: Panel 2 (AvailableSubjectsPanel) */}
-        <div className="solid-card rounded-2xl p-5 border border-border space-y-4">
-          <h2 className="text-base font-bold text-foreground pb-2 border-b border-border">
-            2. Available Subjects Pool
-          </h2>
-
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Semester Filter</label>
-            <select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150"
-            >
-              {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
-                <option key={s} value={s}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Select Subject</label>
-            <select
-              value={selectedSubjectCode}
-              onChange={(e) => setSelectedSubjectCode(e.target.value)}
-              disabled={loadingAvailable || availableSubjects.length === 0}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 disabled:opacity-50"
-            >
-              {availableSubjects.map((subj) => (
-                <option key={subj.subject_code} value={subj.subject_code}>
-                  {subj.subject_code} — {subj.subject_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="button"
-            disabled={assigning || !selectedSubjectCode || isAlreadyAssigned}
-            onClick={handleAssignSubject}
-            className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-xs font-extrabold uppercase tracking-wider transition-colors duration-150 disabled:opacity-50 mt-2"
-          >
-            {assigning ? "Assigning..." : isAlreadyAssigned ? "Already Assigned" : "Assign Selected Subject"}
-          </button>
-        </div>
-
-        {/* Right Column: Panel 3 (AssignedSubjectsPanel) */}
-        <div className="solid-card rounded-2xl p-5 border border-border space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-border">
-            <h2 className="text-base font-bold text-foreground">
-              3. Currently Assigned Subjects
-            </h2>
-            <Badge variant="primary">{assignedSubjects.length}</Badge>
-          </div>
-
-          {loadingAssigned ? (
-            <div className="py-8 text-center text-xs text-muted-foreground animate-pulse">Loading assigned subjects...</div>
-          ) : assignedSubjects.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">No subjects assigned to this faculty member yet.</div>
-          ) : (
-            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
-              {assignedSubjects.map((subject) => (
-                <div
-                  key={subject.subject_code}
-                  className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40"
-                >
-                  <div>
-                    <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 block">
-                      {subject.subject_code}
-                    </span>
-                    <span className="text-xs font-semibold text-foreground block">
-                      {subject.subject_name}
+              {/* Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setFacultyDropdownOpen(!facultyDropdownOpen)}
+                className="w-full h-12 rounded-xl border border-border bg-background hover:border-indigo-500/60 flex items-center justify-between px-3.5 py-2 text-sm font-extrabold text-foreground transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 group"
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black shrink-0 shadow-xs">
+                    {(currentFaculty?.first_name?.[0] || facultyId?.[0] || "F").toUpperCase()}
+                  </div>
+                  <div className="text-left truncate">
+                    <span className="text-sm font-black text-foreground block truncate">
+                      {currentFaculty?.first_name ? `${currentFaculty.first_name} ${currentFaculty.last_name || ""}` : `Faculty (${facultyId})`}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleUnassignSubject(subject.subject_code)}
-                    className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1"
-                  >
-                    Remove
-                  </button>
                 </div>
-              ))}
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="primary" className="font-mono text-[11px] py-0.5">{facultyId}</Badge>
+                  <span className={`text-xs text-muted-foreground transition-transform duration-200 ${facultyDropdownOpen ? "rotate-180" : ""}`}>
+                    ▼
+                  </span>
+                </div>
+              </button>
+
+              {/* Dropdown Menu Overlay */}
+              {facultyDropdownOpen && (
+                <>
+                  {/* Backdrop click listener */}
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setFacultyDropdownOpen(false)}
+                  />
+
+                  {/* Floating Card */}
+                  <div className="absolute left-0 right-0 top-full mt-2 z-40 rounded-2xl border border-border bg-card shadow-2xl p-3 space-y-2 backdrop-blur-md animate-in zoom-in-95 duration-150 max-h-[320px] flex flex-col">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={facultySearchQuery}
+                        onChange={(e) => setFacultySearchQuery(e.target.value)}
+                        placeholder="🔍 Search faculty by name or ID..."
+                        className="w-full h-9 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground font-semibold outline-none focus:border-indigo-500 transition-colors"
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Scrollable Faculty Items */}
+                    <div className="overflow-y-auto space-y-1 flex-1 pr-1">
+                      {filteredFacultyList.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-3 text-center">No faculty members found matching search.</p>
+                      ) : (
+                        filteredFacultyList.map((fac) => {
+                          const isSelected = String(fac.faculty_id).toUpperCase() === facultyId.toUpperCase();
+                          return (
+                            <button
+                              key={fac.faculty_id}
+                              type="button"
+                              onClick={() => {
+                                handleFacultyChange(fac.faculty_id);
+                                setFacultyDropdownOpen(false);
+                                setFacultySearchQuery("");
+                              }}
+                              className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-3 transition-all duration-150 ${isSelected
+                                ? "bg-indigo-600/15 border border-indigo-500/40 text-indigo-600 dark:text-indigo-400 font-extrabold"
+                                : "hover:bg-muted/60 text-foreground border border-transparent"
+                                }`}
+                            >
+                              <div className="flex items-center gap-2.5 truncate">
+                                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black shrink-0">
+                                  {(fac.first_name?.[0] || "F").toUpperCase()}
+                                </div>
+                                <div className="truncate">
+                                  <span className="text-xs font-bold block truncate">
+                                    {fac.first_name} {fac.last_name}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground block truncate">
+                                    {fac.designation || "Assistant Professor"} • {fac.department || department}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <Badge variant="primary" className="font-mono text-[10px] py-0.5 px-1.5">
+                                  {fac.faculty_id}
+                                </Badge>
+                                {isSelected && <span className="text-indigo-600 dark:text-indigo-400 font-black text-xs">✓</span>}
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Panel 2: Available Subjects Pool */}
+          <div className="solid-card rounded-2xl p-6 border border-border space-y-4 bg-card">
+            <h2 className="text-base font-extrabold text-foreground pb-3 border-b border-border">
+              2. Assign Curriculum Subject
+            </h2>
+
+            <CustomSelect
+              label="Sem"
+              value={semester}
+              onChange={setSemester}
+              options={["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => ({
+                value: s,
+                label: `Semester ${s}`,
+              }))}
+            />
+
+            <CustomSelect
+              label="Subject to Assign"
+              value={selectedSubjectCode}
+              onChange={setSelectedSubjectCode}
+              disabled={loadingAvailable || availableSubjects.length === 0}
+              searchable={true}
+              placeholder={loadingAvailable ? "Loading subjects..." : "Select subject to assign..."}
+              options={availableSubjects.map((subj: any) => {
+                const assignedFacName = subj.faculty_name || (subj.faculty_id ? `Assigned to ${subj.faculty_id}` : null);
+                return {
+                  value: subj.subject_code,
+                  label: `${subj.subject_code} — ${subj.subject_name}`,
+                  sublabel: assignedFacName ? `(Currently: ${assignedFacName})` : "Unassigned",
+                  badge: subj.subject_code,
+                };
+              })}
+            />
+
+            <button
+              type="button"
+              disabled={assigning || !selectedSubjectCode || isAlreadyAssigned}
+              onClick={() => handleAssignSubject(false)}
+              className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-xs font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-95 disabled:opacity-50 mt-2"
+            >
+              {assigning ? "Assigning Subject..." : isAlreadyAssigned ? "Already Assigned" : "Assign Subject"}
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column (7 Cols): Merged Faculty Workload & Currently Assigned Subjects Console */}
+        <div className="lg:col-span-7">
+          <div className="solid-card rounded-2xl p-6 border border-border space-y-6 bg-card min-h-full flex flex-col justify-between">
+            <div className="space-y-6">
+              {/* Merged Header & Workload Indicator */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
+                <div>
+                  <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+                    <span>📚 Faculty Workload & Active Assignments</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Managing load for <strong className="text-foreground">{currentFaculty?.first_name ? `${currentFaculty.first_name} ${currentFaculty.last_name || ""}` : facultyId}</strong> ({facultyId})
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={workloadBadge.variant} className="font-bold py-1 px-3">
+                    {workloadBadge.label}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Workload Meter Progress Bar */}
+              <div className={`p-4 rounded-2xl border ${workloadBadge.bg} space-y-2`}>
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-foreground">Workload Capacity Meter</span>
+                  <span className={workloadBadge.color}>{assignedSubjects.length} / 4 Target Max Subjects</span>
+                </div>
+                <div className="h-3 w-full bg-background/80 rounded-full overflow-hidden border border-border p-0.5">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${assignedSubjects.length <= 2
+                      ? "bg-emerald-500"
+                      : assignedSubjects.length === 3
+                        ? "bg-indigo-500"
+                        : assignedSubjects.length === 4
+                          ? "bg-amber-500"
+                          : "bg-rose-500"
+                      }`}
+                    style={{ width: `${Math.min((assignedSubjects.length / 4) * 100, 100)}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground pt-0.5">
+                  {assignedSubjects.length >= 5
+                    ? "⚠️ Warning: Faculty member has exceeded standard recommended load (4 subjects max)."
+                    : assignedSubjects.length === 4
+                      ? "⚡ Note: Maximum recommended workload target reached (4 subjects)."
+                      : "Standard recommended maximum workload: 4 curriculum subjects per semester."}
+                </p>
+              </div>
+
+              {/* Currently Assigned Subjects List Roster */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-foreground uppercase tracking-wider">
+                    Assigned Subjects ({assignedSubjects.length})
+                  </h3>
+                </div>
+
+                {loadingAssigned ? (
+                  <div className="py-12 text-center text-xs text-muted-foreground animate-pulse">Loading assigned subjects...</div>
+                ) : assignedSubjects.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-muted-foreground border border-dashed border-border rounded-2xl">
+                    No subjects assigned to this faculty member yet. Select a subject on the left to assign.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                    {assignedSubjects.map((subject) => (
+                      <div
+                        key={subject.subject_code}
+                        className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="space-y-1 truncate pr-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">
+                              {subject.subject_code}
+                            </span>
+                            {subject.semester && (
+                              <Badge variant="muted" className="text-[10px] py-0 px-1.5">
+                                Sem {subject.semester}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-foreground block truncate">
+                            {subject.subject_name}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUnassignSubject(subject.subject_code)}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600/10 hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-600/30 text-xs font-bold transition-all shrink-0 active:scale-95"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
+
+      {/* Subject Reassignment Confirmation Modal */}
+      {reassignConflict && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="solid-card rounded-3xl p-6 border border-border max-w-lg w-full bg-card shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+              <span className="text-2xl">⚠️</span>
+              <h3 className="text-lg font-black text-foreground">Subject Reassignment Required</h3>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {reassignConflict.message}
+            </p>
+
+            <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-xs text-amber-800 dark:text-amber-300">
+              <strong className="block font-bold mb-1">Reassignment Effect:</strong>
+              Confirming will unassign <strong>{reassignConflict.subjectCode}</strong> from its current faculty and reassign it to <strong>{currentFaculty?.first_name ? `${currentFaculty.first_name} ${currentFaculty.last_name || ""}` : facultyId} ({facultyId})</strong>.
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setReassignConflict(null)}
+                className="px-4 py-2 rounded-xl bg-card hover:bg-muted border border-border text-xs font-bold text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={assigning}
+                onClick={() => handleAssignSubject(true)}
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold shadow-md active:scale-95 transition-all"
+              >
+                {assigning ? "Reassigning..." : "Confirm & Reassign Subject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

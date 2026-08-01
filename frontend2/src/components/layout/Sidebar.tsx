@@ -113,12 +113,12 @@ const studentNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/admin/departments", label: "Departments", icon: FacultyManagementIcon },
-  { href: "/admin/students", label: "Students", icon: StudentsIcon },
-  { href: "/admin/courses", label: "Courses", icon: CurriculumIcon },
+  { href: "/admin/dashboard", label: "Admin Console", icon: DashboardIcon },
+  { href: "/admin/users", label: "User Manager", icon: FacultyManagementIcon },
+  { href: "/admin/curriculum", label: "Curriculum Manager", icon: CurriculumIcon },
   { href: "/admin/reports", label: "Reports & Analytics", icon: ReportsIcon },
-  { href: "/student/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
+  { href: "/admin/audit-logs", label: "System Audit Logs", icon: TakeAttendanceIcon },
+  { href: "/faculty/notifications", label: "Notifications & Alerts", icon: NotificationIcon },
 ];
 
 const facultyNavItems: NavItem[] = [

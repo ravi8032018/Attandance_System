@@ -12,7 +12,13 @@ from backend.app.utils.get_subjects_for_faculty import get_faculty_subject_codes
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
 from backend.app.utils.smtp import send_email_with_link
-from backend.app.utils.dependencies import admin_required, cr_required, get_current_user, student_required
+from backend.app.utils.dependencies import (
+    admin_or_hod_required,
+    admin_required,
+    cr_required,
+    get_current_user,
+    student_required
+)
 from backend.app.utils.unique_student_id import generate_unique_student_id
 from backend.app.schemas.student_schema import StudentBulkCreateRequest
 from backend.my_logger import log_event
@@ -260,6 +266,11 @@ async def get_student_by_id(
 
     log_event("Admin fetched Student profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details=f"admin fetched Student profile")
 
+    student_roles = student.get("role", ["student"])
+    if isinstance(student_roles, str):
+        student_roles = [student_roles]
+    is_cr_flag = "cr" in [str(r).lower() for r in student_roles]
+
     return StudentAdminResponse(
         id=str(student["_id"]),
         registration_no=student["registration_no"],
@@ -277,6 +288,8 @@ async def get_student_by_id(
         photo_url=student.get("photo_url") if "photo_url" in student else None,
         roll_number=student.get("roll_number") if "roll_number" in student else None,
         guardian_email=student.get("guardian_email") if "guardian_email" in student else None,
+        role=student_roles,
+        is_cr=is_cr_flag
     )
 
 @router.post("/complete-profile/{registration_no}")
@@ -760,7 +773,7 @@ async def update_student_by_admin(
 @router.post("/{registration_no}/promote-to-cr", status_code=status.HTTP_200_OK)
 async def promote_student_to_cr(
         registration_no: str = Path(..., description="The registration number of the Student to promote to CR"),
-        current_user: dict = Depends(admin_required)
+        current_user: dict = Depends(admin_or_hod_required)
 ):
     try:
         updated_student = await db.Students.find_one(
@@ -787,9 +800,26 @@ async def promote_student_to_cr(
     if "cr" in updated_student.get("role", []):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Student with registration number {registration_no} is already a CR"
+            detail=f"Student with registration number {registration_no} is already a CR."
         )
     
+    dept = updated_student.get("department")
+    sem = updated_student.get("semester")
+
+    # Enforce System-Wide Rule: Maximum 2 CRs per department & semester
+    if dept and sem:
+        active_crs_count = await db.Students.count_documents({
+            "department": dept,
+            "semester": sem,
+            "role": "cr",
+            "status": "active"
+        })
+        if active_crs_count >= 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Maximum limit of 2 CRs reached for Department '{dept}', Semester {sem}. Please revoke an existing CR before promoting a new student."
+            )
+
     # Add "cr" to the student's role array
     try:
         await db.Students.update_one(
@@ -802,6 +832,93 @@ async def promote_student_to_cr(
     log_event("promote student to CR", user_email=current_user["email"], user_name=current_user["name"], user_id=current_user["id"], user_role=current_user["role"])
 
     return {"message": f"Student with registration number {registration_no} has been promoted to CR.", "status_code": status.HTTP_200_OK}
+
+@router.post("/{registration_no}/revoke-cr", status_code=status.HTTP_200_OK)
+async def revoke_student_cr(
+        registration_no: str = Path(..., description="The registration number of the Student to revoke CR from"),
+        current_user: dict = Depends(admin_or_hod_required)
+):
+    """Revoke CR role from an existing student."""
+    try:
+        student = await db.Students.find_one({"registration_no": registration_no})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Student {registration_no} not found.")
+
+    if "cr" not in student.get("role", []):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Student {registration_no} is not currently a CR.")
+
+    try:
+        await db.Students.update_one(
+            {"registration_no": registration_no},
+            {"$pull": {"role": "cr"}}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error while revoking CR: {str(e)}")
+
+    log_event("revoke student CR", user_email=current_user["email"], user_name=current_user["name"], user_id=current_user["id"], user_role=current_user["role"])
+
+    return {"message": f"CR role revoked for student {registration_no}.", "status_code": status.HTTP_200_OK}
+
+@router.get("/active-crs", status_code=status.HTTP_200_OK)
+async def get_active_crs_summary(
+    department: str = Query(None, description="Department filter"),
+    semester: str = Query(None, description="Semester filter"),
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    """Get active CRs grouped by department & semester, along with capacity stats (max 2 per sem/dept)."""
+    query: dict = {"role": "cr", "status": "active"}
+    if department:
+        query["department"] = department
+    if semester:
+        query["semester"] = semester
+
+    crs_cursor = db.Students.find(query, {
+        "registration_no": 1,
+        "name": 1,
+        "first_name": 1,
+        "last_name": 1,
+        "email": 1,
+        "department": 1,
+        "semester": 1
+    })
+    crs = await crs_cursor.to_list(None)
+
+    # Group by cohort
+    cohorts: dict = {}
+    for cr in crs:
+        key = f"{cr.get('department')}_Sem{cr.get('semester')}"
+        if key not in cohorts:
+            cohorts[key] = {
+                "department": cr.get("department"),
+                "semester": cr.get("semester"),
+                "count": 0,
+                "max_capacity": 2,
+                "crs": []
+            }
+        cohorts[key]["count"] += 1
+        cohorts[key]["crs"].append({
+            "registration_no": cr.get("registration_no"),
+            "name": cr.get("name") or f"{cr.get('first_name', '')} {cr.get('last_name', '')}".strip(),
+            "email": cr.get("email")
+        })
+
+    return {
+        "total_active_crs": len(crs),
+        "cohorts": list(cohorts.values()),
+        "raw_crs": [
+            {
+                "registration_no": cr.get("registration_no"),
+                "name": cr.get("name") or f"{cr.get('first_name', '')} {cr.get('last_name', '')}".strip(),
+                "email": cr.get("email"),
+                "department": cr.get("department"),
+                "semester": cr.get("semester")
+            }
+            for cr in crs
+        ]
+    }
 
 @router.get("/list-students-for-cr", response_model=StudentPaginatedResponse)
 async def list_students_for_cr(
@@ -846,6 +963,23 @@ async def list_students_for_cr(
     query_filter = {}
     expr_conditions = []
 
+    # Enforce session department, semester, and active status from token session
+    sess_dept = session.get("department")
+    sess_sem = session.get("semester")
+
+    if sess_dept:
+        query_filter["department"] = {"$regex": f"^{sess_dept}$", "$options": "i"}
+
+    if sess_sem is not None:
+        sem_list = [sess_sem]
+        if isinstance(sess_sem, int):
+            sem_list.append(str(sess_sem))
+        elif isinstance(sess_sem, str) and str(sess_sem).isdigit():
+            sem_list.append(int(sess_sem))
+        query_filter["semester"] = {"$in": sem_list}
+
+    query_filter["status"] = "active"
+
     if params.registration_no:
         query_filter["registration_no"] = {"$regex": params.registration_no, "$options": "i"}
 
@@ -862,10 +996,14 @@ async def list_students_for_cr(
         query_filter["status"] = params.status.lower()
 
     if params.semester:
-        query_filter["semester"] = params.semester.lower()
+        param_sem = params.semester.strip()
+        sem_list = [param_sem]
+        if param_sem.isdigit():
+            sem_list.append(int(param_sem))
+        query_filter["semester"] = {"$in": sem_list}
 
     if params.department:
-        query_filter["department"] = {"$regex": params.department, "$options": "i"}
+        query_filter["department"] = {"$regex": f"^{params.department}$", "$options": "i"}
 
     if params.subject_code:
         expr_conditions.append({

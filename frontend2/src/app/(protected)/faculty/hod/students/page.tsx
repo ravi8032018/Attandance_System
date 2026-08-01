@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Student } from "@/lib/types";
 import { apiFetch } from "@/lib/api";
 import { useUserMe } from "@/hooks/useUserMe";
@@ -109,11 +110,15 @@ export default function HODStudentsPage() {
     {
       header: "Name",
       className: "!text-left",
-      accessor: (item) => (
-        <span className="font-semibold text-foreground text-left block">
-          {item.first_name} {item.last_name}
-        </span>
-      ),
+      accessor: (item) => {
+        const isStudentCr = Boolean((item as any).is_cr) || (Array.isArray(item.role) ? item.role.includes("cr") : String(item.role || "").includes("cr"));
+        return (
+          <span className="font-semibold text-foreground text-left flex items-center gap-1.5">
+            <span>{item.first_name} {item.last_name}</span>
+            {isStudentCr && <Badge variant="warning" className="text-[10px] py-0 px-1.5">CR</Badge>}
+          </span>
+        );
+      },
     },
     {
       header: "Department & Sem",
@@ -154,14 +159,14 @@ export default function HODStudentsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
             <AcademicCapIcon className="text-indigo-600 dark:text-indigo-400" />
-            <span>Student Registry & Academic Roster</span>
+            <span>HOD Department Student Registry</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Department student directory, semester breakdown, and live academic profiles. Click any card to open detailed student analytics.
+            Complete registry of department students. Click any student card to open detailed profile & attendance analytics.
           </p>
         </div>
 
-        {/* View Mode Toggle Button */}
+        {/* View Switcher */}
         <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border self-start sm:self-auto">
           <button
             onClick={() => setViewMode("grid")}
@@ -186,24 +191,22 @@ export default function HODStudentsPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Filter Bar */}
       <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div>
-            <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block mb-1">
-              Semester
-            </label>
-            <select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full sm:w-36 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="all">All Semesters</option>
-              {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
-                <option key={s} value={s}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            label="Semester"
+            value={semester}
+            onChange={setSemester}
+            className="w-full sm:w-44"
+            options={[
+              { value: "all", label: "All Semesters" },
+              ...["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => ({
+                value: s,
+                label: `Semester ${s}`,
+              })),
+            ]}
+          />
         </div>
 
         {/* Search Bar */}
@@ -213,7 +216,7 @@ export default function HODStudentsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search student name, registration no, email, or roll..."
+            placeholder="Search student name, registration no, email..."
             className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-xs font-medium text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
         </div>
@@ -233,59 +236,68 @@ export default function HODStudentsPage() {
           </p>
         </div>
       ) : viewMode === "grid" ? (
-        /* Card Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filteredStudents.map((s) => (
-            <div
-              key={s.registration_no}
-              onClick={() => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(s.registration_no)}`)}
-              className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group relative bg-card space-y-4 cursor-pointer"
-            >
-              <div className="space-y-3">
-                {/* Top ID & Badges */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="primary">{s.department || department}</Badge>
-                    <Badge variant="muted">Sem {s.semester || semester}</Badge>
-                    <Badge variant={s.status === "inactive" ? "error" : "success"}>
-                      {s.status || "Active"}
-                    </Badge>
+          {filteredStudents.map((s) => {
+            const isStudentCr = Boolean((s as any).is_cr) || (Array.isArray(s.role) ? s.role.includes("cr") : String(s.role || "").includes("cr"));
+            return (
+              <div
+                key={s.registration_no}
+                onClick={() => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(s.registration_no)}`)}
+                className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group relative bg-card space-y-4 cursor-pointer"
+              >
+                <div className="space-y-3">
+                  {/* Top ID & Badges */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant="primary">{s.department || department}</Badge>
+                      <Badge variant="muted">Sem {s.semester || semester}</Badge>
+                      <Badge variant={s.status === "inactive" ? "error" : "success"}>
+                        {s.status || "Active"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Avatar & Student Name */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <StudentAvatar firstName={s.first_name} lastName={s.last_name} />
+                    <div className="truncate flex-1">
+                      <div className="flex items-center gap-2 truncate">
+                        <h3 className="text-base font-black text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                          {s.first_name} {s.last_name}
+                        </h3>
+                        {isStudentCr && (
+                          <Badge variant="warning" className="text-[10px] py-0 px-1.5 shrink-0 font-extrabold">
+                            CR
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                      <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
+                        {s.registration_no}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Avatar & Student Name */}
-                <div className="flex items-center gap-3 pt-1">
-                  <StudentAvatar firstName={s.first_name} lastName={s.last_name} />
-                  <div className="truncate">
-                    <h3 className="text-base font-black text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
-                      {s.first_name} {s.last_name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground truncate">{s.email}</p>
-                    <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
-                      {s.registration_no}
+                {/* Footer Action Links */}
+                <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs font-bold">
+                  <Link
+                    href={`/faculty/get-student-by-id?reg=${encodeURIComponent(s.registration_no)}`}
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View Profile & Analytics &rarr;
+                  </Link>
+
+                  {s.course && (
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/70 bg-muted px-2 py-0.5 rounded-md border border-border">
+                      {s.course}
                     </span>
-                  </div>
+                  )}
                 </div>
               </div>
-
-              {/* Footer Action Links */}
-              <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs font-bold">
-                <Link
-                  href={`/faculty/get-student-by-id?reg=${encodeURIComponent(s.registration_no)}`}
-                  className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  View Profile & Analytics &rarr;
-                </Link>
-
-                {s.course && (
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/70 bg-muted px-2 py-0.5 rounded-md border border-border">
-                    {s.course}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* Table View */

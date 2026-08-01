@@ -173,7 +173,7 @@ export default function HODDashboardPage() {
               {workloadList.map((fac) => (
                 <div
                   key={fac.faculty_id}
-                  onClick={() => router.push(`/faculty/hod/faculty?faculty_id=${encodeURIComponent(fac.faculty_id)}`)}
+                  onClick={() => router.push(`/faculty/get-faculty-by-id?id=${encodeURIComponent(fac.faculty_id)}`)}
                   className="flex items-center justify-between text-xs p-3 rounded-xl border border-border/70 hover:bg-muted/50 cursor-pointer transition-colors"
                 >
                   <div className="space-y-0.5">

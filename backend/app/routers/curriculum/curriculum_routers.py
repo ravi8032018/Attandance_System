@@ -88,6 +88,121 @@ async def list_curriculum(
     # print("--> subject list returned from /curriculum : ", items)
     return CurriculumListResponse(data=items)
 
+from pydantic import BaseModel
+from backend.app.utils.dependencies import get_current_user, admin_or_hod_required
+from backend.my_logger import log_event
+
+class AddSubjectRequest(BaseModel):
+    department: str
+    semester: str
+    subject_code: str
+    subject_name: str
+    credits: Optional[int] = 3
+    type: Optional[str] = "Theory"
+    faculty_id: Optional[str] = None
+
+class UpdateSubjectRequest(BaseModel):
+    department: str
+    semester: str
+    subject_code: str
+    new_subject_name: Optional[str] = None
+    new_subject_code: Optional[str] = None
+    credits: Optional[int] = None
+    type: Optional[str] = None
+    faculty_id: Optional[str] = None
+
+class AssignSubjectRequest(BaseModel):
+    faculty_id: str
+    subject_code: str
+    override: Optional[bool] = False
+
+class UnassignSubjectRequest(BaseModel):
+    faculty_id: str
+    subject_code: str
+
+@router.post("/add-subject")
+async def add_subject_to_curriculum(
+    body: AddSubjectRequest,
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    dept = body.department.strip().upper()
+    sem = str(body.semester).strip()
+    scode = body.subject_code.strip().upper()
+    sname = body.subject_name.strip()
+    fid = body.faculty_id.strip().upper() if body.faculty_id else None
+
+    # Verify if subject_code already exists anywhere in Curriculum
+    existing_curr = await db.Curriculum.find_one({"subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}})
+    if existing_curr:
+        raise HTTPException(status_code=400, detail=f"Subject code '{scode}' already exists in Curriculum catalog.")
+
+    new_sub = {
+        "subject_code": scode,
+        "subject_name": sname,
+        "credits": body.credits or 3,
+        "type": body.type or "Theory",
+        "faculty_id": fid
+    }
+
+    curr_doc = await db.Curriculum.find_one({"department": dept, "semester": sem})
+    if curr_doc:
+        await db.Curriculum.update_one(
+            {"_id": curr_doc["_id"]},
+            {"$push": {"subjects": new_sub}}
+        )
+    else:
+        new_curr = {
+            "department": dept,
+            "semester": sem,
+            "course": "B.Tech",
+            "subjects": [new_sub]
+        }
+        await db.Curriculum.insert_one(new_curr)
+
+    log_event("add subject to curriculum", user_email=current_user.get("email"), details=f"Added subject {scode} ({sname}) to {dept} Sem {sem}")
+
+    return {"message": f"Successfully added subject {scode} ({sname}) to {dept} Sem {sem}."}
+
+@router.put("/update-subject")
+async def update_subject_in_curriculum(
+    body: UpdateSubjectRequest,
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    dept = body.department.strip().upper()
+    sem = str(body.semester).strip()
+    scode = body.subject_code.strip().upper()
+
+    curr_doc = await db.Curriculum.find_one({"department": dept, "semester": sem, "subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}})
+    if not curr_doc:
+        raise HTTPException(status_code=404, detail=f"Subject '{scode}' not found in {dept} Sem {sem}.")
+
+    subjects = curr_doc.get("subjects", [])
+    updated = False
+    new_code = body.new_subject_code.strip().upper() if body.new_subject_code else scode
+    new_name = body.new_subject_name.strip() if body.new_subject_name else None
+
+    for s in subjects:
+        if str(s.get("subject_code", "")).upper() == scode:
+            if new_code:
+                s["subject_code"] = new_code
+            if new_name:
+                s["subject_name"] = new_name
+            if body.credits is not None:
+                s["credits"] = body.credits
+            if body.type is not None:
+                s["type"] = body.type
+            if body.faculty_id is not None:
+                s["faculty_id"] = body.faculty_id.strip().upper() if body.faculty_id else None
+            updated = True
+            break
+
+    if updated:
+        await db.Curriculum.update_one({"_id": curr_doc["_id"]}, {"$set": {"subjects": subjects}})
+
+    log_event("update subject in curriculum", user_email=current_user.get("email"), details=f"Updated subject {scode} to {new_code}")
+
+    return {"message": f"Successfully updated subject {scode}."}
+
 @router.get("/subjects")
 async def get_subjects_pool(
     department: Optional[str] = Query(None, description="Filter by department, e.g. CS"),
@@ -101,18 +216,125 @@ async def get_subjects_pool(
     if semester:
         query_filter["semester"] = str(semester)
 
+    # Build faculty lookup map
+    faculty_map = {}
+    async for fac in db.Faculty.find({"status": "active"}, {"faculty_id": 1, "first_name": 1, "last_name": 1, "_id": 0}):
+        fid = fac.get("faculty_id")
+        if fid:
+            fn = fac.get("first_name", "").strip()
+            ln = fac.get("last_name", "").strip()
+            raw_name = f"{fn} {ln}".strip()
+            faculty_map[fid] = raw_name if raw_name else fid
+
     cursor = db["Curriculum"].find(query_filter)
     subjects_list = []
     async for doc in cursor:
         for s in doc.get("subjects", []):
+            fid = s.get("faculty_id")
+            fname = faculty_map.get(fid) if fid else None
             subjects_list.append(
-                SubjectItem(
-                    subject_code=s.get("subject_code"),
-                    subject_name=s.get("subject_name", s.get("subject_code")),
-                    faculty_id=s.get("faculty_id"),
-                )
+                {
+                    "subject_code": s.get("subject_code"),
+                    "subject_name": s.get("subject_name", s.get("subject_code")),
+                    "faculty_id": fid,
+                    "faculty_name": fname,
+                }
             )
     return {"data": subjects_list}
+
+@router.post("/assign-subject")
+async def assign_subject_to_faculty(
+    body: AssignSubjectRequest,
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    fid = body.faculty_id.strip().upper()
+    scode = body.subject_code.strip().upper()
+
+    # 1. Verify target faculty exists
+    fac = await db.Faculty.find_one({"faculty_id": fid})
+    if not fac:
+        fac = await db.Faculty.find_one({"$or": [{"faculty_id": fid}, {"email": fid.lower()}]})
+    if not fac:
+        raise HTTPException(status_code=404, detail=f"Faculty with ID '{fid}' not found in database.")
+
+    fn = fac.get("first_name", "").strip()
+    ln = fac.get("last_name", "").strip()
+    target_fac_name = f"{fn} {ln}".strip() or fid
+
+    # 2. Find subject in Curriculum
+    curr_doc = await db.Curriculum.find_one({"subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}})
+    if not curr_doc:
+        raise HTTPException(status_code=404, detail=f"Subject '{scode}' not found in curriculum database.")
+
+    current_assigned_fid = None
+    target_subject = None
+    for s in curr_doc.get("subjects", []):
+        if str(s.get("subject_code", "")).upper() == scode:
+            current_assigned_fid = s.get("faculty_id")
+            target_subject = s
+            break
+
+    # 3. Conflict Check: Is it already assigned to another faculty?
+    if current_assigned_fid and str(current_assigned_fid).upper() != fid and not body.override:
+        prev_fac = await db.Faculty.find_one({"faculty_id": str(current_assigned_fid).upper()})
+        prev_name = str(current_assigned_fid)
+        if prev_fac:
+            p_fn = prev_fac.get("first_name", "").strip()
+            p_ln = prev_fac.get("last_name", "").strip()
+            prev_name = f"{p_fn} {p_ln}".strip() or str(current_assigned_fid)
+
+        raise HTTPException(
+            status_code=409,
+            detail=f"Subject '{scode}' ({target_subject.get('subject_name', scode) if target_subject else scode}) is currently assigned to {prev_name} ({current_assigned_fid}). Reassignment required."
+        )
+
+    # 4. Perform update in Curriculum collection
+    res = await db.Curriculum.update_one(
+        {"subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}},
+        {"$set": {"subjects.$.faculty_id": fid}}
+    )
+
+    log_event(
+        "assign subject to faculty",
+        user_email=current_user["email"],
+        user_id=current_user["id"],
+        user_role=current_user["role"],
+        details=f"Assigned subject {scode} to faculty {fid} ({target_fac_name})"
+    )
+
+    return {
+        "message": f"Successfully assigned subject {scode} to {target_fac_name} ({fid}).",
+        "faculty_id": fid,
+        "faculty_name": target_fac_name,
+        "subject_code": scode
+    }
+
+@router.delete("/unassign-subject")
+async def unassign_subject_from_faculty(
+    body: UnassignSubjectRequest,
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    fid = body.faculty_id.strip().upper()
+    scode = body.subject_code.strip().upper()
+
+    res = await db.Curriculum.update_one(
+        {"subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}},
+        {"$set": {"subjects.$.faculty_id": None}}
+    )
+
+    log_event(
+        "unassign subject from faculty",
+        user_email=current_user["email"],
+        user_id=current_user["id"],
+        user_role=current_user["role"],
+        details=f"Unassigned subject {scode} from faculty {fid}"
+    )
+
+    return {
+        "message": f"Successfully removed subject {scode} assignment from {fid}.",
+        "faculty_id": fid,
+        "subject_code": scode
+    }
 
 @router.get("/subject-details/{subject_code}")
 async def get_subject_details(

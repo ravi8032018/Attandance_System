@@ -1,6 +1,6 @@
 import React from "react";
 
-export type BadgeVariant = "primary" | "success" | "warning" | "error" | "muted" | "secondary" | "teal";
+export type BadgeVariant = "primary" | "success" | "warning" | "error" | "muted" | "secondary" | "teal" | "outline";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -37,6 +37,10 @@ const variantStyles: Record<BadgeVariant, { bg: string; dot: string }> = {
   teal: {
     bg: "bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/70 dark:text-teal-300 dark:border-teal-800/80",
     dot: "bg-teal-600 dark:bg-teal-400",
+  },
+  outline: {
+    bg: "bg-transparent text-slate-800 border-slate-200/80 dark:text-slate-200 dark:border-slate-800",
+    dot: "bg-slate-500 dark:bg-slate-400",
   },
 };
 

@@ -129,6 +129,15 @@ class StudentAdminResponse(BaseModel):
     batch_name: Optional[str]
     status: Optional[str]
     photo_url: Optional[str]
+    role: Optional[List[str]] = Field(default_factory=list)
+    is_cr: Optional[bool] = False
+
+    @validator("is_cr", pre=True, always=True)
+    def set_is_cr(cls, v, values):
+        roles = values.get("role") or []
+        if isinstance(roles, list) and "cr" in [str(r).lower() for r in roles]:
+            return True
+        return bool(v) if v is not None else False
 
 class StudentBulkCreateResponse(BaseModel):
     message: Optional[str]
@@ -169,6 +178,7 @@ class StudentFullProfileResponse(BaseModel):
     batch_name: Optional[str] = None # Name of the batch for display
     admission_date: Optional[date] = None # Use date for admission_date
     role: List[str] = []
+    is_cr: Optional[bool] = False
     status: str = "inactive" # e.g., active, inactive, suspended
     created_at: datetime
     created_by: Optional[str] = None
@@ -188,6 +198,15 @@ class StudentListResponse(BaseModel):
     contact_number: Optional[str] = None
     guardian_email: Optional[EmailStr] = None
     roll_number: Optional[str] = None
+    role: Optional[List[str]] = Field(default_factory=list)
+    is_cr: Optional[bool] = False
+
+    @validator("is_cr", pre=True, always=True)
+    def set_is_cr(cls, v, values):
+        roles = values.get("role") or []
+        if isinstance(roles, list) and "cr" in [str(r).lower() for r in roles]:
+            return True
+        return bool(v) if v is not None else False
 
     class Config:
         validate_by_name = True

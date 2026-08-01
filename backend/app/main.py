@@ -12,6 +12,7 @@ from backend.app.routers.notification.notification_router import router as notif
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.curriculum.curriculum_routers import router as curriculum_router
 from backend.app.routers.notification.ws_routers import router as ws_router
+from backend.app.routers.admin_routers import router as admin_management_router
 from backend.app.routers.reports_routers import router as reports_router
 from backend.app.utils.cache_files_checker import cache_files_checker
 import os
@@ -102,6 +103,7 @@ async def disconnect():
 
 
 fastapi_app.include_router(admin_auth_router)
+fastapi_app.include_router(admin_management_router)
 fastapi_app.include_router(faculty_auth_router)
 fastapi_app.include_router(student_auth_router)
 fastapi_app.include_router(student_router)

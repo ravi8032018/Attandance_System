@@ -3,11 +3,19 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 export async function apiFetch(endpoint: string, init?: RequestInit): Promise<Response> {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
+  const defaultHeaders: Record<string, string> = {
+    "Accept": "application/json",
+  };
+
+  if (init?.body && typeof init.body === "string") {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
+
   const options: RequestInit = {
     ...init,
     credentials: "include",
     headers: {
-      "Accept": "application/json",
+      ...defaultHeaders,
       ...(init?.headers || {}),
     },
   };
