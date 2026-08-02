@@ -22,6 +22,23 @@ class FacultyCreateRequest(FacultyBase):
     designation: str = Field(example="Assistant Professor")
     email : EmailStr = Field(example="faculty@example.com")
 
+class FacultyBulkCreateRequest(BaseModel):
+    department: str = Field(..., example='CS')
+    designation: str = Field(default="Assistant Professor", example="Assistant Professor")
+    faculty_emails: List[EmailStr]
+
+    @validator('department', pre=True)
+    def dept_validator(cls, value):
+        if value:
+            return value.upper()
+        return value
+
+class FacultyBulkCreateResponse(BaseModel):
+    message: str
+    created_count: int
+    created_emails: List[str]
+
+
 class FacultyProfileUpdateRequest(BaseModel):
     first_name: str
     last_name: str

@@ -174,7 +174,7 @@ export default function StudentListPage() {
         return (
           <span className="font-semibold text-foreground text-left flex items-center gap-1.5">
             <span>{item.first_name} {item.last_name}</span>
-            {isStudentCr && <Badge variant="warning" className="text-[10px] py-0 px-1.5">CR</Badge>}
+            {isStudentCr && <Badge variant="teal" className="text-[10px] py-0 px-1.5">CR</Badge>}
           </span>
         );
       },

@@ -29,6 +29,7 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.collation import Collation
 
 BACKEND_HOST= os.getenv("BACKEND_HOST")
+FRONTEND_ORIGIN= os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
@@ -39,25 +40,25 @@ async def student_create(
 ):
     student_dict = student.dict()
     # print(student_dict)
-    # this gets the subjects from Curriculam DB
-    payload = {
-        'department': student_dict['department'],
-        'semester': student_dict['semester'],
-        'course': student_dict['course'],
-    }
-    docs = await db.Curriculum.find_one(payload)
-    # print("--> docs: ", docs)
-    data = docs["subjects"] if docs else None 
-    # print("--> data: ", data)
-    subjects_doc = {
-        "subjects": {
-            subject["subject_code"]: subject["subject_name"]
-            for subject in data if data is not None
-        }
-    }
+    dept = str(student_dict['department']).strip()
+    sem = str(student_dict['semester']).strip()
+    sem_list = [sem]
+    if sem.isdigit():
+        sem_list.append(int(sem))
+
+    curr_doc = await db.Curriculum.find_one({
+        "department": {"$regex": f"^{dept}$", "$options": "i"},
+        "semester": {"$in": sem_list}
+    })
+
+    subjects_dict = {}
+    if curr_doc and "subjects" in curr_doc and isinstance(curr_doc["subjects"], list):
+        for s in curr_doc["subjects"]:
+            if isinstance(s, dict) and s.get("subject_code"):
+                subjects_dict[s["subject_code"]] = s.get("subject_name", s["subject_code"])
+
     now = datetime.utcnow()
     unique_student_id = await generate_unique_student_id(student.course, student.registration_year, student.department)
-    # print("Your Unique_Student_ID is ", unique_student_id, " --> ", student.email)
 
     student_dict["registration_no"] = unique_student_id
     student_dict["created_by"] = current_admin["name"]
@@ -67,7 +68,8 @@ async def student_create(
     student_dict['profile_complete']= False
     student_dict['updated_at']= datetime.utcnow()
     student_dict['updated_by']= None
-    student_dict['subjects']= subjects_doc['subjects'] if subjects_doc else {}
+    student_dict['subjects']= subjects_dict
+
 
     # print("--> Subject_doc: ",subjects_doc)
     created=[]
@@ -94,8 +96,8 @@ async def student_create(
         "is_used": False
     })
 
-    # 3. Email the Student with a link to set/reset password
-    link = f"{BACKEND_HOST}/reset-password?token={token}"
+    # 3. Email the Student with a link to set/reset password and onboard
+    link = f"{FRONTEND_ORIGIN}/onboard?token={token}&type=student"
 
     email_data = {
         "email_to": student.email,
@@ -145,26 +147,26 @@ async def bulk_students_create(
     created = []
     created_mails=[]
 
-    # this gets the subjects from Curriculum DB
-    pay = {
-        'department': payload.department,
-        'semester': payload.sem,
-        'course': payload.course,
-    }
-    # subjects_doc = await db.Curriculum.find_one(pay)
-    subjects_doc = {
-        'subjects': {
-            "CSDSC101": "Python Programming",
-            "CSDSC102": "Data Structures",
-            "CSDSC103": "Database Management Systems",
-            "CSDSC104": "Computer Networks",
-        }
-    }
+    dept = str(payload.department).strip()
+    sem = str(payload.sem).strip()
+    sem_list = [sem]
+    if sem.isdigit():
+        sem_list.append(int(sem))
+
+    curr_doc = await db.Curriculum.find_one({
+        "department": {"$regex": f"^{dept}$", "$options": "i"},
+        "semester": {"$in": sem_list}
+    })
+
+    subjects_dict = {}
+    if curr_doc and "subjects" in curr_doc and isinstance(curr_doc["subjects"], list):
+        for s in curr_doc["subjects"]:
+            if isinstance(s, dict) and s.get("subject_code"):
+                subjects_dict[s["subject_code"]] = s.get("subject_name", s["subject_code"])
 
     for stu_mail in student_mails:
         # 1. Create the Student doc with inactive status)
         unique_student_id = await generate_unique_student_id(payload.course,payload.registration_year,payload.department)
-        # print("Your Unique_Student_ID is ",unique_student_id, "\t",stu_mail)
 
         default_password = token_urlsafe(10)
         hashed_default = await hash_password(default_password)
@@ -183,8 +185,9 @@ async def bulk_students_create(
             'updated_at' : now,
             'updated_by' : None,
             "password": hashed_default,
-            "subjects": subjects_doc['subjects']
+            "subjects": subjects_dict
         }
+
         # print(payload.department, payload.course, payload.registration_year, payload.sem, subjects_doc['subjects'])
         try:
             result = await db["Students"].insert_one(stu_doc)
@@ -209,8 +212,8 @@ async def bulk_students_create(
             "is_used": False
         })
 
-        # 3. Email the Student with a link to set/reset password
-        link = f"{BACKEND_HOST}/reset-password?token={token}"
+        # 3. Email the Student with a link to set/reset password and onboard
+        link = f"{FRONTEND_ORIGIN}/onboard?token={token}&type=student"
 
         email_data = {
             "email_to": stu_mail,
@@ -343,20 +346,21 @@ async def complete_profile(
 async def get_current_student_profile(
         current_user: dict = Depends(student_required)
 ):
-    # print("current_user--> ", current_user)
     student_id = current_user.get("id")
-
     if not student_id:
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
+        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find Student.") from e
-    # print("Student--> ", Student)
 
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found.")
+
+    req_fields = ["first_name", "last_name", "dob", "gender", "contact_number"]
+    missing = [f for f in req_fields if not student.get(f) or str(student.get(f)).strip() in ["", "None", "null", "undefined"]]
+    student["profile_complete"] = len(missing) == 0
 
     log_event("read own Student profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details="accessed own Student profile")
 
@@ -369,14 +373,13 @@ async def update_current_student_profile(
 ):
     if "student" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only students can update their own profile.")
-    # print("current user--> ", current_user)
+
     student_id = current_user.get("id")
     if not student_id:
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
-        # print("current Student--> ", Student)
+        student = await db["Students"].find_one({"_id": ObjectId(student_id)})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find Student.") from e
 
@@ -389,24 +392,25 @@ async def update_current_student_profile(
     clean_update["updated_at"] = datetime.utcnow()
     clean_update["updated_by"] = current_user.get("name") or current_user["email"]
 
+    merged = {**student, **clean_update}
+    req_fields = ["first_name", "last_name", "dob", "gender", "contact_number"]
+    missing = [f for f in req_fields if not merged.get(f) or str(merged.get(f)).strip() in ["", "None", "null", "undefined"]]
+
+    if not missing:
+        clean_update["profile_complete"] = True
+        clean_update["status"] = "active"
+    else:
+        clean_update["profile_complete"] = False
+
     result = await db["Students"].update_one(
-        {"_id": ObjectId(student_id), "status": "active"},
+        {"_id": ObjectId(student_id)},
         {"$set": clean_update}
     )
 
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Student profile not found (or no changes made).")
-    if result.modified_count == 0 and clean_update:
-        # This can happen if the update data is identical to current data
-        pass
-
-    updated_student = await db["Students"].find_one({"_id": ObjectId(student_id), "status": "active"})
-    if not updated_student:
-        raise HTTPException(status_code=500, detail="Failed to retrieve updated Student profile.")
-
     log_event("update own Student profile", user_email=current_user["email"], user_id=current_user["id"], user_role="Student", details=f"updated own profile fields: {list(clean_update.keys())}")
 
-    return "Profile updated successfully"
+    return {"message": "Profile updated successfully", "profile_complete": not missing, "missing_fields": missing}
+
 
 @router.post("/change-password")
 async def change_student_password(

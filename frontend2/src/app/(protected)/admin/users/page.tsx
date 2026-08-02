@@ -1,12 +1,37 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { AcademicTermSwitcher } from "@/components/ui/AcademicTermSwitcher";
+import { TermMode, getSavedTermMode, getSemesterSelectOptions } from "@/lib/academicTerm";
+import { normalizeRoles } from "@/lib/utils";
+
+function checkIsHod(fac: any): boolean {
+  if (!fac) return false;
+  const roles = normalizeRoles(fac.role);
+  if (roles.includes("hod")) return true;
+  if (typeof fac.role === "string" && fac.role.toLowerCase().includes("hod")) return true;
+  if (Array.isArray(fac.role) && fac.role.some((r: any) => String(r).toLowerCase() === "hod")) return true;
+  if (Boolean(fac.is_hod)) return true;
+  if ((fac.designation || "").toLowerCase().includes("head of department")) return true;
+  return false;
+}
+
+function checkIsCr(stu: any): boolean {
+  if (!stu) return false;
+  const roles = normalizeRoles(stu.role);
+  if (roles.includes("cr")) return true;
+  if (typeof stu.role === "string" && stu.role.toLowerCase().includes("cr")) return true;
+  if (Array.isArray(stu.role) && stu.role.some((r: any) => String(r).toLowerCase() === "cr")) return true;
+  if (Boolean(stu.is_cr)) return true;
+  return false;
+}
 
 function parseApiError(data: any): string {
   if (!data) return "An unexpected error occurred.";
@@ -31,17 +56,31 @@ const DEPARTMENTS: DepartmentOption[] = [
   { code: "AGRI", name: "Agriculture Science", icon: "🌾" },
 ];
 
-export default function AdminUserManagerPage() {
+function AdminUserManagerContent() {
+  const searchParams = useSearchParams();
   const [selectedDept, setSelectedDept] = useState("CS");
   const [activePersona, setActivePersona] = useState<"faculty" | "student">("faculty");
+  const [termMode, setTermMode] = useState<TermMode>("odd");
   const [selectedSem, setSelectedSem] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    setTermMode(getSavedTermMode());
+  }, []);
+
+  useEffect(() => {
+    const qSearch = searchParams?.get("search");
+    if (qSearch) {
+      setSearchTerm(qSearch);
+    }
+  }, [searchParams]);
 
   const [loading, setLoading] = useState(true);
   const [facultyList, setFacultyList] = useState<any[]>([]);
   const [studentList, setStudentList] = useState<any[]>([]);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
 
   // Auto-dismiss notification after 5 seconds
   useEffect(() => {
@@ -90,6 +129,254 @@ export default function AdminUserManagerPage() {
   // Edit Student Modal State
   const [editStudent, setEditStudent] = useState<any | null>(null);
 
+  // Admin Reset Password Modal State
+  const [resetPassTarget, setResetPassTarget] = useState<{ type: "faculty" | "student"; id: string; name: string } | null>(null);
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [resetPassLoading, setResetPassLoading] = useState(false);
+
+  // Admin Promote Cohort Modal State
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [promoteDept, setPromoteDept] = useState(selectedDept);
+  const [promoteFromSem, setPromoteFromSem] = useState("1");
+  const [promoteToSem, setPromoteToSem] = useState("2");
+  const [promoteLoading, setPromoteLoading] = useState(false);
+
+  const handleAdminResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPassTarget || !newAdminPassword) return;
+    setResetPassLoading(true);
+    try {
+      const res = await apiFetch("/admin/reset-user-password", {
+        method: "POST",
+        body: JSON.stringify({
+          target_type: resetPassTarget.type,
+          user_id: resetPassTarget.id,
+          new_password: newAdminPassword,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || "Password reset successfully." });
+        setResetPassTarget(null);
+        setNewAdminPassword("");
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Server error resetting password." });
+    } finally {
+      setResetPassLoading(false);
+    }
+  };
+
+  const handleToggleUserStatus = async (target_type: "faculty" | "student", user_id: string, newStatus: string) => {
+    try {
+      const res = await apiFetch("/admin/toggle-user-status", {
+        method: "POST",
+        body: JSON.stringify({
+          target_type,
+          user_id,
+          status: newStatus,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || `Status updated to ${newStatus}.` });
+        fetchUsers();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Server error updating status." });
+    }
+  };
+
+  const handlePromoteCohort = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPromoteLoading(true);
+    try {
+      const res = await apiFetch("/admin/students/promote-cohort", {
+        method: "POST",
+        body: JSON.stringify({
+          department: promoteDept,
+          current_semester: promoteFromSem,
+          target_semester: promoteToSem,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || "Cohort promoted successfully!" });
+        setShowPromoteModal(false);
+        fetchUsers();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Server error promoting cohort." });
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
+
+  // Unified Onboarding & User Creation Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createCategory, setCreateCategory] = useState<"student" | "faculty">("faculty");
+  const [createMode, setCreateMode] = useState<"single" | "batch">("single");
+  const [creatingUser, setCreatingUser] = useState(false);
+
+  // Single / Batch form state
+  const [singleFacEmail, setSingleFacEmail] = useState("");
+  const [singleFacDept, setSingleFacDept] = useState(selectedDept);
+  const [singleFacDesig, setSingleFacDesig] = useState("Assistant Professor");
+
+  const [batchFacEmailsText, setBatchFacEmailsText] = useState("");
+  const [batchFacDept, setBatchFacDept] = useState(selectedDept);
+  const [batchFacDesig, setBatchFacDesig] = useState("Assistant Professor");
+
+  const [singleStuEmail, setSingleStuEmail] = useState("");
+  const [singleStuDept, setSingleStuDept] = useState(selectedDept);
+  const [singleStuCourse, setSingleStuCourse] = useState("BSc");
+  const [singleStuSem, setSingleStuSem] = useState("1");
+  const [singleStuYear, setSingleStuYear] = useState(new Date().getFullYear().toString());
+
+  const [batchStuEmailsText, setBatchStuEmailsText] = useState("");
+  const [batchStuDept, setBatchStuDept] = useState(selectedDept);
+  const [batchStuCourse, setBatchStuCourse] = useState("BSc");
+  const [batchStuSem, setBatchStuSem] = useState("1");
+  const [batchStuYear, setBatchStuYear] = useState(new Date().getFullYear().toString());
+
+  // Sync selectedDept with creation forms
+  useEffect(() => {
+    setSingleFacDept(selectedDept);
+    setBatchFacDept(selectedDept);
+    setSingleStuDept(selectedDept);
+    setBatchStuDept(selectedDept);
+  }, [selectedDept]);
+
+  const handleUnifiedUserCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingUser(true);
+    try {
+      if (createCategory === "faculty") {
+        if (createMode === "single") {
+          const res = await apiFetch("/faculty/create", {
+            method: "POST",
+            body: JSON.stringify({
+              email: singleFacEmail.trim(),
+              department: singleFacDept,
+              designation: singleFacDesig.trim() || "Assistant Professor",
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setActionMsg({ type: "success", text: data.message || "Faculty account created & activation email sent!" });
+            setShowCreateModal(false);
+            setSingleFacEmail("");
+            fetchUsers();
+          } else {
+            setActionMsg({ type: "error", text: parseApiError(data) });
+          }
+        } else {
+          // Batch Faculty
+          const parsedEmails = batchFacEmailsText
+            .split(/[\n,;]+/)
+            .map((e) => e.trim())
+            .filter((e) => e.length > 0 && e.includes("@"));
+
+          if (parsedEmails.length === 0) {
+            setActionMsg({ type: "error", text: "Please enter at least one valid email address." });
+            setCreatingUser(false);
+            return;
+          }
+
+          const res = await apiFetch("/faculty/bulk-create", {
+            method: "POST",
+            body: JSON.stringify({
+              department: batchFacDept,
+              designation: batchFacDesig.trim() || "Assistant Professor",
+              faculty_emails: parsedEmails,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setActionMsg({
+              type: "success",
+              text: data.message || `Successfully created ${data.created_count || parsedEmails.length} faculty accounts!`,
+            });
+            setShowCreateModal(false);
+            setBatchFacEmailsText("");
+            fetchUsers();
+          } else {
+            setActionMsg({ type: "error", text: parseApiError(data) });
+          }
+        }
+      } else {
+        // Student Creation
+        if (createMode === "single") {
+          const res = await apiFetch("/student/create", {
+            method: "POST",
+            body: JSON.stringify({
+              email: singleStuEmail.trim(),
+              department: singleStuDept,
+              course: singleStuCourse.trim().toUpperCase(),
+              semester: singleStuSem,
+              registration_year: singleStuYear.trim(),
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setActionMsg({ type: "success", text: data.message || "Student account created & activation email sent!" });
+            setShowCreateModal(false);
+            setSingleStuEmail("");
+            fetchUsers();
+          } else {
+            setActionMsg({ type: "error", text: parseApiError(data) });
+          }
+        } else {
+          // Batch Student
+          const parsedEmails = batchStuEmailsText
+            .split(/[\n,;]+/)
+            .map((e) => e.trim())
+            .filter((e) => e.length > 0 && e.includes("@"));
+
+          if (parsedEmails.length === 0) {
+            setActionMsg({ type: "error", text: "Please enter at least one valid email address." });
+            setCreatingUser(false);
+            return;
+          }
+
+          const res = await apiFetch("/student/bulk-create", {
+            method: "POST",
+            body: JSON.stringify({
+              department: batchStuDept,
+              course: batchStuCourse.trim().toUpperCase(),
+              sem: batchStuSem,
+              registration_year: batchStuYear.trim(),
+              student_emails: parsedEmails,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setActionMsg({
+              type: "success",
+              text: data.message || `Successfully created ${data.created_count || parsedEmails.length} student accounts!`,
+            });
+            setShowCreateModal(false);
+            setBatchStuEmailsText("");
+            fetchUsers();
+          } else {
+            setActionMsg({ type: "error", text: parseApiError(data) });
+          }
+        }
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "An error occurred while creating user accounts." });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+
   const filteredFaculty = facultyList.filter((f) => {
     const q = searchTerm.toLowerCase().trim();
     if (!q) return true;
@@ -97,7 +384,8 @@ export default function AdminUserManagerPage() {
     const email = (f.email || "").toLowerCase();
     const fid = (f.faculty_id || "").toLowerCase();
     const desig = (f.designation || "").toLowerCase();
-    return name.includes(q) || email.includes(q) || fid.includes(q) || desig.includes(q);
+    const role = (f.role || "").toLowerCase();
+    return name.includes(q) || email.includes(q) || fid.includes(q) || desig.includes(q) || role.includes(q);
   });
 
   const filteredStudents = studentList.filter((s) => {
@@ -239,6 +527,23 @@ export default function AdminUserManagerPage() {
       }
     } catch (err) {
       setActionMsg({ type: "error", text: "Server error toggling HOD role." });
+    }
+  };
+
+  const handleToggleCr = async (registration_no: string) => {
+    try {
+      const res = await apiFetch(`/admin/student/${encodeURIComponent(registration_no)}/toggle-cr`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || "CR role updated." });
+        fetchUsers();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Server error toggling CR role." });
     }
   };
 
@@ -403,11 +708,10 @@ export default function AdminUserManagerPage() {
       {/* Auto-Dismiss Notification */}
       {actionMsg && (
         <div
-          className={`p-4 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-between shadow-sm ${
-            actionMsg.type === "success"
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-          }`}
+          className={`p-4 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-between shadow-sm ${actionMsg.type === "success"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+            : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+            }`}
         >
           <span>{actionMsg.text}</span>
           <span className="text-[10px] opacity-75 font-normal">(Auto-dismissing in 5s)</span>
@@ -428,12 +732,32 @@ export default function AdminUserManagerPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => (activePersona === "faculty" ? setShowAddFacultyModal(true) : setShowAddStudentModal(true))}
-          className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm self-start sm:self-auto"
-        >
-          + Add New {activePersona === "faculty" ? "Faculty" : "Student"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {activePersona === "student" && (
+            <button
+              onClick={() => {
+                setPromoteDept(selectedDept);
+                setShowPromoteModal(true);
+              }}
+              className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <span>🎓</span>
+              <span>Promote Semester Cohort</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setCreateCategory(activePersona);
+              setShowCreateModal(true);
+            }}
+            className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center gap-1.5"
+          >
+            <span>✨</span>
+            <span>+ Onboard New {activePersona === "faculty" ? "Faculty" : "Student"} (Single / Batch)</span>
+          </button>
+        </div>
+
       </div>
 
       {/* Filters & Control Bar */}
@@ -481,41 +805,33 @@ export default function AdminUserManagerPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActivePersona("faculty")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activePersona === "faculty"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "border border-border bg-card hover:bg-muted text-muted-foreground"
-              }`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${activePersona === "faculty"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "border border-border bg-card hover:bg-muted text-muted-foreground"
+                }`}
             >
               👨‍🏫 Faculty Members ({filteredFaculty.length})
             </button>
             <button
               onClick={() => setActivePersona("student")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activePersona === "student"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "border border-border bg-card hover:bg-muted text-muted-foreground"
-              }`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${activePersona === "student"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "border border-border bg-card hover:bg-muted text-muted-foreground"
+                }`}
             >
               🎓 Enrolled Students ({filteredStudents.length})
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <AcademicTermSwitcher currentMode={termMode} onModeChange={(mode) => setTermMode(mode)} />
+
             {activePersona === "student" && (
               <div className="w-40">
                 <CustomSelect
                   value={selectedSem}
                   onChange={(val) => setSelectedSem(val)}
-                  options={[
-                    { value: "all", label: "All Semesters" },
-                    { value: "1", label: "Semester 1" },
-                    { value: "2", label: "Semester 2" },
-                    { value: "3", label: "Semester 3" },
-                    { value: "4", label: "Semester 4" },
-                    { value: "5", label: "Semester 5" },
-                    { value: "6", label: "Semester 6" },
-                  ]}
+                  options={getSemesterSelectOptions(termMode, true)}
                 />
               </div>
             )}
@@ -523,17 +839,15 @@ export default function AdminUserManagerPage() {
             <div className="flex items-center border border-border rounded-xl bg-card p-1">
               <button
                 onClick={() => setViewMode("table")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                  viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 📋 Table
               </button>
               <button
                 onClick={() => setViewMode("card")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                  viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 🎴 Cards
               </button>
@@ -569,7 +883,7 @@ export default function AdminUserManagerPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {filteredFaculty.map((fac) => {
-                      const isHod = (fac.role || []).includes("hod");
+                      const isHod = checkIsHod(fac);
                       return (
                         <tr key={fac.faculty_id} className="hover:bg-muted/30 transition-colors">
                           <td className="p-4">
@@ -582,7 +896,6 @@ export default function AdminUserManagerPage() {
                                 >
                                   {fac.first_name} {fac.last_name}
                                 </button>
-                                <span className="text-[10px] text-muted-foreground block">{fac.email}</span>
                               </div>
                             </div>
                           </td>
@@ -591,34 +904,16 @@ export default function AdminUserManagerPage() {
                           <td className="p-4 text-muted-foreground">{fac.designation}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-1.5">
+                              {isHod && <Badge variant="teal">HOD</Badge>}
                               <Badge variant="primary">Faculty</Badge>
-                              {isHod && <Badge variant="success">HOD</Badge>}
                             </div>
                           </td>
-                          <td className="p-4 text-right space-x-2">
-                            <button
-                              onClick={() => openAssignSubjectModal(fac)}
-                              className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                            >
-                              Assign Subjects
-                            </button>
-                            <button
-                              onClick={() => handleToggleHod(fac.faculty_id)}
-                              className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold hover:bg-muted transition-colors"
-                            >
-                              {isHod ? "Revoke HOD" : "Promote HOD"}
-                            </button>
+                          <td className="p-4 text-right">
                             <button
                               onClick={() => setEditFaculty(fac)}
-                              className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold hover:bg-muted transition-colors"
+                              className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
                             >
                               Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteFaculty(fac.faculty_id)}
-                              className="px-2.5 py-1 rounded-lg border border-red-500/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                              Delete
                             </button>
                           </td>
                         </tr>
@@ -631,7 +926,7 @@ export default function AdminUserManagerPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredFaculty.map((fac) => {
-                const isHod = (fac.role || []).includes("hod");
+                const isHod = checkIsHod(fac);
                 return (
                   <div key={fac.faculty_id} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
                     <div className="space-y-3">
@@ -648,7 +943,7 @@ export default function AdminUserManagerPage() {
                             <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">{fac.faculty_id}</span>
                           </div>
                         </div>
-                        {isHod && <Badge variant="success">HOD</Badge>}
+                        {isHod && <Badge variant="teal">HOD</Badge>}
                       </div>
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p><strong className="text-foreground">Dept:</strong> {fac.department}</p>
@@ -657,27 +952,13 @@ export default function AdminUserManagerPage() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-border flex items-center justify-end">
                       <button
-                        onClick={() => openAssignSubjectModal(fac)}
-                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        onClick={() => setEditFaculty(fac)}
+                        className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
                       >
-                        Assign Subjects →
+                        Edit
                       </button>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setEditFaculty(fac)}
-                          className="px-2 py-1 rounded-lg border border-border text-[11px] font-bold hover:bg-muted"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFaculty(fac.faculty_id)}
-                          className="px-2 py-1 rounded-lg border border-red-500/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          Delete
-                        </button>
-                      </div>
                     </div>
                   </div>
                 );
@@ -714,7 +995,7 @@ export default function AdminUserManagerPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {filteredStudents.map((stu) => {
-                      const isCr = (stu.role || []).includes("cr");
+                      const isCr = checkIsCr(stu);
                       return (
                         <tr key={stu.registration_no} className="hover:bg-muted/30 transition-colors">
                           <td className="p-4">
@@ -726,13 +1007,12 @@ export default function AdminUserManagerPage() {
                                 size="sm"
                               />
                               <div>
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-2">
                                   <span className="font-extrabold text-foreground capitalize">
                                     {stu.first_name} {stu.last_name}
                                   </span>
-                                  {isCr && <Badge variant="primary" className="text-[10px]">CR</Badge>}
+                                  {isCr && <Badge variant="teal" className="text-[10px]">CR</Badge>}
                                 </div>
-                                <span className="text-[10px] text-muted-foreground block font-mono">{stu.email}</span>
                               </div>
                             </div>
                           </td>
@@ -744,18 +1024,12 @@ export default function AdminUserManagerPage() {
                               {stu.status || "active"}
                             </Badge>
                           </td>
-                          <td className="p-4 text-right space-x-2">
+                          <td className="p-4 text-right">
                             <button
                               onClick={() => setEditStudent(stu)}
-                              className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                              className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
                             >
                               Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(stu.registration_no)}
-                              className="px-2.5 py-1 rounded-lg border border-red-500/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            >
-                              Delete
                             </button>
                           </td>
                         </tr>
@@ -768,7 +1042,7 @@ export default function AdminUserManagerPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredStudents.map((stu) => {
-                const isCr = (stu.role || []).includes("cr");
+                const isCr = checkIsCr(stu);
                 return (
                   <div key={stu.registration_no} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
                     <div className="space-y-3">
@@ -785,7 +1059,7 @@ export default function AdminUserManagerPage() {
                               <h3 className="font-extrabold text-foreground text-sm capitalize">
                                 {stu.first_name} {stu.last_name}
                               </h3>
-                              {isCr && <Badge variant="primary" className="text-[10px]">CR</Badge>}
+                              {isCr && <Badge variant="teal" className="text-[10px]">CR</Badge>}
                             </div>
                             <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">{stu.registration_no}</span>
                           </div>
@@ -801,18 +1075,12 @@ export default function AdminUserManagerPage() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-end gap-1.5">
+                    <div className="pt-3 border-t border-border flex items-center justify-end">
                       <button
                         onClick={() => setEditStudent(stu)}
-                        className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold hover:bg-muted"
+                        className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
                       >
                         Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteStudent(stu.registration_no)}
-                        className="px-2.5 py-1 rounded-lg border border-red-500/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        Delete
                       </button>
                     </div>
                   </div>
@@ -1027,14 +1295,57 @@ export default function AdminUserManagerPage() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="font-bold text-foreground block mb-1">Qualification / Specialization</label>
-                <input
-                  placeholder="e.g. Ph.D in AI & Machine Learning"
-                  value={editFaculty.qualification || ""}
-                  onChange={(e) => setEditFaculty({ ...editFaculty, qualification: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-border bg-background"
-                />
+              {/* Admin Actions Toolbar inside Edit Faculty Modal */}
+              <div className="pt-4 border-t border-border space-y-2">
+                <label className="font-extrabold block text-[10px] uppercase tracking-wider text-muted-foreground">
+                  ⚡ Quick Admin Actions & Role Operations
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fac = editFaculty;
+                      setEditFaculty(null);
+                      openAssignSubjectModal(fac);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 transition-colors"
+                  >
+                    📚 Assign Subjects
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fac = editFaculty;
+                      setEditFaculty(null);
+                      setResetPassTarget({ type: "faculty", id: fac.faculty_id, name: `${fac.first_name} ${fac.last_name}` });
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-bold hover:bg-amber-100 transition-colors"
+                  >
+                    🔑 Reset Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fac = editFaculty;
+                      handleToggleHod(fac.faculty_id);
+                      setEditFaculty(null);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 font-bold hover:bg-teal-100 transition-colors"
+                  >
+                    {checkIsHod(editFaculty) ? "Revoke HOD Role" : "👑 Promote to HOD"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fac = editFaculty;
+                      setEditFaculty(null);
+                      handleDeleteFaculty(fac.faculty_id);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-800/80 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold hover:bg-red-100 transition-colors"
+                  >
+                    🗑️ Delete Faculty
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
@@ -1260,6 +1571,48 @@ export default function AdminUserManagerPage() {
                 </div>
               </div>
 
+              {/* Admin Actions Toolbar inside Edit Student Modal */}
+              <div className="pt-4 border-t border-border space-y-2">
+                <label className="font-extrabold block text-[10px] uppercase tracking-wider text-muted-foreground">
+                  ⚡ Quick Admin Actions & Role Operations
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const stu = editStudent;
+                      setEditStudent(null);
+                      setResetPassTarget({ type: "student", id: stu.registration_no, name: `${stu.first_name} ${stu.last_name}` });
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-bold hover:bg-amber-100 transition-colors"
+                  >
+                    🔑 Reset Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const stu = editStudent;
+                      handleToggleCr(stu.registration_no);
+                      setEditStudent(null);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 font-bold hover:bg-teal-100 transition-colors"
+                  >
+                    {checkIsCr(editStudent) ? "Revoke CR Role" : "🎓 Promote to CR"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const stu = editStudent;
+                      setEditStudent(null);
+                      handleDeleteStudent(stu.registration_no);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-800/80 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold hover:bg-red-100 transition-colors"
+                  >
+                    🗑️ Delete Student
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
                 <button
                   type="button"
@@ -1279,6 +1632,504 @@ export default function AdminUserManagerPage() {
           </div>
         </div>
       )}
+
+      {/* Unified User Creation & Onboarding Modal (Single & Batch) */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div>
+                <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <span>✨ Onboard New Users</span>
+                </h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Auto-generates unique IDs & sends email links for password setup and profile completion.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Category Toggle: Faculty vs Student */}
+            <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1 rounded-xl border border-border/60">
+              <button
+                type="button"
+                onClick={() => setCreateCategory("faculty")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${createCategory === "faculty"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                👨‍🏫 Faculty Member
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateCategory("student")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${createCategory === "student"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                🎓 Enrolled Student
+              </button>
+            </div>
+
+            {/* Mode Toggle: Single vs Batch */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateMode("single")}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${createMode === "single"
+                  ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold"
+                  : "border-border text-muted-foreground hover:bg-muted/30"
+                  }`}
+              >
+                👤 Single User
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateMode("batch")}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${createMode === "batch"
+                  ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold"
+                  : "border-border text-muted-foreground hover:bg-muted/30"
+                  }`}
+              >
+                👥 Batch / Multiple Users
+              </button>
+            </div>
+
+            <form onSubmit={handleUnifiedUserCreate} className="space-y-4 text-xs">
+              {/* FACULTY FORM */}
+              {createCategory === "faculty" && (
+                <>
+                  {createMode === "single" ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="font-bold text-foreground block mb-1">
+                          Faculty Email Address <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          required
+                          type="email"
+                          placeholder="e.g. professor.sharma@university.edu"
+                          value={singleFacEmail}
+                          onChange={(e) => setSingleFacEmail(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-border bg-background"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Department</label>
+                          <CustomSelect
+                            value={singleFacDept}
+                            onChange={(val) => setSingleFacDept(val)}
+                            options={DEPARTMENTS.map((d) => ({ value: d.code, label: d.code }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Designation</label>
+                          <input
+                            placeholder="Assistant Professor"
+                            value={singleFacDesig}
+                            onChange={(e) => setSingleFacDesig(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Department</label>
+                          <CustomSelect
+                            value={batchFacDept}
+                            onChange={(val) => setBatchFacDept(val)}
+                            options={DEPARTMENTS.map((d) => ({ value: d.code, label: d.code }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Designation</label>
+                          <input
+                            placeholder="Assistant Professor"
+                            value={batchFacDesig}
+                            onChange={(e) => setBatchFacDesig(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-foreground block">
+                            Faculty Email Addresses <span className="text-red-500">*</span>
+                          </label>
+                          <span className="text-[10px] text-muted-foreground">
+                            {batchFacEmailsText.split(/[\n,;]+/).filter((e) => e.trim().includes("@")).length} valid email(s)
+                          </span>
+                        </div>
+                        <textarea
+                          required
+                          rows={5}
+                          placeholder="Enter email addresses separated by lines or commas:&#10;fac1@univ.edu&#10;fac2@univ.edu&#10;fac3@univ.edu"
+                          value={batchFacEmailsText}
+                          onChange={(e) => setBatchFacEmailsText(e.target.value)}
+                          className="w-full p-3 rounded-xl border border-border bg-background font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* STUDENT FORM */}
+              {createCategory === "student" && (
+                <>
+                  {createMode === "single" ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="font-bold text-foreground block mb-1">
+                          Student Email Address <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          required
+                          type="email"
+                          placeholder="e.g. rahul.student@university.edu"
+                          value={singleStuEmail}
+                          onChange={(e) => setSingleStuEmail(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-border bg-background"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Department</label>
+                          <CustomSelect
+                            value={singleStuDept}
+                            onChange={(val) => setSingleStuDept(val)}
+                            options={DEPARTMENTS.map((d) => ({ value: d.code, label: d.code }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Course Name</label>
+                          <input
+                            required
+                            placeholder="e.g. BSc"
+                            value={singleStuCourse}
+                            onChange={(e) => setSingleStuCourse(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Semester</label>
+                          <CustomSelect
+                            value={singleStuSem}
+                            onChange={(val) => setSingleStuSem(val)}
+                            options={[
+                              { value: "1", label: "Semester 1" },
+                              { value: "2", label: "Semester 2" },
+                              { value: "3", label: "Semester 3" },
+                              { value: "4", label: "Semester 4" },
+                              { value: "5", label: "Semester 5" },
+                              { value: "6", label: "Semester 6" },
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Registration Year</label>
+                          <input
+                            required
+                            placeholder="e.g. 2025"
+                            value={singleStuYear}
+                            onChange={(e) => setSingleStuYear(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Department</label>
+                          <CustomSelect
+                            value={batchStuDept}
+                            onChange={(val) => setBatchStuDept(val)}
+                            options={DEPARTMENTS.map((d) => ({ value: d.code, label: d.code }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Course Name</label>
+                          <input
+                            required
+                            placeholder="e.g. BSc"
+                            value={batchStuCourse}
+                            onChange={(e) => setBatchStuCourse(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Semester</label>
+                          <CustomSelect
+                            value={batchStuSem}
+                            onChange={(val) => setBatchStuSem(val)}
+                            options={[
+                              { value: "1", label: "Semester 1" },
+                              { value: "2", label: "Semester 2" },
+                              { value: "3", label: "Semester 3" },
+                              { value: "4", label: "Semester 4" },
+                              { value: "5", label: "Semester 5" },
+                              { value: "6", label: "Semester 6" },
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-foreground block mb-1">Registration Year</label>
+                          <input
+                            required
+                            placeholder="e.g. 2025"
+                            value={batchStuYear}
+                            onChange={(e) => setBatchStuYear(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-foreground block">
+                            Student Email Addresses <span className="text-red-500">*</span>
+                          </label>
+                          <span className="text-[10px] text-muted-foreground">
+                            {batchStuEmailsText.split(/[\n,;]+/).filter((e) => e.trim().includes("@")).length} valid email(s)
+                          </span>
+                        </div>
+                        <textarea
+                          required
+                          rows={5}
+                          placeholder="Enter email addresses separated by lines or commas:&#10;student1@univ.edu&#10;student2@univ.edu&#10;student3@univ.edu"
+                          value={batchStuEmailsText}
+                          onChange={(e) => setBatchStuEmailsText(e.target.value)}
+                          className="w-full p-3 rounded-xl border border-border bg-background font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[11px] flex items-start gap-2">
+                <span className="shrink-0">💡</span>
+                <span>
+                  The system will auto-generate unique registration numbers (e.g. 2025CS001) and dispatch password activation links directly to each email.
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl border border-border text-muted-foreground font-bold hover:bg-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {creatingUser ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Creating & Emailing...</span>
+                    </>
+                  ) : (
+                    <span>✨ Create & Send Activation Emails</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Direct Reset Password Modal */}
+      {resetPassTarget && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="solid-card rounded-2xl p-6 border border-border max-w-md w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <span>🔑</span>
+                <span>Reset User Password</span>
+              </h2>
+              <button
+                onClick={() => setResetPassTarget(null)}
+                className="text-muted-foreground hover:text-foreground font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+              Target User: <strong className="text-foreground">{resetPassTarget.name}</strong> ({resetPassTarget.id})
+            </div>
+
+            <form onSubmit={handleAdminResetPassword} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-foreground block mb-1">New Password *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Enter new password (min 6 chars)"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setResetPassTarget(null)}
+                  className="px-4 py-2 rounded-xl border border-border text-muted-foreground font-bold hover:bg-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetPassLoading || newAdminPassword.length < 6}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold disabled:opacity-50 flex items-center gap-2"
+                >
+                  {resetPassLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>🔑 Update Password Now</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Promote Semester Cohort Modal */}
+      {showPromoteModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="solid-card rounded-2xl p-6 border border-border max-w-lg w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <span>🎓</span>
+                <span>Promote Semester Cohort</span>
+              </h2>
+              <button
+                onClick={() => setShowPromoteModal(false)}
+                className="text-muted-foreground hover:text-foreground font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
+              ⚠️ Mass promotion updates the active semester for all enrolled students in the target cohort. Moving students to "Graduated" sets their status to alumnus.
+            </div>
+
+            <form onSubmit={handlePromoteCohort} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-foreground block mb-1">Academic Department</label>
+                <CustomSelect
+                  value={promoteDept}
+                  onChange={setPromoteDept}
+                  options={DEPARTMENTS.map((d) => ({
+                    value: d.code,
+                    label: `${d.icon} ${d.name} (${d.code})`,
+                  }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-foreground block mb-1">Current Semester</label>
+                  <CustomSelect
+                    value={promoteFromSem}
+                    onChange={setPromoteFromSem}
+                    options={["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => ({
+                      value: s,
+                      label: `Semester ${s}`,
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-foreground block mb-1">Target Semester</label>
+                  <CustomSelect
+                    value={promoteToSem}
+                    onChange={setPromoteToSem}
+                    options={[
+                      { value: "2", label: "Semester 2" },
+                      { value: "3", label: "Semester 3" },
+                      { value: "4", label: "Semester 4" },
+                      { value: "5", label: "Semester 5" },
+                      { value: "6", label: "Semester 6" },
+                      { value: "7", label: "Semester 7" },
+                      { value: "8", label: "Semester 8" },
+                      { value: "Graduated", label: "Graduated (Alumni)" },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowPromoteModal(false)}
+                  className="px-4 py-2 rounded-xl border border-border text-muted-foreground font-bold hover:bg-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={promoteLoading}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-50 flex items-center gap-2"
+                >
+                  {promoteLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Promoting Students...</span>
+                    </>
+                  ) : (
+                    <span>🚀 Execute Cohort Promotion</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
+
+export default function AdminUserManagerPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs font-bold text-muted-foreground animate-pulse">Loading user manager...</div>}>
+      <AdminUserManagerContent />
+    </Suspense>
+  );
+}
+

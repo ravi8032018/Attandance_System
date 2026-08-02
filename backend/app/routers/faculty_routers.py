@@ -3,8 +3,21 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from backend.app.db import db
 from secrets import token_urlsafe
 from datetime import timedelta, datetime
-from backend.app.schemas.faculty_schema import FacultyCreateRequest, FacultyProfileUpdateRequest, FacultySelfUpdateRequest, ChangePasswordRequest, FacultyFilterParamsRequest, SortOrder, FacultyProfileUpdateByAdmin
-from backend.app.schemas.faculty_schema import FacultyAdminResponse, FacultyFullProfileResponse, FacultyPaginatedResponse, FacultyListResponse
+from backend.app.schemas.faculty_schema import (
+    FacultyCreateRequest,
+    FacultyBulkCreateRequest,
+    FacultyBulkCreateResponse,
+    FacultyProfileUpdateRequest,
+    FacultySelfUpdateRequest,
+    ChangePasswordRequest,
+    FacultyFilterParamsRequest,
+    SortOrder,
+    FacultyProfileUpdateByAdmin,
+    FacultyAdminResponse,
+    FacultyFullProfileResponse,
+    FacultyPaginatedResponse,
+    FacultyListResponse
+)
 from backend.app.utils.dates_normalizer_to_datetime import normalize_dates_for_mongo
 from backend.app.utils.hash import hash_password, varify_hash
 from backend.app.utils.placeholder_cleaner import clean_placeholders
@@ -21,6 +34,7 @@ import json, os
 from datetime import timezone, datetime, timedelta
 
 BACKEND_HOST= os.getenv("BACKEND_HOST")
+FRONTEND_ORIGIN= os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 
 router = APIRouter(prefix="/faculty", tags=["Faculty"])
 
@@ -65,8 +79,8 @@ async def faculty_create(
         "expires_at": expiry,
         "is_used": False
     })
-    # 3. Email the Student with a link to set/reset password
-    link = f"{BACKEND_HOST}/reset-fac-password?token={token}"
+    # Email the faculty with link to set password and onboard
+    link = f"{FRONTEND_ORIGIN}/onboard?token={token}&type=faculty"
 
     email_data = {
         "email_to": faculty.email,
@@ -102,6 +116,100 @@ async def faculty_create(
 
     return {
         "message": f"Faculty account created successfully for {faculty_dict['email']} [{faculty_dict['faculty_id']}]"}
+
+@router.post("/bulk-create", response_model=FacultyBulkCreateResponse)
+async def bulk_faculty_create(
+        payload: FacultyBulkCreateRequest,
+        current_admin: dict = Depends(admin_required)
+):
+    faculty_emails = payload.faculty_emails
+    now = datetime.utcnow()
+    created = []
+    created_mails = []
+
+    for fac_mail in faculty_emails:
+        unique_faculty_id = await generate_unique_faculty_id(payload.department)
+
+        default_password = token_urlsafe(10)
+        hashed_default = await hash_password(default_password)
+        fac_doc = {
+            "email": fac_mail,
+            "faculty_id": unique_faculty_id,
+            "department": payload.department.upper() if payload.department else "CS",
+            "designation": format_designation(payload.designation),
+            "role": ["faculty"],
+            "status": "inactive",
+            "created_by": current_admin.get("name") or current_admin.get("email"),
+            "created_at": now,
+            "profile_complete": False,
+            "updated_at": now,
+            "updated_by": None,
+            "password": hashed_default
+        }
+
+        try:
+            result = await db["Faculty"].insert_one(fac_doc)
+        except DuplicateKeyError:
+            continue
+        except Exception as e:
+            print("Error inserting faculty:", e)
+            continue
+
+        if not result:
+            continue
+
+        token = token_urlsafe(32)
+        expiry = now + timedelta(hours=48)
+        await db["PasswordResetDB"].insert_one({
+            "user_id": str(result.inserted_id),
+            "token": token,
+            "user_type": "faculty",
+            "type": "set_password",
+            "expires_at": expiry,
+            "is_used": False
+        })
+
+        link = f"{FRONTEND_ORIGIN}/onboard?token={token}&type=faculty"
+        email_data = {
+            "email_to": fac_mail,
+            "faculty_id": unique_faculty_id,
+            "link": link,
+            "created_at": now.isoformat(),
+            "is_sent": False
+        }
+        created.append(email_data)
+        created_mails.append(fac_mail)
+
+    if created:
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", "..", ".."))
+        email_cache_dirr_path = os.path.join(PROJECT_ROOT, "cache_local")
+
+        with open(f"{email_cache_dirr_path}/faculty_to_email.json", "r+") as f:
+            try:
+                data = json.load(f)
+            except json.decoder.JSONDecodeError:
+                data = []
+
+            for dicts in created:
+                data.append(dicts)
+            f.seek(0)
+            json.dump(data, f, indent=2)
+            f.truncate()
+
+        try:
+            send_email_with_link(f"{email_cache_dirr_path}/faculty_to_email.json")
+        except Exception as e:
+            print("Error sending faculty bulk emails:", e)
+
+    log_event("bulk create faculty", user_email=current_admin.get("email"), user_role="admin", details=f"Created {len(created_mails)} faculty members")
+
+    return FacultyBulkCreateResponse(
+        message=f"Successfully created {len(created_mails)} faculty account(s).",
+        created_count=len(created_mails),
+        created_emails=created_mails
+    )
+
 
 @router.get("/faculty-id/{faculty_id}", response_model=FacultyAdminResponse)
 async def get_faculty_by_id(
@@ -168,24 +276,22 @@ async def complete_profile(
 async def get_current_faculty_profile(
     current_user: dict = Depends(faculty_required)
 ):
-    # print("Starting current_user--> ", current_user)
-    # if "faculty" not in current_user.get("role", []):
-    #     raise HTTPException(status_code=403, detail="Access denied. Only faculties can view their own profile.")
-
     faculty_id = current_user.get("id")
 
     if not faculty_id:
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id), "status": "active"})
-        # print("faculty--> ", faculty)
+        faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id)})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find faculty.") from e
-    # print("Student--> ", Student)
 
     if not faculty:
         raise HTTPException(status_code=404, detail="Faculty profile not found.")
+
+    req_fields = ["first_name", "last_name", "dob", "gender", "contact_number"]
+    missing = [f for f in req_fields if not faculty.get(f) or str(faculty.get(f)).strip() in ["", "None", "null", "undefined"]]
+    faculty["profile_complete"] = len(missing) == 0
 
     log_event("read own faculty profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details="accessed own faculty profile")
 
@@ -198,15 +304,13 @@ async def update_current_faculty_profile(
 ):
     if "faculty" not in current_user.get("role", []):
         raise HTTPException(status_code=403, detail="Access denied. Only faculty can update their own profile.")
-    # print("current user--> ", current_user)
 
     faculty_id = current_user.get("id")
     if not faculty_id:
         raise HTTPException(status_code=400, detail="Invalid user session.")
 
     try:
-        faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id), "status": "active"})
-        # print("current Student--> ", Student)
+        faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id)})
     except Exception as e:
         raise HTTPException(status_code=404, detail="Cannot find faculty.") from e
 
@@ -219,24 +323,25 @@ async def update_current_faculty_profile(
     clean_update["updated_at"] = datetime.utcnow()
     clean_update["updated_by"] = current_user.get("name") or current_user["email"]
 
+    merged = {**faculty, **clean_update}
+    req_fields = ["first_name", "last_name", "dob", "gender", "contact_number"]
+    missing = [f for f in req_fields if not merged.get(f) or str(merged.get(f)).strip() in ["", "None", "null", "undefined"]]
+
+    if not missing:
+        clean_update["profile_complete"] = True
+        clean_update["status"] = "active"
+    else:
+        clean_update["profile_complete"] = False
+
     result = await db["Faculty"].update_one(
-        {"_id": ObjectId(faculty_id), "status": "active"},
+        {"_id": ObjectId(faculty_id)},
         {"$set": clean_update}
     )
 
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Faculty profile not found (or no changes made).")
-    if result.modified_count == 0 and clean_update:
-        # This can happen if the update data is identical to current data
-        pass
-
-    updated_faculty = await db["Faculty"].find_one({"_id": ObjectId(faculty_id), "status": "active"})
-    if not updated_faculty:
-        raise HTTPException(status_code=500, detail="Failed to retrieve updated faculty profile.")
-
     log_event("update own faculty profile", user_email=current_user["email"], user_id=current_user["id"], user_role=current_user['role'], details=f"updated own profile fields: {list(clean_update.keys())}")
 
-    return "Profile updated successfully"
+    return {"message": "Profile updated successfully", "profile_complete": not missing, "missing_fields": missing}
+
 
 @router.post("/change-password")
 async def change_faculty_password(

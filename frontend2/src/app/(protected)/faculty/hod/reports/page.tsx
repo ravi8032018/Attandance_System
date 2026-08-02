@@ -243,7 +243,8 @@ export default function HODReportsPage() {
       department,
       semester === "all" ? "All Semesters" : `Semester ${semester}`,
       defaulterColumns,
-      defaulters
+      defaulters,
+      "portrait"
     );
   }
 
@@ -369,21 +370,19 @@ export default function HODReportsPage() {
           <div className="flex items-center gap-2 bg-muted p-1 rounded-xl border border-border self-start sm:self-auto">
             <button
               onClick={() => setActiveTab("defaulters")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "defaulters"
-                  ? "bg-card text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === "defaulters"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               Defaulter Warning List ({defaulters.length})
             </button>
             <button
               onClick={() => setActiveTab("workload")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "workload"
-                  ? "bg-card text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === "workload"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               Faculty Workload & Performance ({workload.length})
             </button>
@@ -537,13 +536,12 @@ export default function HODReportsPage() {
                             {st.attended_classes} / {st.total_classes}
                           </td>
                           <td
-                            className={`py-3 px-3 text-sm font-mono font-bold ${
-                              st.attendance_pct < 40
-                                ? "text-rose-600 dark:text-rose-400"
-                                : st.attendance_pct < 75
+                            className={`py-3 px-3 text-sm font-mono font-bold ${st.attendance_pct < 40
+                              ? "text-rose-600 dark:text-rose-400"
+                              : st.attendance_pct < 75
                                 ? "text-amber-600 dark:text-amber-400"
                                 : "text-emerald-600 dark:text-emerald-400"
-                            }`}
+                              }`}
                           >
                             {st.attendance_pct}%
                           </td>
@@ -659,13 +657,12 @@ export default function HODReportsPage() {
                                 <div className="h-1.5 w-28 rounded-full bg-muted overflow-hidden">
                                   <div
                                     style={{ width: `${Math.min(completionPct, 100)}%` }}
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                      completionPct >= 75
-                                        ? "bg-emerald-500"
-                                        : completionPct >= 40
+                                    className={`h-full rounded-full transition-all duration-500 ${completionPct >= 75
+                                      ? "bg-emerald-500"
+                                      : completionPct >= 40
                                         ? "bg-amber-500"
                                         : "bg-indigo-500"
-                                    }`}
+                                      }`}
                                   />
                                 </div>
                               </div>

@@ -26,6 +26,21 @@ export function hasRole(userRoles: string | string[] | undefined | null, targetR
 }
 
 /**
+ * Evaluates role inputs (string, array, comma-separated) and returns the highest role in system hierarchy:
+ * admin > hod > faculty > cr > student
+ */
+export function getHighestRole(rolesInput: string | string[] | undefined | null): string {
+  const normalized = normalizeRoles(rolesInput);
+  if (normalized.includes("admin")) return "admin";
+  if (normalized.includes("hod")) return "hod";
+  if (normalized.includes("faculty")) return "faculty";
+  if (normalized.includes("cr")) return "cr";
+  if (normalized.includes("student")) return "student";
+  return normalized[0] || "user";
+}
+
+
+/**
  * Ensures faculty names always have "Dr." prefix when displayed as text.
  * Example: "Prodipto Das" -> "Dr. Prodipto Das"
  */
@@ -99,3 +114,13 @@ export function formatDateTimeIST(dateInput: string | Date | number | null | und
   }
 }
 
+export function getMissingProfileFields(u: any): string[] {
+  if (!u) return ["First Name", "Last Name", "Date of Birth", "Gender", "Contact Phone Number"];
+  const missing: string[] = [];
+  if (!u.first_name || !String(u.first_name).trim()) missing.push("First Name");
+  if (!u.last_name || !String(u.last_name).trim()) missing.push("Last Name");
+  if (!u.dob || !String(u.dob).trim()) missing.push("Date of Birth");
+  if (!u.gender || !String(u.gender).trim()) missing.push("Gender");
+  if (!u.contact_number && !u.phone && !u.contact_no) missing.push("Contact Phone Number");
+  return missing;
+}

@@ -7,12 +7,16 @@ export interface Faculty {
   last_name: string;
   department: string;
   designation?: string;
+  office_location?: string;
   status: string;
   role: string[];
   contact_number?: string;
+  phone?: string;
+  gender?: string;
   dob?: string;
   joining_date?: string;
   photo_url?: string;
+  profile_complete?: boolean;
 }
 
 export interface Student {
@@ -31,8 +35,13 @@ export interface Student {
   roll_number?: string;
   guardian_email?: string;
   contact_number?: string;
+  phone?: string;
+  gender?: string;
+  dob?: string;
   photo_url?: string;
+  profile_complete?: boolean;
 }
+
 
 export interface Subject {
   subject_code: string;

@@ -4,6 +4,8 @@ from pydantic import BaseModel
 class SubjectItem(BaseModel):
     subject_code: str
     subject_name: str
+    credits: Optional[int] = 3
+    type: Optional[str] = "Theory"
     faculty_id: Optional[str] = None
     faculty_name: Optional[str] = None
     total_sessions: Optional[int] = 0

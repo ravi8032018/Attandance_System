@@ -528,45 +528,111 @@ async def get_student_personal_report(
     if not student:
         raise HTTPException(status_code=404, detail="Student record not found.")
 
-    dept = student.get("department", "")
-    sem = str(student.get("semester", ""))
-
-    att_cursor = db.Attendance.find({
-        "attendance_records.registration_no": reg_no,
-        "status": {"$nin": ["rejected", "cancelled"]}
-    }).sort("date", -1)
+    dept = str(student.get("department", "")).strip()
+    sem = str(student.get("semester", "")).strip()
+    student_created_at = student.get("created_at")
 
     subject_stats = {}
+
+    # 1. Fetch subjects from db.Curriculum for department & semester
+    sem_list = [sem]
+    if sem.isdigit():
+        sem_list.append(int(sem))
+
+    curr_cursor = db.Curriculum.find({
+        "department": {"$regex": f"^{dept}$", "$options": "i"},
+        "semester": {"$in": sem_list}
+    })
+    async for cdoc in curr_cursor:
+        for subj in cdoc.get("subjects", []):
+            if isinstance(subj, dict):
+                scode = subj.get("subject_code")
+                sname = subj.get("subject_name", scode)
+                if scode and scode not in subject_stats:
+                    subject_stats[scode] = {
+                        "subject_code": scode,
+                        "subject_name": sname,
+                        "attended": 0,
+                        "total": 0
+                    }
+
+    # 2. Check student's own subjects dict
+    stu_subjects = student.get("subjects", {})
+    if isinstance(stu_subjects, dict):
+        for scode, sname in stu_subjects.items():
+            if scode and scode not in subject_stats:
+                subject_stats[scode] = {
+                    "subject_code": scode,
+                    "subject_name": str(sname),
+                    "attended": 0,
+                    "total": 0
+                }
+
+    # 3. Query Attendance sessions
+    att_query: dict = {
+        "status": {"$nin": ["rejected", "cancelled"]}
+    }
+    if subject_stats:
+        att_query["$or"] = [
+            {"attendance_records.registration_no": reg_no},
+            {"subject_code": {"$in": list(subject_stats.keys())}}
+        ]
+    else:
+        att_query["attendance_records.registration_no"] = reg_no
+
+    att_cursor = db.Attendance.find(att_query).sort("date", -1)
+
     total_attended = 0
     total_classes = 0
     monthly_trend = []
+    processed_session_ids = set()
 
     async for sess in att_cursor:
+        sess_id = str(sess.get("session_id") or sess.get("_id"))
+        if sess_id in processed_session_ids:
+            continue
+        processed_session_ids.add(sess_id)
+
         scode = sess.get("subject_code")
         sname = sess.get("subject_name", scode)
-        dt_str = sess.get("date")
-        if isinstance(dt_str, datetime):
-            dt_str = dt_str.isoformat()
+        dt_raw = sess.get("date")
+        dt_str = dt_raw.isoformat() if isinstance(dt_raw, datetime) else str(dt_raw)
 
         if scode not in subject_stats:
             subject_stats[scode] = {"subject_code": scode, "subject_name": sname, "attended": 0, "total": 0}
 
-        subject_stats[scode]["total"] += 1
-        total_classes += 1
-
         recs = sess.get("attendance_records", [])
-        is_present = any(r.get("registration_no") == reg_no and r.get("status") in ["present", "", None] for r in recs)
+        student_record = next((r for r in recs if r.get("registration_no") == reg_no), None)
 
-        if is_present:
-            subject_stats[scode]["attended"] += 1
-            total_attended += 1
+        if student_record is not None:
+            is_present = student_record.get("status") in ["present", "", None]
+            subject_stats[scode]["total"] += 1
+            total_classes += 1
+            if is_present:
+                subject_stats[scode]["attended"] += 1
+                total_attended += 1
 
-        monthly_trend.append({
-            "session_id": sess.get("session_id", ""),
-            "date": str(dt_str),
-            "subject_code": scode,
-            "status": "present" if is_present else "absent"
-        })
+            monthly_trend.append({
+                "session_id": str(sess.get("session_id", "")),
+                "date": dt_str,
+                "subject_code": scode,
+                "status": "present" if is_present else "absent"
+            })
+        else:
+            sess_date = dt_raw if isinstance(dt_raw, datetime) else None
+            if student_created_at and sess_date and sess_date < student_created_at:
+                # Session conducted before student joined -> skip counting against student
+                pass
+            else:
+                # Session conducted after student joined but student not recorded -> absent
+                subject_stats[scode]["total"] += 1
+                total_classes += 1
+                monthly_trend.append({
+                    "session_id": str(sess.get("session_id", "")),
+                    "date": dt_str,
+                    "subject_code": scode,
+                    "status": "absent"
+                })
 
     subject_list = []
     for scode, stat in subject_stats.items():
@@ -577,7 +643,7 @@ async def get_student_personal_report(
             "attended_classes": stat["attended"],
             "total_classes": stat["total"],
             "attendance_pct": pct,
-            "is_eligible": pct >= 75.0
+            "is_eligible": pct >= 75.0 if stat["total"] > 0 else True
         })
 
     overall_pct = round((total_attended / total_classes * 100), 1) if total_classes > 0 else 0.0
@@ -596,7 +662,9 @@ async def get_student_personal_report(
         "overall_attended": total_attended,
         "overall_total_classes": total_classes,
         "overall_attendance_pct": overall_pct,
-        "is_eligible": overall_pct >= 75.0,
+        "is_eligible": overall_pct >= 75.0 if total_classes > 0 else True,
         "subject_breakdown": subject_list,
         "session_history": monthly_trend[:10],
     }
+
+

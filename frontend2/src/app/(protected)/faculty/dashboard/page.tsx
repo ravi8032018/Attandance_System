@@ -7,7 +7,9 @@ import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { useFacultyMe } from "@/hooks/useFacultyMe";
+import { ProfileCompletionBanner } from "@/components/ui/ProfileCompletionBanner";
 import { apiFetch } from "@/lib/api";
+
 
 interface RecentSession {
   id: string;
@@ -149,7 +151,14 @@ export default function FacultyDashboardPage() {
 
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Profile Completion Warning Banner */}
+      <ProfileCompletionBanner
+        isProfileComplete={faculty?.profile_complete ?? true}
+        userRole="faculty"
+      />
+
       {/* Header Greeting */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">

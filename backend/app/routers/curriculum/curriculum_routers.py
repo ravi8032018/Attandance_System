@@ -73,6 +73,8 @@ async def list_curriculum(
                 SubjectItem(
                     subject_code=scode,
                     subject_name=s.get("subject_name", scode),
+                    credits=s.get("credits", 3),
+                    type=s.get("type", "Theory"),
                     faculty_id=fid,
                     faculty_name=fname,
                     total_sessions=t_sess,
@@ -203,6 +205,37 @@ async def update_subject_in_curriculum(
 
     return {"message": f"Successfully updated subject {scode}."}
 
+class DeleteSubjectRequest(BaseModel):
+    department: str
+    semester: str
+    subject_code: str
+
+@router.delete("/delete-subject")
+async def delete_subject_from_curriculum(
+    body: DeleteSubjectRequest,
+    current_user: dict = Depends(admin_or_hod_required)
+):
+    dept = body.department.strip().upper()
+    sem = str(body.semester).strip()
+    scode = body.subject_code.strip().upper()
+
+    curr_doc = await db.Curriculum.find_one({"department": dept, "semester": sem, "subjects.subject_code": {"$regex": f"^{scode}$", "$options": "i"}})
+    if not curr_doc:
+        raise HTTPException(status_code=404, detail=f"Subject '{scode}' not found in {dept} Sem {sem}.")
+
+    active_sessions_count = await db.Attendance.count_documents({"subject_code": {"$regex": f"^{scode}$", "$options": "i"}})
+    if active_sessions_count > 0:
+        raise HTTPException(status_code=409, detail=f"Cannot delete subject '{scode}'. It has {active_sessions_count} recorded attendance sessions in the database.")
+
+    await db.Curriculum.update_one(
+        {"_id": curr_doc["_id"]},
+        {"$pull": {"subjects": {"subject_code": {"$regex": f"^{scode}$", "$options": "i"}}}}
+    )
+
+    log_event("delete subject from curriculum", user_email=current_user.get("email"), details=f"Deleted subject {scode} from {dept} Sem {sem}", severity="CRITICAL")
+
+    return {"message": f"Successfully deleted subject {scode} from {dept} Sem {sem}."}
+
 @router.get("/subjects")
 async def get_subjects_pool(
     department: Optional[str] = Query(None, description="Filter by department, e.g. CS"),
@@ -236,6 +269,8 @@ async def get_subjects_pool(
                 {
                     "subject_code": s.get("subject_code"),
                     "subject_name": s.get("subject_name", s.get("subject_code")),
+                    "credits": s.get("credits", 3),
+                    "type": s.get("type", "Theory"),
                     "faculty_id": fid,
                     "faculty_name": fname,
                 }

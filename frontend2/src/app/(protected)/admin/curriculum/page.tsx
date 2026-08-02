@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { AcademicTermSwitcher } from "@/components/ui/AcademicTermSwitcher";
+import { TermMode, getSavedTermMode, getSemesterSelectOptions, getActiveSemesters } from "@/lib/academicTerm";
 
 function parseApiError(data: any): string {
   if (!data) return "An unexpected error occurred.";
@@ -15,10 +17,36 @@ function parseApiError(data: any): string {
   return "An unexpected server error occurred.";
 }
 
+function getSubjectTypeBadgeVariant(typeStr: string): "primary" | "teal" | "warning" | "muted" {
+  const t = (typeStr || "").trim().toLowerCase();
+  if (t.includes("practical") || t.includes("lab")) return "teal";
+  if (t.includes("theory")) return "primary";
+  if (t.includes("elective")) return "warning";
+  return "muted";
+}
+
 export default function AdminCurriculumPage() {
   const [department, setDepartment] = useState("CS");
-  const [semester, setSemester] = useState("4");
+  const [termMode, setTermMode] = useState<TermMode>("odd");
+  const [semester, setSemester] = useState("1");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  useEffect(() => {
+    const initialMode = getSavedTermMode();
+    setTermMode(initialMode);
+    const active = getActiveSemesters(initialMode);
+    if (active.length > 0 && !active.includes(semester)) {
+      setSemester(active[0]);
+    }
+  }, []);
+
+  const handleTermModeChange = (newMode: TermMode) => {
+    setTermMode(newMode);
+    const active = getActiveSemesters(newMode);
+    if (active.length > 0 && !active.includes(semester)) {
+      setSemester(active[0]);
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [curriculumItems, setCurriculumItems] = useState<any[]>([]);
@@ -36,6 +64,9 @@ export default function AdminCurriculumPage() {
   // Add Subject Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [subForm, setSubForm] = useState({
+    department: "CS",
+    semester: "4",
+    course: "BSC",
     subject_code: "",
     subject_name: "",
     credits: 3,
@@ -61,9 +92,10 @@ export default function AdminCurriculumPage() {
     }
   };
 
-  const fetchDepartmentFaculty = async () => {
+  const fetchDepartmentFaculty = async (targetDept?: string) => {
+    const deptToFetch = targetDept || department;
     try {
-      const res = await apiFetch(`/faculty/?department=${encodeURIComponent(department)}&limit=100`);
+      const res = await apiFetch(`/faculty/?department=${encodeURIComponent(deptToFetch)}&limit=100`);
       if (res.ok) {
         const data = await res.json();
         const facs = data.data || [];
@@ -71,7 +103,7 @@ export default function AdminCurriculumPage() {
           { value: "", label: "-- None (Unassigned) --" },
           ...facs.map((f: any) => ({
             value: f.faculty_id,
-            label: `${f.first_name} ${f.last_name} (${f.faculty_id})`,
+            label: `Dr. ${f.first_name} ${f.last_name} (ID: ${f.faculty_id}) • ${f.department || deptToFetch} Dept`,
           })),
         ];
         setFacultyOptions(opts);
@@ -83,17 +115,40 @@ export default function AdminCurriculumPage() {
 
   useEffect(() => {
     fetchCurriculum();
-    fetchDepartmentFaculty();
+    fetchDepartmentFaculty(department);
   }, [department, semester]);
+
+  const handleModalDeptChange = (newDept: string) => {
+    setSubForm((prev) => ({ ...prev, department: newDept }));
+    fetchDepartmentFaculty(newDept);
+  };
+
+  const handleOpenAddModal = () => {
+    setSubForm({
+      department: department,
+      semester: semester,
+      course: "BSC",
+      subject_code: "",
+      subject_name: "",
+      credits: 3,
+      type: "Theory",
+      faculty_id: "",
+    });
+    fetchDepartmentFaculty(department);
+    setShowAddModal(true);
+  };
 
   const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const targetDept = subForm.department || department;
+      const targetSem = subForm.semester || semester;
       const res = await apiFetch("/curriculum/add-subject", {
         method: "POST",
         body: JSON.stringify({
-          department,
-          semester,
+          department: targetDept,
+          semester: targetSem,
+          course: subForm.course,
           subject_code: subForm.subject_code,
           subject_name: subForm.subject_name,
           credits: subForm.credits,
@@ -105,8 +160,22 @@ export default function AdminCurriculumPage() {
       if (res.ok) {
         setActionMsg({ type: "success", text: data.message || "Subject added to curriculum successfully." });
         setShowAddModal(false);
-        setSubForm({ subject_code: "", subject_name: "", credits: 3, type: "Theory", faculty_id: "" });
-        fetchCurriculum();
+        setSubForm({
+          department: targetDept,
+          semester: targetSem,
+          course: "BSC",
+          subject_code: "",
+          subject_name: "",
+          credits: 3,
+          type: "Theory",
+          faculty_id: "",
+        });
+        if (targetDept === department && targetSem === semester) {
+          fetchCurriculum();
+        } else {
+          setDepartment(targetDept);
+          setSemester(targetSem);
+        }
       } else {
         setActionMsg({ type: "error", text: parseApiError(data) });
       }
@@ -114,6 +183,7 @@ export default function AdminCurriculumPage() {
       setActionMsg({ type: "error", text: "Server error adding subject." });
     }
   };
+
 
   const handleUpdateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,16 +215,38 @@ export default function AdminCurriculumPage() {
     }
   };
 
+  const handleDeleteSubject = async (scode: string) => {
+    if (!confirm(`Are you sure you want to delete subject '${scode}' from ${department} Semester ${semester}?`)) return;
+    try {
+      const res = await apiFetch("/curriculum/delete-subject", {
+        method: "DELETE",
+        body: JSON.stringify({
+          department,
+          semester,
+          subject_code: scode,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || `Subject ${scode} deleted.` });
+        fetchCurriculum();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Server error deleting subject." });
+    }
+  };
+
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Auto-Dismiss Notification */}
       {actionMsg && (
         <div
-          className={`p-4 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-between shadow-sm ${
-            actionMsg.type === "success"
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-          }`}
+          className={`p-4 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-between shadow-sm ${actionMsg.type === "success"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+            : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+            }`}
         >
           <span>{actionMsg.text}</span>
           <span className="text-[10px] opacity-75 font-normal">(Auto-dismissing in 5s)</span>
@@ -176,11 +268,12 @@ export default function AdminCurriculumPage() {
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
-          className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm"
+          onClick={handleOpenAddModal}
+          className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm flex items-center gap-1.5"
         >
-          + Add New Subject
+          <span>+ Add New Course</span>
         </button>
+
       </div>
 
       {/* Filters & View Toggle */}
@@ -200,39 +293,34 @@ export default function AdminCurriculumPage() {
             />
           </div>
           <div>
-            <label className="font-bold text-xs text-foreground block mb-1">Semester</label>
+            <label className="font-bold text-xs text-foreground block mb-1">Active Semester</label>
             <CustomSelect
               value={semester}
               onChange={(val) => setSemester(val)}
-              options={[
-                { value: "1", label: "Semester 1" },
-                { value: "2", label: "Semester 2" },
-                { value: "3", label: "Semester 3" },
-                { value: "4", label: "Semester 4" },
-                { value: "5", label: "Semester 5" },
-                { value: "6", label: "Semester 6" },
-              ]}
+              options={getSemesterSelectOptions(termMode, false)}
             />
           </div>
         </div>
 
-        <div className="flex items-center border border-border rounded-xl bg-card p-1 self-start sm:self-auto">
-          <button
-            onClick={() => setViewMode("table")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-              viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            📋 Table View
-          </button>
-          <button
-            onClick={() => setViewMode("card")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-              viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            🎴 Card View
-          </button>
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+          <AcademicTermSwitcher currentMode={termMode} onModeChange={handleTermModeChange} />
+
+          <div className="flex items-center border border-border rounded-xl bg-card p-1">
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              📋 Table View
+            </button>
+            <button
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              🎴 Card View
+            </button>
+          </div>
         </div>
       </div>
 
@@ -265,9 +353,11 @@ export default function AdminCurriculumPage() {
                     <td className="p-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{sub.subject_code}</td>
                     <td className="p-4 font-extrabold text-foreground">{sub.subject_name || sub.subject_code}</td>
                     <td className="p-4">
-                      <Badge variant="muted">{sub.type || "Theory"}</Badge>
+                      <Badge variant={getSubjectTypeBadgeVariant(sub.type)}>
+                        {sub.type || "Theory"}
+                      </Badge>
                     </td>
-                    <td className="p-4 font-mono">{sub.credits || 3} Credits</td>
+                    <td className="p-4 font-mono">{sub.credits !== undefined ? sub.credits : 3} Credits</td>
                     <td className="p-4">
                       {sub.faculty_id ? (
                         <span className="font-extrabold text-foreground">{sub.faculty_name || sub.faculty_id}</span>
@@ -275,14 +365,14 @@ export default function AdminCurriculumPage() {
                         <span className="text-muted-foreground italic">Unassigned</span>
                       )}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right space-x-1.5">
                       <button
                         onClick={() =>
                           setEditSubject({
                             original_code: sub.subject_code,
                             subject_code: sub.subject_code,
                             subject_name: sub.subject_name || sub.subject_code,
-                            credits: sub.credits || 3,
+                            credits: sub.credits !== undefined ? sub.credits : 3,
                             type: sub.type || "Theory",
                             faculty_id: sub.faculty_id || "",
                           })
@@ -290,6 +380,13 @@ export default function AdminCurriculumPage() {
                         className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSubject(sub.subject_code)}
+                        className="px-2 py-1 rounded-lg border border-red-200 dark:border-red-800/80 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Delete Subject"
+                      >
+                        🗑️
                       </button>
                     </td>
                   </tr>
@@ -307,11 +404,13 @@ export default function AdminCurriculumPage() {
                   <span className="font-mono text-sm font-black text-indigo-600 dark:text-indigo-400 block">
                     {sub.subject_code}
                   </span>
-                  <Badge variant="muted">{sub.type || "Theory"}</Badge>
+                  <Badge variant={getSubjectTypeBadgeVariant(sub.type)}>
+                    {sub.type || "Theory"}
+                  </Badge>
                 </div>
                 <h3 className="text-sm font-extrabold text-foreground">{sub.subject_name || sub.subject_code}</h3>
                 <div className="space-y-1 text-xs text-muted-foreground">
-                  <p><strong className="text-foreground">Credits:</strong> {sub.credits || 3} Credits</p>
+                  <p><strong className="text-foreground">Credits:</strong> {sub.credits !== undefined ? sub.credits : 3} Credits</p>
                   <p>
                     <strong className="text-foreground">Faculty:</strong>{" "}
                     {sub.faculty_id ? (
@@ -323,7 +422,7 @@ export default function AdminCurriculumPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-border flex items-center justify-end">
+              <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
                 <button
                   onClick={() =>
                     setEditSubject({
@@ -335,9 +434,16 @@ export default function AdminCurriculumPage() {
                       faculty_id: sub.faculty_id || "",
                     })
                   }
-                  className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                  className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                 >
-                  Edit Subject
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteSubject(sub.subject_code)}
+                  className="px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-800/80 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  title="Delete Subject"
+                >
+                  🗑️ Delete
                 </button>
               </div>
             </div>
@@ -345,66 +451,191 @@ export default function AdminCurriculumPage() {
         </div>
       )}
 
-      {/* Add Subject Modal */}
+      {/* Add Subject / Course Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-foreground">Add Subject to {department} Sem {semester}</h2>
-            <form onSubmit={handleAddSubject} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-foreground block mb-1">Subject Code</label>
-                <input
-                  required
-                  placeholder="e.g. CSDSC255"
-                  value={subForm.subject_code}
-                  onChange={(e) => setSubForm({ ...subForm, subject_code: e.target.value.toUpperCase() })}
-                  className="w-full p-2.5 rounded-xl border border-border bg-background font-mono"
-                />
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="space-y-0.5">
+                <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <span>📚 Add New Course / Subject Definition</span>
+                </h2>
+                <p className="text-[11px] text-muted-foreground">
+                  Define new curriculum subject with department, semester, degree track & faculty assignment.
+                </p>
               </div>
-              <div>
-                <label className="font-bold text-foreground block mb-1">Subject Name</label>
-                <input
-                  required
-                  placeholder="e.g. Cloud Computing & DevOps"
-                  value={subForm.subject_name}
-                  onChange={(e) => setSubForm({ ...subForm, subject_name: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-border bg-background"
-                />
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1 rounded-lg hover:bg-muted transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSubject} className="space-y-4 text-xs">
+              {/* 1. Academic Program Location (Department, Semester, Course Track) */}
+              <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 space-y-2.5">
+                <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
+                  📌 Academic Program & Semester Context
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="font-bold text-foreground block mb-1">
+                      Department <span className="text-red-500">*</span>
+                    </label>
+                    <CustomSelect
+                      value={subForm.department}
+                      onChange={handleModalDeptChange}
+                      options={[
+                        { value: "CS", label: "CS (Computer Science)" },
+                        { value: "CSE", label: "CSE (CS & Engineering)" },
+                        { value: "ECE", label: "ECE (Electronics & Comm)" },
+                        { value: "EEE", label: "EEE (Electrical & Electronics)" },
+                        { value: "ME", label: "ME (Mechanical Eng)" },
+                        { value: "CE", label: "CE (Civil Eng)" },
+                        { value: "MATH", label: "MATH (Mathematics)" },
+                        { value: "PHYS", label: "PHYS (Physics)" },
+                        { value: "AGRI", label: "AGRI (Agriculture)" },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-foreground block mb-1">
+                      Semester <span className="text-red-500">*</span>
+                    </label>
+                    <CustomSelect
+                      value={subForm.semester}
+                      onChange={(val) => setSubForm({ ...subForm, semester: val })}
+                      options={[
+                        { value: "1", label: "Semester 1" },
+                        { value: "2", label: "Semester 2" },
+                        { value: "3", label: "Semester 3" },
+                        { value: "4", label: "Semester 4" },
+                        { value: "5", label: "Semester 5" },
+                        { value: "6", label: "Semester 6" },
+                        { value: "7", label: "Semester 7" },
+                        { value: "8", label: "Semester 8" },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-foreground block mb-1">Degree Track</label>
+                    <CustomSelect
+                      value={subForm.course}
+                      onChange={(val) => setSubForm({ ...subForm, course: val })}
+                      options={[
+                        { value: "BSC", label: "B.Sc (Hons)" },
+                        { value: "BTECH", label: "B.Tech" },
+                        { value: "MSC", label: "M.Sc" },
+                        { value: "BCA", label: "BCA" },
+                        { value: "MCA", label: "MCA" },
+                      ]}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+
+              {/* 2. Course Identification (Course ID / Subject Code & Course Name) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-foreground block mb-1">Type</label>
+                  <label className="font-bold text-foreground block mb-1">
+                    Course ID / Subject Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    required
+                    placeholder="e.g. CSDSC204"
+                    value={subForm.subject_code}
+                    onChange={(e) => setSubForm({ ...subForm, subject_code: e.target.value.toUpperCase() })}
+                    className="w-full p-2.5 rounded-xl border border-border bg-background font-mono uppercase font-black text-indigo-600 dark:text-indigo-400"
+                  />
+                  <span className="text-[10px] text-muted-foreground mt-0.5 block">Unique official course code</span>
+                </div>
+
+                <div>
+                  <label className="font-bold text-foreground block mb-1">
+                    Course Name / Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    required
+                    placeholder="e.g. Data Structures & Algorithms"
+                    value={subForm.subject_name}
+                    onChange={(e) => setSubForm({ ...subForm, subject_name: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-border bg-background font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* 3. Academic Specifications (Instruction Type & Credit Hours) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-foreground block mb-1">Instruction Type</label>
                   <CustomSelect
                     value={subForm.type}
                     onChange={(val) => setSubForm({ ...subForm, type: val })}
                     options={[
-                      { value: "Theory", label: "Theory" },
-                      { value: "Practical/Lab", label: "Practical/Lab" },
-                      { value: "Elective", label: "Elective" },
+                      { value: "Theory", label: "Theory (Lecture)" },
+                      { value: "Practical", label: "Practical / Lab" },
+                      { value: "Elective", label: "Elective Subject" },
+                      { value: "Project", label: "Project / Dissertation" },
                     ]}
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-foreground block mb-1">Credits</label>
+                  <label className="font-bold text-foreground block mb-1">Credit Hours</label>
                   <input
                     type="number"
                     min={1}
                     max={10}
                     value={subForm.credits}
                     onChange={(e) => setSubForm({ ...subForm, credits: parseInt(e.target.value) || 3 })}
-                    className="w-full p-2.5 rounded-xl border border-border bg-background font-mono"
+                    className="w-full p-2.5 rounded-xl border border-border bg-background font-mono font-bold"
                   />
                 </div>
               </div>
-              <div>
-                <label className="font-bold text-foreground block mb-1">Assigned Faculty Member</label>
+
+              {/* 4. Faculty Allocation (Instructor Name & Faculty ID Selection) */}
+              <div className="space-y-1.5 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-foreground block">
+                    Assigned Faculty Instructor (Name & Faculty ID)
+                  </label>
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {facultyOptions.length > 1 ? `${facultyOptions.length - 1} Faculty Members` : "No Faculty Registered"}
+                  </span>
+                </div>
                 <CustomSelect
                   value={subForm.faculty_id}
                   onChange={(val) => setSubForm({ ...subForm, faculty_id: val })}
                   options={facultyOptions}
                 />
+
+                {subForm.faculty_id ? (
+                  <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-emerald-500 text-base">👨‍🏫</span>
+                      <div>
+                        <span className="font-extrabold text-foreground block">
+                          {facultyOptions.find((f) => f.value === subForm.faculty_id)?.label || subForm.faculty_id}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          Mapped Faculty ID: <strong>{subForm.faculty_id}</strong>
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="success">Assigned</Badge>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic mt-1">
+                    Note: Unassigned courses can be assigned later via HOD Subject Allocation Hub.
+                  </p>
+                )}
               </div>
 
+              {/* Form Action Buttons */}
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
                 <button
                   type="button"
@@ -415,15 +646,16 @@ export default function AdminCurriculumPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-md shadow-indigo-600/20 active:scale-95 transition-all"
                 >
-                  Add Subject
+                  Create & Register Course
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
 
       {/* Edit Subject Modal */}
       {editSubject && (
@@ -457,7 +689,7 @@ export default function AdminCurriculumPage() {
                     onChange={(val) => setEditSubject({ ...editSubject, type: val })}
                     options={[
                       { value: "Theory", label: "Theory" },
-                      { value: "Practical/Lab", label: "Practical/Lab" },
+                      { value: "Practical", label: "Practical" },
                       { value: "Elective", label: "Elective" },
                     ]}
                   />

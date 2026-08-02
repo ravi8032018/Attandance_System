@@ -1,9 +1,12 @@
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query,status, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, status, BackgroundTasks
+from fastapi.responses import JSONResponse
 from fastapi.params import Depends
 
 from backend.app.schemas.auth_schema import _gen_otp, _send_reset_email, ForgotPasswordRequest, ForgotPasswordRequestVerify, SetPasswordRequest
 from backend.app.utils.hash import varify_hash, hash_password
+from backend.app.utils.jwt import create_access_token
+from backend.app.utils.set_cookies import set_auth_cookie
 from backend.app.db import db
 from datetime import datetime, timedelta, timezone
 
@@ -38,7 +41,16 @@ async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...
         {"_id": token_doc["_id"]},
         {"$set": {"is_used": True}}
     )
-    return {"message": "Password reset successful. You may now log in."}
+
+    token_data = {"sub": str(token_doc["student_id"]), "token_role": "student"}
+    access_token = create_access_token(token_data)
+
+    resp = JSONResponse(
+        status_code=200,
+        content={"message": "Password reset successful. Account activated."}
+    )
+    set_auth_cookie(resp, access_token)
+    return resp
 
 @router.post("/reset-fac-password")
 async def reset_fac_password(req:  SetPasswordRequest, token: str =Query(...)):
@@ -67,9 +79,17 @@ async def reset_fac_password(req:  SetPasswordRequest, token: str =Query(...)):
             {"_id": token_doc["_id"]},
             {"$set": {"is_used": True}}
         )
-        return {"message": "Password reset successful. You may now log in."}
+
+        token_data = {"sub": str(token_doc["user_id"]), "token_role": "faculty"}
+        access_token = create_access_token(token_data)
+
+        resp = JSONResponse(
+            status_code=200,
+            content={"message": "Password reset successful. Account activated."}
+        )
+        set_auth_cookie(resp, access_token)
+        return resp
     except Exception as e:
-        # print()
         raise HTTPException(status_code=500, detail="Error in resetting faculty password:" + str(e))
 
 

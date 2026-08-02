@@ -133,8 +133,8 @@ export default function StudentReportsPage() {
               title="Overall Attendance Rate"
               value={`${report.overall_attendance_pct}%`}
               trend={{
-                value: report.is_eligible ? "Eligible for Exams (≥75%)" : "Low Attendance Warning (<75%)",
-                positive: report.is_eligible,
+                value: report.overall_total_classes === 0 ? "No Classes Conducted Yet" : report.is_eligible ? "Eligible for Exams (≥75%)" : "Low Attendance Warning (<75%)",
+                positive: report.overall_total_classes === 0 || report.is_eligible,
               }}
               icon="📊"
             />
@@ -145,10 +145,11 @@ export default function StudentReportsPage() {
             />
             <StatCard
               title="Exam Eligibility Status"
-              value={report.is_eligible ? "Eligible" : "Warning"}
-              trend={{ value: report.is_eligible ? "Safe Zone" : "Required Cutoff: 75%", positive: report.is_eligible }}
-              icon={report.is_eligible ? "🎓" : "⚠️"}
+              value={report.overall_total_classes === 0 ? "Good Standing" : report.is_eligible ? "Eligible" : "Warning"}
+              trend={{ value: report.overall_total_classes === 0 ? "No Sessions Held" : report.is_eligible ? "Safe Zone" : "Required Cutoff: 75%", positive: report.overall_total_classes === 0 || report.is_eligible }}
+              icon={report.overall_total_classes === 0 ? "🎓" : report.is_eligible ? "🎓" : "⚠️"}
             />
+
           </div>
 
           {/* Subject Breakdown Cards */}

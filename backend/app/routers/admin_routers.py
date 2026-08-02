@@ -56,6 +56,25 @@ class UpdateStudentAdminRequest(BaseModel):
     guardian_name: Optional[str] = None
     guardian_phone: Optional[str] = None
 
+class AdminResetUserPasswordRequest(BaseModel):
+    target_type: str
+    user_id: str
+    new_password: str
+
+class AdminToggleUserStatusRequest(BaseModel):
+    target_type: str
+    user_id: str
+    status: str
+
+class AdminTransferHodRequest(BaseModel):
+    department: str
+    new_hod_faculty_id: str
+
+class AdminPromoteCohortRequest(BaseModel):
+    department: str
+    current_semester: str
+    target_semester: str
+
 # --- Admin System Overview Stats ---
 @router.get("/stats")
 async def get_admin_system_stats(current_admin: dict = Depends(admin_required)):
@@ -82,35 +101,120 @@ async def get_admin_system_stats(current_admin: dict = Depends(admin_required)):
 # --- System Audit Logs ---
 @router.get("/audit-logs")
 async def get_audit_logs(
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(100, ge=1, le=1000),
+    skip: int = Query(0, ge=0),
+    search: Optional[str] = Query(None),
+    startDate: Optional[str] = Query(None),
+    endDate: Optional[str] = Query(None),
+    severityLevel: Optional[str] = Query(None),
+    actorRole: Optional[str] = Query(None),
     current_admin: dict = Depends(admin_required)
 ):
+    query: dict = {}
+
+    if severityLevel and severityLevel.upper() != "ALL":
+        sev_target = severityLevel.upper()
+        if sev_target in ["MODIFY", "MODIFICATION"]:
+            query["severity"] = {"$in": ["MODIFY", "MODIFICATION"]}
+        else:
+            query["severity"] = sev_target
+
+
+    if actorRole and actorRole.lower() != "all":
+        query["user_role"] = {"$regex": f"^{actorRole}$", "$options": "i"}
+
+    if startDate or endDate:
+        ts_query = {}
+        if startDate:
+            ts_query["$gte"] = startDate if "T" in startDate else f"{startDate}T00:00:00Z"
+        if endDate:
+            ts_query["$lte"] = endDate if "T" in endDate else f"{endDate}T23:59:59Z"
+        query["timestamp"] = ts_query
+
+    if search and search.strip():
+        term = search.strip()
+        regex_pattern = {"$regex": term, "$options": "i"}
+        query["$or"] = [
+            {"action": regex_pattern},
+            {"user_email": regex_pattern},
+            {"user_name": regex_pattern},
+            {"user_id": regex_pattern},
+            {"user_role": regex_pattern},
+            {"details": regex_pattern},
+            {"ip_address": regex_pattern},
+            {"user_agent": regex_pattern},
+        ]
+
+    db_logs = []
+    total_count = 0
+    try:
+        total_count = await db.AuditLogs.count_documents(query)
+        cursor = db.AuditLogs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit)
+        db_logs = await cursor.to_list(length=limit)
+    except Exception:
+        db_logs = []
+
+    # If DB logs found, return them
+    if db_logs or total_count > 0:
+        return {"logs": db_logs, "total": total_count}
+
+    # Fallback to local JSON file parsing if AuditLogs collection is not populated yet
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", "..", ".."))
     cache_path = os.path.join(PROJECT_ROOT, "cache_local", "backend_logs.json")
 
-    logs = []
+    file_logs = []
     if os.path.exists(cache_path):
         try:
-            with open(cache_path, "r") as f:
-                content = f.read()
-                raw_entries = content.split("}\n{")
-                for raw in raw_entries:
-                    cleaned = raw.strip()
-                    if not cleaned.startswith("{"):
-                        cleaned = "{" + cleaned
-                    if not cleaned.endswith("}"):
-                        cleaned = cleaned + "}"
+            with open(cache_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line_str = line.strip()
+                    if not line_str:
+                        continue
                     try:
-                        parsed = json.loads(cleaned)
-                        logs.append(parsed)
+                        parsed = json.loads(line_str)
+                        if "severity" not in parsed:
+                            act = (parsed.get("action") or "").lower()
+                            if any(k in act for k in ["login", "signup", "delete", "promote", "revoke", "password", "role"]):
+                                parsed["severity"] = "CRITICAL"
+                            elif any(k in act for k in ["create", "update", "add", "assign", "unassign", "edit", "save"]):
+                                parsed["severity"] = "MODIFICATION"
+                            else:
+                                parsed["severity"] = "INFO"
+                        file_logs.append(parsed)
                     except Exception:
                         pass
         except Exception:
-            logs = []
+            file_logs = []
 
-    logs.reverse()
-    return {"logs": logs[:limit]}
+    file_logs.reverse()
+
+    filtered = []
+    for entry in file_logs:
+        if severityLevel and severityLevel.upper() != "ALL":
+            if entry.get("severity") != severityLevel.upper():
+                continue
+        if actorRole and actorRole.lower() != "all":
+            if (entry.get("user_role") or "").lower() != actorRole.lower():
+                continue
+        if startDate:
+            s_cmp = startDate if "T" in startDate else f"{startDate}T00:00:00Z"
+            if (entry.get("timestamp") or "") < s_cmp:
+                continue
+        if endDate:
+            e_cmp = endDate if "T" in endDate else f"{endDate}T23:59:59Z"
+            if (entry.get("timestamp") or "") > e_cmp:
+                continue
+        if search and search.strip():
+            term = search.strip().lower()
+            concat_str = f"{entry.get('action','')} {entry.get('user_email','')} {entry.get('user_name','')} {entry.get('user_id','')} {entry.get('details','')} {entry.get('ip_address','')} {entry.get('user_agent','')}".lower()
+            if term not in concat_str:
+                continue
+        filtered.append(entry)
+
+    sliced = filtered[skip : skip + limit]
+    return {"logs": sliced, "total": len(filtered)}
+
 
 # --- Faculty CRUD ---
 @router.post("/faculty")
@@ -313,3 +417,145 @@ async def delete_student(
     log_event("admin delete student", user_email=current_admin["email"], details=f"Deleted student {reg_no}")
 
     return {"message": f"Successfully deleted student {reg_no}."}
+
+@router.post("/student/{registration_no}/toggle-cr")
+async def toggle_cr_role(
+    registration_no: str,
+    current_admin: dict = Depends(admin_required)
+):
+    reg_no = registration_no.strip().upper()
+    st = await db.Students.find_one({"registration_no": reg_no})
+    if not st:
+        raise HTTPException(status_code=404, detail="Student not found.")
+
+    current_roles = [r.lower() for r in st.get("role", ["student"])]
+    if "cr" in current_roles:
+        new_roles = [r for r in current_roles if r != "cr"]
+        msg = f"Revoked CR role from student {reg_no}."
+    else:
+        new_roles = current_roles + ["cr"]
+        msg = f"Granted CR role to student {reg_no}."
+
+    await db.Students.update_one({"registration_no": reg_no}, {"$set": {"role": new_roles}})
+
+    log_event("admin toggle cr role", user_email=current_admin["email"], details=msg)
+
+    return {"message": msg, "new_roles": new_roles}
+
+# --- Phase 1: Security & Credentials Override ---
+@router.post("/reset-user-password")
+async def admin_reset_user_password(
+    body: AdminResetUserPasswordRequest,
+    current_admin: dict = Depends(admin_required)
+):
+    target_type = body.target_type.strip().lower()
+    uid = body.user_id.strip().upper()
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long.")
+    
+    hashed = await hash_password(body.new_password)
+    
+    if target_type == "faculty":
+        fac = await db.Faculty.find_one({"faculty_id": uid})
+        if not fac:
+            raise HTTPException(status_code=404, detail=f"Faculty with ID '{uid}' not found.")
+        await db.Faculty.update_one({"faculty_id": uid}, {"$set": {"password": hashed, "status": "active"}})
+        msg = f"Successfully reset password for Faculty {uid}."
+    elif target_type == "student":
+        st = await db.Students.find_one({"registration_no": uid})
+        if not st:
+            raise HTTPException(status_code=404, detail=f"Student with Registration No '{uid}' not found.")
+        await db.Students.update_one({"registration_no": uid}, {"$set": {"password": hashed, "status": "active"}})
+        msg = f"Successfully reset password for Student {uid}."
+    else:
+        raise HTTPException(status_code=400, detail="Invalid target_type. Must be 'faculty' or 'student'.")
+    
+    log_event("admin reset user password", user_email=current_admin["email"], details=msg, severity="CRITICAL")
+    return {"message": msg}
+
+@router.post("/toggle-user-status")
+async def admin_toggle_user_status(
+    body: AdminToggleUserStatusRequest,
+    current_admin: dict = Depends(admin_required)
+):
+    target_type = body.target_type.strip().lower()
+    uid = body.user_id.strip().upper()
+    st_val = body.status.strip().lower()
+    
+    if st_val not in ["active", "inactive", "suspended"]:
+        raise HTTPException(status_code=400, detail="Status must be 'active', 'inactive', or 'suspended'.")
+    
+    if target_type == "faculty":
+        fac = await db.Faculty.find_one({"faculty_id": uid})
+        if not fac:
+            raise HTTPException(status_code=404, detail=f"Faculty with ID '{uid}' not found.")
+        await db.Faculty.update_one({"faculty_id": uid}, {"$set": {"status": st_val}})
+        msg = f"Updated status of Faculty {uid} to '{st_val}'."
+    elif target_type == "student":
+        st = await db.Students.find_one({"registration_no": uid})
+        if not st:
+            raise HTTPException(status_code=404, detail=f"Student with Registration No '{uid}' not found.")
+        await db.Students.update_one({"registration_no": uid}, {"$set": {"status": st_val}})
+        msg = f"Updated status of Student {uid} to '{st_val}'."
+    else:
+        raise HTTPException(status_code=400, detail="Invalid target_type. Must be 'faculty' or 'student'.")
+    
+    log_event("admin toggle user status", user_email=current_admin["email"], details=msg, severity="MODIFICATION")
+    return {"message": msg, "status": st_val}
+
+@router.post("/faculty/transfer-hod")
+async def admin_transfer_hod(
+    body: AdminTransferHodRequest,
+    current_admin: dict = Depends(admin_required)
+):
+    dept = body.department.strip().upper()
+    target_fid = body.new_hod_faculty_id.strip().upper()
+    
+    # 1. Verify target faculty exists
+    target_fac = await db.Faculty.find_one({"faculty_id": target_fid})
+    if not target_fac:
+        raise HTTPException(status_code=404, detail=f"Faculty member '{target_fid}' not found.")
+    
+    # 2. Revoke HOD role from any current HOD in this department
+    async for prev in db.Faculty.find({"department": dept, "role": {"$in": ["hod", "HOD"]}}):
+        p_roles = [r for r in prev.get("role", []) if str(r).lower() != "hod"]
+        if not p_roles:
+            p_roles = ["faculty"]
+        await db.Faculty.update_one({"_id": prev["_id"]}, {"$set": {"role": p_roles}})
+    
+    # 3. Grant HOD role to target faculty
+    t_roles = list(set([r.lower() for r in target_fac.get("role", ["faculty"])] + ["hod"]))
+    await db.Faculty.update_one({"faculty_id": target_fid}, {"$set": {"role": t_roles, "department": dept}})
+    
+    fn = target_fac.get("first_name", "")
+    ln = target_fac.get("last_name", "")
+    msg = f"Successfully appointed Dr. {fn} {ln} ({target_fid}) as HOD for {dept} department."
+    log_event("admin transfer hod role", user_email=current_admin["email"], details=msg, severity="CRITICAL")
+    return {"message": msg}
+
+# --- Phase 2: Cohort Promotion ---
+@router.post("/students/promote-cohort")
+async def admin_promote_cohort(
+    body: AdminPromoteCohortRequest,
+    current_admin: dict = Depends(admin_required)
+):
+    dept = body.department.strip().upper()
+    curr_sem = str(body.current_semester).strip()
+    target_sem = str(body.target_semester).strip()
+    
+    # Match students in department and current semester
+    query = {"department": dept, "semester": {"$in": [curr_sem, int(curr_sem) if curr_sem.isdigit() else curr_sem]}}
+    matching_count = await db.Students.count_documents(query)
+    
+    if matching_count == 0:
+        raise HTTPException(status_code=404, detail=f"No active students found in {dept} Semester {curr_sem}.")
+    
+    update_data = {"semester": target_sem}
+    if target_sem.lower() == "graduated":
+        update_data["status"] = "graduated"
+    
+    res = await db.Students.update_many(query, {"$set": update_data})
+    
+    msg = f"Successfully promoted {res.modified_count} students in {dept} from Semester {curr_sem} to {target_sem}."
+    log_event("admin promote cohort", user_email=current_admin["email"], details=msg, severity="CRITICAL")
+    return {"message": msg, "promoted_count": res.modified_count}

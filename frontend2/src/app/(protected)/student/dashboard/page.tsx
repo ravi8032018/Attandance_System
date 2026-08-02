@@ -6,8 +6,10 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { useUserMe } from "@/hooks/useUserMe";
 import { apiFetch } from "@/lib/api";
+import { ProfileCompletionBanner } from "@/components/ui/ProfileCompletionBanner";
 
 interface SubjectStat {
+
   subject_code: string;
   subject_name: string;
   attended_classes: number;
@@ -148,7 +150,14 @@ export default function StudentDashboardPage() {
 
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Profile Completion Warning Banner */}
+      <ProfileCompletionBanner
+        isProfileComplete={user?.profile_complete ?? true}
+        userRole="student"
+      />
+
       {/* Header Greeting */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -196,19 +205,44 @@ export default function StudentDashboardPage() {
               value={`${data.overall_attendance_pct}%`}
               description={`${data.overall_attended} / ${data.overall_total_classes} Total Classes`}
               trend={{
-                value: data.is_eligible ? "Good Standing (≥75%)" : "Low Attendance Alert (<75%)",
-                positive: data.is_eligible,
+                value:
+                  data.overall_total_classes === 0
+                    ? "No Classes Conducted Yet"
+                    : data.is_eligible
+                      ? "Good Standing (≥75%)"
+                      : "Low Attendance Alert (<75%)",
+                positive: data.overall_total_classes === 0 || data.is_eligible,
               }}
               icon="🎓"
-              variant="indigo"
+              variant={data.overall_total_classes === 0 ? "indigo" : data.is_eligible ? "indigo" : "rose"}
             />
             <StatCard
               title="Exam Eligibility Status"
-              value={data.is_eligible ? "Eligible" : "Defaulter Flagged"}
-              description={data.is_eligible ? "Safe Zone for Examinations" : "Requires 75% Cutoff"}
-              trend={{ value: data.is_eligible ? "Eligible" : "Warning Cutoff", positive: data.is_eligible }}
-              icon={data.is_eligible ? "✓" : "⚠️"}
-              variant={data.is_eligible ? "emerald" : "rose"}
+              value={
+                data.overall_total_classes === 0
+                  ? "Good Standing"
+                  : data.is_eligible
+                    ? "Eligible"
+                    : "Defaulter Flagged"
+              }
+              description={
+                data.overall_total_classes === 0
+                  ? "No sessions held for this batch yet"
+                  : data.is_eligible
+                    ? "Safe Zone for Examinations"
+                    : "Requires 75% Cutoff"
+              }
+              trend={{
+                value:
+                  data.overall_total_classes === 0
+                    ? "No Sessions Yet"
+                    : data.is_eligible
+                      ? "Eligible"
+                      : "Warning Cutoff",
+                positive: data.overall_total_classes === 0 || data.is_eligible,
+              }}
+              icon={data.overall_total_classes === 0 ? "🎓" : data.is_eligible ? "✓" : "⚠️"}
+              variant={data.overall_total_classes === 0 ? "emerald" : data.is_eligible ? "emerald" : "rose"}
             />
             <StatCard
               title="Enrolled Courses"
@@ -225,6 +259,7 @@ export default function StudentDashboardPage() {
               variant="purple"
             />
           </div>
+
 
           {/* 4-ZONE ATTENDANCE HEATMAP GRAPH COMPONENT */}
           <div className="solid-card rounded-2xl p-6 border border-border space-y-6 bg-card">
@@ -306,7 +341,7 @@ export default function StudentDashboardPage() {
                       </div>
 
                       {/* DYNAMIC DATA PILLARS (Gravitational Anchoring to Bottom X-Axis) */}
-                      <div className="grid grid-cols-5 gap-3 sm:gap-6 items-end h-full px-4 relative z-20">
+                      <div className="grid grid-cols-7 gap-3 sm:gap-6 items-end h-full px-4 relative z-20">
                         {data.subject_breakdown.map((subj, index) => {
                           const pct = Math.min(100, Math.max(0, subj.attendance_pct));
                           const palette = subjectPalettes[index % subjectPalettes.length];
@@ -374,7 +409,7 @@ export default function StudentDashboardPage() {
                   </div>
 
                   {/* EXTERNAL X-AXIS TELEMETRY (Anchored Firmly Below X-Axis) */}
-                  <div className="grid grid-cols-5 gap-3 sm:gap-6 pl-[50px] pr-[130px] pt-2 text-center">
+                  <div className="grid grid-cols-7 gap-3 sm:gap-6 pl-[50px] pr-[130px] pt-2 text-center">
                     {data.subject_breakdown.map((subj) => {
                       return (
                         <div key={subj.subject_code} className="space-y-0.5 max-w-full">
@@ -480,7 +515,11 @@ export default function StudentDashboardPage() {
                       </div>
 
                       <div className="pt-2 border-t border-border/60 text-[11px] font-bold">
-                        {subj.is_eligible ? (
+                        {subj.total_classes === 0 ? (
+                          <div className="flex items-center gap-1.5 text-indigo-500 font-semibold">
+                            <span>ℹ️ No classes conducted for this course yet.</span>
+                          </div>
+                        ) : subj.is_eligible ? (
                           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                             <span>✓ Safe! You can miss up to {safeMiss} {safeMiss === 1 ? "class" : "classes"}.</span>
                           </div>
@@ -490,6 +529,7 @@ export default function StudentDashboardPage() {
                           </div>
                         )}
                       </div>
+
                     </div>
                   );
                 })}

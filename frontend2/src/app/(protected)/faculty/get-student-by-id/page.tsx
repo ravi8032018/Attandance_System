@@ -513,7 +513,7 @@ function StudentLookupContent() {
                       <div className="truncate">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-extrabold text-foreground">{crItem.name}</span>
-                          <Badge variant="warning" className="text-[9px] py-0 px-1">CR</Badge>
+                          <Badge variant="teal" className="text-[9px] py-0 px-1">CR</Badge>
                         </div>
                         <span className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 block">
                           {crItem.registration_no} ({crItem.email})

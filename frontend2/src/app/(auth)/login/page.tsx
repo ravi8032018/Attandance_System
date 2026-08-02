@@ -62,7 +62,7 @@ export default function LoginPage() {
             🎓
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-            Academic Portal
+            SAMS - AUS
           </h1>
           <p className="mt-1 text-xs font-medium text-muted-foreground">
             Sign in to access your role-based workspace
@@ -76,11 +76,10 @@ export default function LoginPage() {
               key={r}
               type="button"
               onClick={() => setRole(r)}
-              className={`flex-1 rounded-lg py-2 text-xs font-bold capitalize transition-colors duration-150 ${
-                role === r
+              className={`flex-1 rounded-lg py-2 text-xs font-bold capitalize transition-colors duration-150 ${role === r
                   ? "bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {r}
             </button>

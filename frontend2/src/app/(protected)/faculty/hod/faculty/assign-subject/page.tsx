@@ -6,6 +6,8 @@ import { useFacultySubjects } from "@/hooks/useFacultySubjects";
 import { useAvailableSubjects } from "@/hooks/useAvailableSubjects";
 import { Badge } from "@/components/ui/Badge";
 import { CustomSelect, CustomSelectOption } from "@/components/ui/CustomSelect";
+import { AcademicTermSwitcher } from "@/components/ui/AcademicTermSwitcher";
+import { TermMode, getSavedTermMode, getSemesterSelectOptions, getActiveSemesters } from "@/lib/academicTerm";
 import { apiFetch } from "@/lib/api";
 import { useUserMe } from "@/hooks/useUserMe";
 
@@ -17,7 +19,25 @@ function AssignSubjectWorkspaceContent() {
   const initialFacultyId = searchParams.get("faculty_id") || "CSFAC01";
 
   const [facultyId, setFacultyId] = useState(initialFacultyId);
-  const [semester, setSemester] = useState("4");
+  const [termMode, setTermMode] = useState<TermMode>("odd");
+  const [semester, setSemester] = useState("1");
+
+  useEffect(() => {
+    const initialMode = getSavedTermMode();
+    setTermMode(initialMode);
+    const active = getActiveSemesters(initialMode);
+    if (active.length > 0 && !active.includes(semester)) {
+      setSemester(active[0]);
+    }
+  }, []);
+
+  const handleTermModeChange = (newMode: TermMode) => {
+    setTermMode(newMode);
+    const active = getActiveSemesters(newMode);
+    if (active.length > 0 && !active.includes(semester)) {
+      setSemester(active[0]);
+    }
+  };
   const [selectedSubjectCode, setSelectedSubjectCode] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
@@ -353,18 +373,18 @@ function AssignSubjectWorkspaceContent() {
 
           {/* Panel 2: Available Subjects Pool */}
           <div className="solid-card rounded-2xl p-6 border border-border space-y-4 bg-card">
-            <h2 className="text-base font-extrabold text-foreground pb-3 border-b border-border">
-              2. Assign Curriculum Subject
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+              <h2 className="text-base font-extrabold text-foreground">
+                2. Assign Curriculum Subject
+              </h2>
+              <AcademicTermSwitcher currentMode={termMode} onModeChange={handleTermModeChange} />
+            </div>
 
             <CustomSelect
-              label="Sem"
+              label="Active Semester"
               value={semester}
               onChange={setSemester}
-              options={["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => ({
-                value: s,
-                label: `Semester ${s}`,
-              }))}
+              options={getSemesterSelectOptions(termMode, false)}
             />
 
             <CustomSelect
