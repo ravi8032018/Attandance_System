@@ -41,12 +41,12 @@ export function useUserMe() {
 
       let endpointsToTry: string[] = [];
 
-      if (isStudentPath) {
-        endpointsToTry = ["/student/me", "/faculty/me"];
-      } else if (isAdminPath) {
-        endpointsToTry = ["/faculty/me", "/student/me"];
+      if (isAdminPath) {
+        endpointsToTry = ["/admin/me", "/faculty/me", "/student/me"];
+      } else if (isStudentPath) {
+        endpointsToTry = ["/student/me", "/faculty/me", "/admin/me"];
       } else {
-        endpointsToTry = ["/faculty/me", "/student/me"];
+        endpointsToTry = ["/faculty/me", "/admin/me", "/student/me"];
       }
 
       for (const endpoint of endpointsToTry) {
@@ -57,7 +57,9 @@ export function useUserMe() {
             if (!cancelled) {
               setUser(data);
               let rawRoles = data?.role || data?.roles || data?.token_role;
-              if (endpoint === "/student/me" && (!rawRoles || (Array.isArray(rawRoles) && rawRoles.length === 0))) {
+              if (endpoint === "/admin/me" && (!rawRoles || (Array.isArray(rawRoles) && rawRoles.length === 0))) {
+                rawRoles = ["admin"];
+              } else if (endpoint === "/student/me" && (!rawRoles || (Array.isArray(rawRoles) && rawRoles.length === 0))) {
                 rawRoles = ["student"];
               }
               const normRoles = normalizeRoles(rawRoles);
@@ -97,10 +99,10 @@ export function useUserMe() {
     };
   }, [pathname]);
 
-  const isStudent = pathname?.startsWith("/student") || hasRole(roles, "student");
+  const isAdmin = hasRole(roles, "admin") || (roles.length === 0 && Boolean(pathname?.startsWith("/admin")));
+  const isStudent = hasRole(roles, "student") || (roles.length === 0 && Boolean(pathname?.startsWith("/student")));
   const isHod = hasRole(roles, "hod");
-  const isAdmin = pathname?.startsWith("/admin") || hasRole(roles, "admin");
-  const isFaculty = hasRole(roles, "faculty") || isHod;
+  const isFaculty = hasRole(roles, "faculty") || isHod || (roles.length === 0 && Boolean(pathname?.startsWith("/faculty")));
   const isCr = hasRole(roles, "cr");
 
   return {

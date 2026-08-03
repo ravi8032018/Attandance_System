@@ -403,10 +403,6 @@ export default function AdminReportsPage() {
               className="w-full h-9 rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
             >
               <option value="CS">Computer Science (CS)</option>
-              <option value="IT">Information Tech (IT)</option>
-              <option value="ECE">Electronics (ECE)</option>
-              <option value="EE">Electrical (EE)</option>
-              <option value="ME">Mechanical (ME)</option>
             </select>
           </div>
 

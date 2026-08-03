@@ -78,28 +78,24 @@ export function TopHeader() {
 
           {/* Right Header Actions Order: ThemeToggle -> NotificationPopover -> UserProfileMenu */}
           <div
-            className={`flex items-center transition-all duration-300 ease-in-out ${
-              scrolled ? "gap-2 sm:gap-3" : "gap-5"
-            }`}
+            className={`flex items-center transition-all duration-300 ease-in-out ${scrolled ? "gap-2 sm:gap-3" : "gap-5"
+              }`}
           >
             <div
-              className={`transition-all duration-300 ease-in-out transform origin-center ${
-                scrolled ? "scale-85 sm:scale-90" : "scale-100"
-              }`}
+              className={`transition-all duration-300 ease-in-out transform origin-center ${scrolled ? "scale-85 sm:scale-90" : "scale-100"
+                }`}
             >
               <ThemeToggle />
             </div>
             <div
-              className={`transition-all duration-300 ease-in-out transform origin-center ${
-                scrolled ? "scale-85 sm:scale-90" : "scale-100"
-              }`}
+              className={`transition-all duration-300 ease-in-out transform origin-center ${scrolled ? "scale-85 sm:scale-90" : "scale-100"
+                }`}
             >
               <NotificationPopover />
             </div>
             <div
-              className={`transition-all duration-300 ease-in-out transform origin-center ${
-                scrolled ? "scale-85 sm:scale-90" : "scale-100"
-              }`}
+              className={`transition-all duration-300 ease-in-out transform origin-center ${scrolled ? "scale-85 sm:scale-90" : "scale-100"
+                }`}
             >
               <UserProfileMenu />
             </div>

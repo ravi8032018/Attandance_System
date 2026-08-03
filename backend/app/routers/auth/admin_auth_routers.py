@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from bson import ObjectId
 from backend.app.schemas.auth_schema import SignInResponse, UserSignUpRequest, UserSignInRequest
 from backend.app.utils.hash import varify_hash, hash_password
 from backend.app.utils.jwt import create_access_token
 from backend.app.db import db
 from backend.app.utils.roles import has_role
+from backend.app.utils.dependencies import admin_required
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from backend.my_logger import log_event
@@ -99,6 +101,39 @@ async def admin_login(admin: UserSignInRequest):
     log_event("Admin Login", user_email=existing_user["email"], user_name=existing_user["name"], user_id=str(existing_user["_id"]), user_role="admin")
 
     return resp
+
+
+@router.get("/me")
+async def get_current_admin_profile(
+    current_admin: dict = Depends(admin_required)
+):
+    admin_id = current_admin.get("id")
+    if not admin_id:
+        raise HTTPException(status_code=400, detail="Invalid admin session.")
+
+    try:
+        admin = await db.Admins.find_one({"_id": ObjectId(admin_id)})
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Cannot find admin.") from e
+
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin profile not found.")
+
+    admin["_id"] = str(admin["_id"])
+    admin.pop("password", None)
+
+    # Ensure consistent name fields for frontend consumption
+    raw_name = admin.get("name") or "System Administrator"
+    name_parts = raw_name.strip().split(" ", 1)
+    admin["first_name"] = admin.get("first_name") or name_parts[0]
+    admin["last_name"] = admin.get("last_name") or (name_parts[1] if len(name_parts) > 1 else "")
+    if "role" not in admin or not admin["role"]:
+        admin["role"] = ["admin"]
+
+    log_event("read own admin profile", user_email=current_admin["email"], user_id=current_admin["id"], user_role="admin")
+
+    return admin
+
 
 
 

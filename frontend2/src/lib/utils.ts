@@ -39,18 +39,45 @@ export function getHighestRole(rolesInput: string | string[] | undefined | null)
   return normalized[0] || "user";
 }
 
-
 /**
- * Ensures faculty names always have "Dr." prefix when displayed as text.
- * Example: "Prodipto Das" -> "Dr. Prodipto Das"
+ * Formats faculty names with official title prefix (Dr. / Prof.) based on designation or string input.
+ * Example: formatFacultyName({ first_name: "John", last_name: "Doe", designation: "Associate Professor" }) -> "Prof. John Doe"
+ * Example: formatFacultyName("Prodipto Das") -> "Dr. Prodipto Das"
  */
-export function formatFacultyName(name?: string, fallback = "Dr. Faculty"): string {
-  if (!name || !name.trim()) return fallback;
-  const trimmed = name.trim();
-  if (/^dr\.?/i.test(trimmed)) {
-    return trimmed;
+export function formatFacultyName(
+  facOrName?: string | { first_name?: string; last_name?: string; designation?: string; name?: string } | null,
+  fallback = "Faculty Member"
+): string {
+  if (!facOrName) return fallback;
+  if (typeof facOrName === "string") {
+    const trimmed = facOrName.trim();
+    if (!trimmed) return fallback;
+    if (/^(dr|prof)\.?/i.test(trimmed)) return trimmed;
+    return `Dr. ${trimmed}`;
   }
-  return `Dr. ${trimmed}`;
+
+  const fn = (facOrName.first_name || "").trim();
+  const ln = (facOrName.last_name || "").trim();
+  let baseName = `${fn} ${ln}`.trim() || (facOrName.name || "").trim() || fallback;
+
+  const desig = (facOrName.designation || "").toLowerCase();
+  let prefix = "";
+  if (desig.includes("doctor") || desig.includes("dr.") || desig.includes("dr ")) {
+    prefix = "Dr. ";
+  } else if (desig.includes("professor") || desig.includes("prof.") || desig.includes("prof ")) {
+    prefix = "Prof. ";
+  }
+
+  if (prefix && baseName.toLowerCase().startsWith(prefix.toLowerCase().trim())) {
+    prefix = "";
+  }
+
+  return `${prefix}${baseName}`.trim();
+}
+
+export function formatDesignation(desig?: string, fallback = "Assistant Professor"): string {
+  if (!desig || !desig.trim()) return fallback;
+  return desig.trim();
 }
 
 /**
@@ -69,58 +96,33 @@ export function getInitials(name?: string, fallback = "F"): string {
   return parts.map((part) => part.charAt(0).toUpperCase()).join("");
 }
 
-export function getFacultyInitials(firstName?: string, lastName?: string): string {
-  const rawName = `${firstName || ""} ${lastName || ""}`.trim();
-  return getInitials(rawName, "F");
+export function getFacultyInitials(name?: string, fallback = "F"): string {
+  return getInitials(name, fallback);
 }
 
-/**
- * Normalizes and formats faculty designation to Title Case.
- * Example: "ASSISTANT PROFESSOR" -> "Assistant Professor"
- * Example: "Associate PROFESSOR" -> "Associate Professor"
- * Example: "lab assistant" -> "Lab Assistant"
- */
-export function formatDesignation(designation?: string, fallback = "Faculty"): string {
-  if (!designation || !designation.trim()) return fallback;
-  return designation
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+export function getMissingProfileFields(user: any): string[] {
+  if (!user) return [];
+  const required = ["first_name", "last_name", "email", "phone_number", "contact_number"];
+  return required.filter((field: string) => !user[field] || String(user[field]).trim() === "");
 }
 
-/**
- * Formats a date/time string, Date object, or timestamp into India Standard Time (IST, GMT+5:30).
- * Example output: "1 Aug 2026, 02:46 PM"
- */
-export function formatDateTimeIST(dateInput: string | Date | number | null | undefined): string {
-  if (!dateInput) return "—";
+export function formatDateTimeIST(dateInput: string | Date | undefined | null): string {
+  if (!dateInput) return "N/A";
   try {
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return String(dateInput);
+    const dateObj = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+    if (isNaN(dateObj.getTime())) return String(dateInput);
 
-    return d.toLocaleString("en-IN", {
+    return dateObj.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
-      day: "numeric",
+      day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
       hour12: true,
     });
-  } catch {
+  } catch (err) {
     return String(dateInput);
   }
-}
-
-export function getMissingProfileFields(u: any): string[] {
-  if (!u) return ["First Name", "Last Name", "Date of Birth", "Gender", "Contact Phone Number"];
-  const missing: string[] = [];
-  if (!u.first_name || !String(u.first_name).trim()) missing.push("First Name");
-  if (!u.last_name || !String(u.last_name).trim()) missing.push("Last Name");
-  if (!u.dob || !String(u.dob).trim()) missing.push("Date of Birth");
-  if (!u.gender || !String(u.gender).trim()) missing.push("Gender");
-  if (!u.contact_number && !u.phone && !u.contact_no) missing.push("Contact Phone Number");
-  return missing;
 }

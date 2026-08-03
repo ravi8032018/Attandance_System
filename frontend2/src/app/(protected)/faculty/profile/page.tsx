@@ -339,7 +339,7 @@ function FacultyProfileContent() {
 
       {/* Edit / Complete Profile Modal for Faculty */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>

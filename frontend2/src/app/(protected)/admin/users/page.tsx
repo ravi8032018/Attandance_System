@@ -130,7 +130,7 @@ function AdminUserManagerContent() {
   const [editStudent, setEditStudent] = useState<any | null>(null);
 
   // Admin Reset Password Modal State
-  const [resetPassTarget, setResetPassTarget] = useState<{ type: "faculty" | "student"; id: string; name: string } | null>(null);
+  const [resetPassTarget, setResetPassTarget] = useState<{ type: "faculty" | "student"; id: string; name: string; email?: string } | null>(null);
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [resetPassLoading, setResetPassLoading] = useState(false);
 
@@ -1269,10 +1269,17 @@ function AdminUserManagerContent() {
               </div>
               <div>
                 <label className="font-bold text-foreground block mb-1">Designation</label>
-                <input
-                  value={editFaculty.designation || ""}
-                  onChange={(e) => setEditFaculty({ ...editFaculty, designation: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-border bg-background"
+                <CustomSelect
+                  value={editFaculty.designation || "Assistant Professor"}
+                  onChange={(val) => setEditFaculty({ ...editFaculty, designation: val })}
+                  options={[
+                    { value: "Professor", label: "Professor" },
+                    { value: "Associate Professor", label: "Associate Professor" },
+                    { value: "Assistant Professor", label: "Assistant Professor" },
+                    { value: "Senior Lecturer", label: "Senior Lecturer" },
+                    { value: "Visiting Faculty", label: "Visiting Faculty" },
+                    { value: "Guest Lecturer", label: "Guest Lecturer" },
+                  ]}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -1298,7 +1305,7 @@ function AdminUserManagerContent() {
               {/* Admin Actions Toolbar inside Edit Faculty Modal */}
               <div className="pt-4 border-t border-border space-y-2">
                 <label className="font-extrabold block text-[10px] uppercase tracking-wider text-muted-foreground">
-                  ⚡ Quick Admin Actions & Role Operations
+                  ⚡ Quick Admin Actions &amp; Role Operations
                 </label>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -1317,7 +1324,7 @@ function AdminUserManagerContent() {
                     onClick={() => {
                       const fac = editFaculty;
                       setEditFaculty(null);
-                      setResetPassTarget({ type: "faculty", id: fac.faculty_id, name: `${fac.first_name} ${fac.last_name}` });
+                      setResetPassTarget({ type: "faculty", id: fac.faculty_id, email: fac.email, name: `${fac.first_name} ${fac.last_name}` });
                     }}
                     className="px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-bold hover:bg-amber-100 transition-colors"
                   >
@@ -1330,9 +1337,13 @@ function AdminUserManagerContent() {
                       handleToggleHod(fac.faculty_id);
                       setEditFaculty(null);
                     }}
-                    className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 font-bold hover:bg-teal-100 transition-colors"
+                    className={`px-3 py-1.5 rounded-xl border font-bold transition-colors ${
+                      checkIsHod(editFaculty)
+                        ? "border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100"
+                        : "border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100"
+                    }`}
                   >
-                    {checkIsHod(editFaculty) ? "Revoke HOD Role" : "👑 Promote to HOD"}
+                    {checkIsHod(editFaculty) ? "Demote from HOD" : "👑 Promote to HOD"}
                   </button>
                   <button
                     type="button"
@@ -1734,11 +1745,17 @@ function AdminUserManagerContent() {
                         </div>
                         <div>
                           <label className="font-bold text-foreground block mb-1">Designation</label>
-                          <input
-                            placeholder="Assistant Professor"
+                          <CustomSelect
                             value={singleFacDesig}
-                            onChange={(e) => setSingleFacDesig(e.target.value)}
-                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                            onChange={(val) => setSingleFacDesig(val)}
+                            options={[
+                              { value: "Professor", label: "Professor" },
+                              { value: "Associate Professor", label: "Associate Professor" },
+                              { value: "Assistant Professor", label: "Assistant Professor" },
+                              { value: "Senior Lecturer", label: "Senior Lecturer" },
+                              { value: "Visiting Faculty", label: "Visiting Faculty" },
+                              { value: "Guest Lecturer", label: "Guest Lecturer" },
+                            ]}
                           />
                         </div>
                       </div>
@@ -1756,11 +1773,17 @@ function AdminUserManagerContent() {
                         </div>
                         <div>
                           <label className="font-bold text-foreground block mb-1">Designation</label>
-                          <input
-                            placeholder="Assistant Professor"
+                          <CustomSelect
                             value={batchFacDesig}
-                            onChange={(e) => setBatchFacDesig(e.target.value)}
-                            className="w-full p-2.5 rounded-xl border border-border bg-background"
+                            onChange={(val) => setBatchFacDesig(val)}
+                            options={[
+                              { value: "Professor", label: "Professor" },
+                              { value: "Associate Professor", label: "Associate Professor" },
+                              { value: "Assistant Professor", label: "Assistant Professor" },
+                              { value: "Senior Lecturer", label: "Senior Lecturer" },
+                              { value: "Visiting Faculty", label: "Visiting Faculty" },
+                              { value: "Guest Lecturer", label: "Guest Lecturer" },
+                            ]}
                           />
                         </div>
                       </div>

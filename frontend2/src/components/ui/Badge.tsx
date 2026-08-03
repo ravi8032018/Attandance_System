@@ -6,6 +6,7 @@ interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
   pulse?: boolean;
+  showDot?: boolean;
   className?: string;
 }
 
@@ -44,14 +45,14 @@ const variantStyles: Record<BadgeVariant, { bg: string; dot: string }> = {
   },
 };
 
-export function Badge({ children, variant = "primary", pulse = false, className = "" }: BadgeProps) {
+export function Badge({ children, variant = "primary", pulse = false, showDot = true, className = "" }: BadgeProps) {
   const style = variantStyles[variant];
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide transition-colors duration-150 ${style.bg} ${className}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${style.dot} ${pulse ? "animate-pulse" : ""}`} />
+      {showDot && <span className={`h-1.5 w-1.5 rounded-full ${style.dot} ${pulse ? "animate-pulse" : ""}`} />}
       {children}
     </span>
   );

@@ -286,9 +286,6 @@ export default function AdminCurriculumPage() {
               onChange={(val) => setDepartment(val)}
               options={[
                 { value: "CS", label: "Computer Science (CS)" },
-                { value: "CSE", label: "Computer Science & Eng (CSE)" },
-                { value: "ECE", label: "Electronics & Comm (ECE)" },
-                { value: "AGRI", label: "Agriculture (AGRI)" },
               ]}
             />
           </div>

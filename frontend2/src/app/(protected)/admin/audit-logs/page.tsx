@@ -29,7 +29,7 @@ export default function AdminAuditLogsPage() {
 
   // Filtering Array States
   const [searchTerm, setSearchTerm] = useState("");
-  const [datePreset, setDatePreset] = useState<"today" | "7days" | "30days" | "all" | "custom">("all");
+  const [datePreset, setDatePreset] = useState<"today" | "7days" | "30days" | "all" | "custom">("today");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 

@@ -65,13 +65,34 @@ async def get_current_user(request: Request):
         if not user:
             raise credentials_exception
 
+        fn = (user.get("first_name") or "").strip()
+        ln = (user.get("last_name") or "").strip()
+        full_name = f"{fn} {ln}".strip() or (user.get("name") or "").strip() or user.get("email", "User")
+
+        db_roles = user.get("role", [])
+        if isinstance(db_roles, str):
+            db_roles = [db_roles]
+        if token_role and token_role not in db_roles:
+            db_roles = list(db_roles) + [token_role]
+
+        role_priority = ["admin", "hod", "cr", "faculty", "student"]
+        highest_role = token_role or "user"
+        for r_target in role_priority:
+            if any(r_target == str(r).lower() or r_target in str(r).lower() for r in db_roles):
+                highest_role = r_target
+                break
+
         return {
             "id": str(user["_id"]),
             "unique_id": unique_id or None, 
-            "name": user.get("first_name"),
+            "name": full_name,
+            "first_name": fn,
+            "last_name": ln,
+            "full_name": full_name,
             "email": user.get("email"),
-            "role": user.get("role", []),     # actual roles in DB
-            "token_role": token_role          # role from token
+            "role": db_roles,                 # actual roles in DB
+            "token_role": token_role,         # role from token
+            "user_role": highest_role,        # highest authority role
         }
 
     except JWTError:

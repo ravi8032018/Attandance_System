@@ -646,35 +646,32 @@ async def get_subject_details(
     }
 
 @router.get("/my-subjects-for-sem", response_model=CurriculumListResponse)
-async def faculty_subjects_for_sem(
-    department = Query(None, description="Filter by department, e.g. CS"),
-    semester = Query(None, description="Filter by semester, e.g. 1"),
-    Faculty_id = Query(None, description="only use this arg if hod or admin need the faculty's subjects, e.g. CSFAC01"),
+async def my_subjects_for_sem(
+    department: Optional[str] = Query(None, description="Filter by department, e.g. CS"),
+    semester: Optional[str] = Query(None, description="Filter by semester, e.g. 1"),
+    Faculty_id: Optional[str] = Query(None, description="only use this arg if hod or admin need the faculty's subjects, e.g. CSFAC01"),
+    faculty_id: Optional[str] = Query(None, description="alias for Faculty_id"),
     current_user: dict = Depends(get_current_user),
 ):
-    # print("--> Curriculum request by user:", current_user)
-    # Optional: restrict to admin/faculty only
+    target_fid_param = Faculty_id or faculty_id
     if "admin" not in current_user["role"]:
         if "hod" not in current_user.get("role", []):
             if "faculty" not in current_user.get("role", []):
                 if "student" in current_user.get("role", []):
                     raise HTTPException(status_code=403, detail="Access denied.")
 
-    # if not department or not semester:
-    #     raise HTTPException(status_code=400, detail="Department and semester are required.")
-    
     fac_id_raw = current_user.get("faculty_id") or current_user.get("unique_id")
     if not fac_id_raw and "faculty" in [r.lower() for r in current_user.get("role", [])]:
         fac_doc = await db.Faculty.find_one({"_id": ObjectId(current_user["id"])}) or await db.Faculty.find_one({"email": current_user.get("email")})
         if fac_doc:
             fac_id_raw = fac_doc.get("faculty_id")
-    faculty_id = str(fac_id_raw or "").upper()
+    target_faculty_id = str(fac_id_raw or "").upper()
 
-    if Faculty_id:
+    if target_fid_param:
         if "admin" not in current_user["role"] and "hod" not in current_user["role"]:
-            pass  # faculty can provide their own id or leave blank to get their subjects
+            pass
         else:
-            faculty_id = Faculty_id.upper()
+            target_faculty_id = target_fid_param.upper()
               
     # Build Mongo filter
     query_filter: dict = {}
@@ -682,8 +679,8 @@ async def faculty_subjects_for_sem(
         query_filter["department"] = str(department)
     if semester:
         query_filter["semester"] = str(semester)
-    if faculty_id:
-        query_filter["subjects.faculty_id"] = faculty_id
+    if target_faculty_id:
+        query_filter["subjects.faculty_id"] = target_faculty_id
 
     # If no params are provided, query_filter stays {}, so Mongo returns all docs.
     cursor = db["Curriculum"].find(query_filter)
@@ -692,7 +689,7 @@ async def faculty_subjects_for_sem(
     async for doc in cursor:
         faculty_subjects = [
             s for s in doc.get("subjects", [])
-            if not faculty_id or str(s.get("faculty_id", "")).upper() == faculty_id
+            if not target_faculty_id or str(s.get("faculty_id", "")).upper() == target_faculty_id
         ]
         if faculty_subjects:
             items.append(
