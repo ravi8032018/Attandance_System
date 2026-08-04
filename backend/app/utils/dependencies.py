@@ -65,6 +65,13 @@ async def get_current_user(request: Request):
         if not user:
             raise credentials_exception
 
+        if str(user.get("status", "")).lower() in ["frozen", "suspended"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account Suspended. Contact System Administrator.",
+                headers={"Set-Cookie": "dept_user_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"}
+            )
+
         fn = (user.get("first_name") or "").strip()
         ln = (user.get("last_name") or "").strip()
         full_name = f"{fn} {ln}".strip() or (user.get("name") or "").strip() or user.get("email", "User")
@@ -93,6 +100,9 @@ async def get_current_user(request: Request):
             "role": db_roles,                 # actual roles in DB
             "token_role": token_role,         # role from token
             "user_role": highest_role,        # highest authority role
+            "status": user.get("status", "active"),
+            "status_reason": user.get("status_reason"),
+            "status_updated_at": user.get("status_updated_at"),
         }
 
     except JWTError:

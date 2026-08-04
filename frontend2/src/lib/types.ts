@@ -9,6 +9,8 @@ export interface Faculty {
   designation?: string;
   office_location?: string;
   status: string;
+  status_reason?: string;
+  status_updated_at?: string;
   role: string[];
   contact_number?: string;
   phone?: string;
@@ -30,6 +32,8 @@ export interface Student {
   semester: string | number;
   department: string;
   status: string;
+  status_reason?: string;
+  status_updated_at?: string;
   role?: string[];
   is_cr?: boolean;
   roll_number?: string;

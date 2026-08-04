@@ -128,6 +128,8 @@ function CRAttendanceContent() {
   // Toggle student status
   const setStudentStatus = (regNo: string, status: "present" | "absent" | "leave") => {
     if (isTimeExpired) return;
+    const st = students.find((s) => s.registration_no === regNo);
+    if (st && ((st.status || "").toLowerCase() === "frozen" || (st.status || "").toLowerCase() === "suspended")) return;
     setAttendanceMap((prev) => ({ ...prev, [regNo]: status }));
   };
 
@@ -135,7 +137,9 @@ function CRAttendanceContent() {
     if (isTimeExpired) return;
     const nextMap: Record<string, "present" | "absent" | "leave"> = {};
     students.forEach((s) => {
-      nextMap[s.registration_no] = status;
+      if ((s.status || "").toLowerCase() !== "frozen" && (s.status || "").toLowerCase() !== "suspended") {
+        nextMap[s.registration_no] = status;
+      }
     });
     setAttendanceMap(nextMap);
   };
@@ -148,10 +152,13 @@ function CRAttendanceContent() {
     setMsg(null);
 
     try {
-      // Send complete attendance records for all enrolled students
-      const attendance_data = Object.entries(attendanceMap).map(([registration_no, status]) => ({
-        registration_no,
-        status,
+      // Send complete attendance records for active non-suspended enrolled students
+      const activeStudents = students.filter(
+        (s) => (s.status || "").toLowerCase() !== "frozen" && (s.status || "").toLowerCase() !== "suspended"
+      );
+      const attendance_data = activeStudents.map((s) => ({
+        registration_no: s.registration_no,
+        status: attendanceMap[s.registration_no] || "present",
       }));
 
       const payload = {
@@ -376,47 +383,63 @@ function CRAttendanceContent() {
         {/* Student List Grid */}
         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
           {filteredStudents.map((student) => {
+            const isSuspended = (student.status || "").toLowerCase() === "frozen" || (student.status || "").toLowerCase() === "suspended";
             const currentStatus = attendanceMap[student.registration_no] || "present";
             const fullName = `${student.first_name || ""} ${student.last_name || ""}`.trim() || "Student";
 
             return (
               <div
                 key={student.registration_no}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-border hover:bg-muted/40 transition-colors"
+                className={`flex items-center justify-between p-3.5 rounded-xl border border-border transition-colors ${
+                  isSuspended ? "opacity-50 bg-muted/30 select-none cursor-not-allowed" : "hover:bg-muted/40"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <FacultyAvatar firstName={student.first_name} lastName={student.last_name} size="sm" />
                   <div>
-                    <h3 className="text-xs font-extrabold text-foreground leading-tight">{fullName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-extrabold text-foreground leading-tight">{fullName}</h3>
+                      {isSuspended && (
+                        <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                          [Suspended]
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] font-mono text-muted-foreground">{student.registration_no}</p>
                   </div>
                 </div>
 
-                {/* Present / Absent Toggle Buttons */}
-                <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
-                  <button
-                    type="button"
-                    disabled={isTimeExpired}
-                    onClick={() => setStudentStatus(student.registration_no, "present")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${currentStatus === "present"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
-                  >
-                    Present
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isTimeExpired}
-                    onClick={() => setStudentStatus(student.registration_no, "absent")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${currentStatus === "absent"
-                      ? "bg-rose-600 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
-                  >
-                    Absent
-                  </button>
-                </div>
+                {/* Present / Absent Toggle Buttons or Suspended Badge */}
+                {isSuspended ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 flex items-center gap-1">
+                    <span>❄️</span> Suspended
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
+                    <button
+                      type="button"
+                      disabled={isTimeExpired}
+                      onClick={() => setStudentStatus(student.registration_no, "present")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${currentStatus === "present"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      Present
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isTimeExpired}
+                      onClick={() => setStudentStatus(student.registration_no, "absent")}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${currentStatus === "absent"
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      Absent
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

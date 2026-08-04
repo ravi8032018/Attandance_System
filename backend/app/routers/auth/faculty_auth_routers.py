@@ -79,9 +79,11 @@ async def faculty_login(faculty: FacultySignInRequest):
 
     if not existing_faculty or not varify_hash(faculty.password, existing_faculty["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if existing_faculty["status"] == "pending":
+    if str(existing_faculty.get("status", "")).lower() in ["frozen", "suspended"]:
+        raise HTTPException(status_code=403, detail="Account Suspended. Contact System Administrator.")
+    if existing_faculty.get("status") == "pending":
         raise HTTPException(status_code=401, detail="Faculty account is under approval")
-    if existing_faculty["status"] == "rejected":
+    if existing_faculty.get("status") == "rejected":
         raise HTTPException(status_code=401, detail="Faculty account is rejected")
     if not has_role(existing_faculty, 'faculty'):
         raise HTTPException(status_code=403, detail="Not authorized as faculty")

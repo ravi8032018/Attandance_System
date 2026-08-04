@@ -79,6 +79,9 @@ async def admin_login(admin: UserSignInRequest):
     if not existing_user or not varify_hash(admin.password, existing_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    if str(existing_user.get("status", "")).lower() in ["frozen", "suspended"]:
+        raise HTTPException(status_code=403, detail="Account Suspended. Contact System Administrator.")
+
     if not has_role(existing_user, 'admin'):
         raise HTTPException(status_code=403, detail="Not authorized as admin")
 

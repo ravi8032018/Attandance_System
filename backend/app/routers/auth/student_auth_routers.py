@@ -80,6 +80,9 @@ async def students_login(student: StudentSignInRequest):
     if not existing_student or not varify_hash(student.password, existing_student["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    if str(existing_student.get("status", "")).lower() in ["frozen", "suspended"]:
+        raise HTTPException(status_code=403, detail="Account Suspended. Contact System Administrator.")
+
     if not has_role(existing_student, 'student'):
         raise HTTPException(status_code=403, detail="Not authorized as Student")
 

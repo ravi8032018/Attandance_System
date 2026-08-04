@@ -9,6 +9,8 @@ from bson import ObjectId
 from backend.app.db import db
 from backend.app.utils.dependencies import admin_required
 from backend.app.utils.hash import hash_password
+from backend.app.utils.notifications import save_notification
+from backend.app.utils.smtp import send_single_email
 from backend.my_logger import log_event
 
 router = APIRouter(prefix="/admin", tags=["admin-management"])
@@ -65,6 +67,12 @@ class AdminToggleUserStatusRequest(BaseModel):
     target_type: str
     user_id: str
     status: str
+
+class AdminFreezeUserRequest(BaseModel):
+    target_type: str
+    user_id: str
+    action: str
+    reason: Optional[str] = None
 
 class AdminTransferHodRequest(BaseModel):
     department: str
@@ -482,26 +490,156 @@ async def admin_toggle_user_status(
     uid = body.user_id.strip().upper()
     st_val = body.status.strip().lower()
     
-    if st_val not in ["active", "inactive", "suspended"]:
-        raise HTTPException(status_code=400, detail="Status must be 'active', 'inactive', or 'suspended'.")
+    if st_val not in ["active", "inactive", "suspended", "frozen"]:
+        raise HTTPException(status_code=400, detail="Status must be 'active', 'inactive', 'frozen', or 'suspended'.")
     
     if target_type == "faculty":
         fac = await db.Faculty.find_one({"faculty_id": uid})
         if not fac:
             raise HTTPException(status_code=404, detail=f"Faculty with ID '{uid}' not found.")
-        await db.Faculty.update_one({"faculty_id": uid}, {"$set": {"status": st_val}})
+        await db.Faculty.update_one({"faculty_id": uid}, {"$set": {"status": st_val}, "$unset": {"account_status": ""}})
         msg = f"Updated status of Faculty {uid} to '{st_val}'."
     elif target_type == "student":
         st = await db.Students.find_one({"registration_no": uid})
         if not st:
             raise HTTPException(status_code=404, detail=f"Student with Registration No '{uid}' not found.")
-        await db.Students.update_one({"registration_no": uid}, {"$set": {"status": st_val}})
+        await db.Students.update_one({"registration_no": uid}, {"$set": {"status": st_val}, "$unset": {"account_status": ""}})
         msg = f"Updated status of Student {uid} to '{st_val}'."
     else:
         raise HTTPException(status_code=400, detail="Invalid target_type. Must be 'faculty' or 'student'.")
     
     log_event("admin toggle user status", user_email=current_admin["email"], details=msg, severity="MODIFICATION")
     return {"message": msg, "status": st_val}
+
+@router.get("/faculty/{faculty_id}/active-courses-check")
+async def check_faculty_active_courses(
+    faculty_id: str,
+    current_admin: dict = Depends(admin_required)
+):
+    fid = faculty_id.strip().upper()
+    count = 0
+    async for curr in db.Curriculum.find({"$or": [{"Faculty_id": fid}, {"subjects.Faculty_id": fid}]}):
+        subs = curr.get("subjects", [])
+        if not subs:
+            if str(curr.get("Faculty_id", "")).upper() == fid:
+                count += 1
+        else:
+            for s in subs:
+                if str(s.get("Faculty_id", "")).upper() == fid:
+                    count += 1
+    return {"faculty_id": fid, "active_courses_count": count}
+
+@router.post("/freeze-user")
+async def admin_freeze_user(
+    body: AdminFreezeUserRequest,
+    current_admin: dict = Depends(admin_required)
+):
+    target_type = body.target_type.strip().lower()
+    uid = body.user_id.strip().upper()
+    act = body.action.strip().upper()
+    reason = (body.reason or "").strip()
+    
+    if act not in ["FREEZE", "UNFREEZE"]:
+        raise HTTPException(status_code=400, detail="Action must be 'FREEZE' or 'UNFREEZE'.")
+    if act == "FREEZE" and not reason:
+        raise HTTPException(status_code=400, detail="A reason for suspension is required.")
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    new_status = "frozen" if act == "FREEZE" else "active"
+    update_doc = {
+        "status": new_status,
+        "status_reason": reason if act == "FREEZE" else None,
+        "status_updated_at": now_iso
+    }
+
+    user_email = ""
+    user_role = target_type
+
+    if target_type in ["faculty", "hod"]:
+        fac = await db.Faculty.find_one({"faculty_id": uid})
+        if not fac:
+            raise HTTPException(status_code=404, detail=f"Faculty member '{uid}' not found.")
+        
+        # Check HoD cryostasis rule
+        roles = [str(r).lower() for r in fac.get("role", [])]
+        if "hod" in roles and target_type != "hod":
+            user_role = "hod"
+        
+        if "hod" in roles:
+            # Enforce that only Admin can freeze an HoD
+            admin_roles = [str(r).lower() for r in current_admin.get("role", ["admin"])]
+            if "admin" not in admin_roles:
+                raise HTTPException(status_code=403, detail="Only Super Admin / System Admin can freeze an HoD account.")
+
+        await db.Faculty.update_one({"faculty_id": uid}, {"$set": update_doc, "$unset": {"account_status": ""}})
+        user_email = fac.get("email", "")
+
+    elif target_type == "student":
+        st = await db.Students.find_one({"registration_no": uid})
+        if not st:
+            raise HTTPException(status_code=404, detail=f"Student '{uid}' not found.")
+        await db.Students.update_one({"registration_no": uid}, {"$set": update_doc, "$unset": {"account_status": ""}})
+        user_email = st.get("email", "")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid target_type. Must be 'faculty', 'student', or 'hod'.")
+
+    log_action = "ACCOUNT FROZEN" if act == "FREEZE" else "ACCOUNT UNFROZEN"
+    log_event(
+        log_action,
+        user_email=user_email,
+        user_id=uid,
+        user_role=user_role,
+        details=f"Reason: {reason}" if act == "FREEZE" else "Account unfrozen by admin",
+        severity="CRITICAL"
+    )
+
+    # 1. In-App & Real-time Notification
+    target_user_id = str(fac["_id"]) if (target_type in ["faculty", "hod"] and fac) else (str(st["_id"]) if (target_type == "student" and st) else uid)
+    user_name = f"{fac.get('first_name', '')} {fac.get('last_name', '')}".strip() if target_type in ["faculty", "hod"] else f"{st.get('first_name', '')} {st.get('last_name', '')}".strip()
+    user_name = user_name or uid
+
+    notif_title = "Account Suspended ❄️" if act == "FREEZE" else "Account Reactivated ☀️"
+    notif_body = (
+        f"Your account ({user_email}) has been frozen by the System Administrator. Reason: {reason}"
+        if act == "FREEZE"
+        else f"Your account ({user_email}) has been reactivated by the System Administrator."
+    )
+    
+    try:
+        await save_notification(
+            user_id=target_user_id,
+            type="account_frozen" if act == "FREEZE" else "account_unfrozen",
+            title=notif_title,
+            body=notif_body,
+            data={"reason": reason, "updated_at": now_iso, "status": new_status},
+            send_ws=True
+        )
+    except Exception as e:
+        print(f"[Freeze Notif Error] {e}")
+
+    # 2. Email Dispatch via existing SMTP system
+    email_subject = f"Official Notice: Account {'Suspended' if act == 'FREEZE' else 'Reactivated'} - Assam University CS Department"
+    email_body = (
+        f"Dear {user_name},\n\n"
+        f"This is an official communication regarding your account ({user_email}) at Assam University Department of Computer Science.\n\n"
+        f"STATUS UPDATE: {'SUSPENDED / FROZEN' if act == 'FREEZE' else 'REACTIVATED / ACTIVE'}\n"
+        f"DATE & TIME: {now_iso}\n"
+        f"REASON: {reason if act == 'FREEZE' else 'Account restored by System Administrator'}\n\n"
+        f"{'If you have any questions, please contact the System Administrator or Head of Department.' if act == 'FREEZE' else 'You may now log in to access your workspace.'}\n\n"
+        f"Best regards,\nAssam University CS Department Administration"
+    )
+    try:
+        send_single_email(to_email=user_email, subject=email_subject, body=email_body)
+    except Exception as e:
+        print(f"[Freeze Email Error] {e}")
+
+    msg = f"Account for {user_email or uid} successfully {'suspended' if act == 'FREEZE' else 'reactivated'}."
+    return {
+        "message": msg,
+        "status": new_status,
+        "status_reason": update_doc["status_reason"],
+        "status_updated_at": now_iso
+    }
 
 @router.post("/faculty/transfer-hod")
 async def admin_transfer_hod(

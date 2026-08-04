@@ -55,11 +55,11 @@ async def get_current_user_from_ws(websocket: WebSocket):
             code=status.WS_1008_POLICY_VIOLATION,
             reason="User not found"
         )
-    # Load user from DB; adapt to your ORM
-    if not user:
+
+    if str(user.get("status", "")).lower() in ["frozen", "suspended"]:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
-            reason="User not found"
+            reason="Account Suspended. Contact System Administrator."
         )
 
     return user

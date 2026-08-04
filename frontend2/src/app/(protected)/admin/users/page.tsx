@@ -140,7 +140,6 @@ function AdminUserManagerContent() {
   const [promoteFromSem, setPromoteFromSem] = useState("1");
   const [promoteToSem, setPromoteToSem] = useState("2");
   const [promoteLoading, setPromoteLoading] = useState(false);
-
   const handleAdminResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetPassTarget || !newAdminPassword) return;
@@ -167,6 +166,150 @@ function AdminUserManagerContent() {
     } finally {
       setResetPassLoading(false);
     }
+  };
+
+  // Freeze User Modal State
+  const [freezeModalData, setFreezeModalData] = useState<{
+    target_type: "faculty" | "student" | "hod";
+    user_id: string;
+    name: string;
+    email: string;
+    is_hod: boolean;
+    active_courses_count: number;
+  } | null>(null);
+  const [freezeReason, setFreezeReason] = useState("");
+  const [freezeSubmitting, setFreezeSubmitting] = useState(false);
+  const [freezeCheckingCourses, setFreezeCheckingCourses] = useState(false);
+
+  const openFreezeModal = async (target_type: "faculty" | "student", user: any) => {
+    const is_hod = checkIsHod(user);
+    const uid = user.faculty_id || user.registration_no;
+    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || uid;
+
+    setFreezeReason("");
+    setFreezeModalData({
+      target_type: is_hod ? "hod" : target_type,
+      user_id: uid,
+      name,
+      email: user.email || "",
+      is_hod,
+      active_courses_count: 0,
+    });
+
+    if (target_type === "faculty" || is_hod) {
+      setFreezeCheckingCourses(true);
+      try {
+        const res = await apiFetch(`/admin/faculty/${encodeURIComponent(uid)}/active-courses-check`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const activeCourses = data.active_courses_count || 0;
+          setFreezeModalData((prev) => prev ? { ...prev, active_courses_count: activeCourses } : null);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setFreezeCheckingCourses(false);
+      }
+    }
+  };
+
+  const handleConfirmFreeze = async () => {
+    if (!freezeModalData) return;
+    if (!freezeReason.trim()) {
+      setActionMsg({ type: "error", text: "Please enter a reason for account suspension." });
+      return;
+    }
+
+    setFreezeSubmitting(true);
+    try {
+      const res = await apiFetch("/admin/freeze-user", {
+        method: "POST",
+        body: JSON.stringify({
+          target_type: freezeModalData.target_type,
+          user_id: freezeModalData.user_id,
+          action: "FREEZE",
+          reason: freezeReason.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || `Account for ${freezeModalData.name} frozen.` });
+        setFreezeModalData(null);
+        fetchUsers();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Failed to process account freeze request." });
+    } finally {
+      setFreezeSubmitting(false);
+    }
+  };
+
+  const handleUnfreezeUser = async (target_type: "faculty" | "student", user: any) => {
+    const is_hod = checkIsHod(user);
+    const uid = user.faculty_id || user.registration_no;
+    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || uid;
+
+    try {
+      const res = await apiFetch("/admin/freeze-user", {
+        method: "POST",
+        body: JSON.stringify({
+          target_type: is_hod ? "hod" : target_type,
+          user_id: uid,
+          action: "UNFREEZE",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionMsg({ type: "success", text: data.message || `Account for ${name} reactivated.` });
+        fetchUsers();
+      } else {
+        setActionMsg({ type: "error", text: parseApiError(data) });
+      }
+    } catch (err) {
+      setActionMsg({ type: "error", text: "Failed to reactivate account." });
+    }
+  };
+
+  const isUserFrozen = (u: any) => {
+    const st = (u?.status || "").toLowerCase();
+    return st === "frozen" || st === "suspended";
+  };
+
+  const renderAccountStatusBadge = (user: any) => {
+    if (isUserFrozen(user)) {
+      return (
+        <span
+          title={user.status_reason ? `Reason: ${user.status_reason}` : "Account Suspended"}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-extrabold text-[11px] bg-rose-600 text-white shadow-xs shrink-0"
+        >
+          <span>❄️</span>
+          <span>Frozen</span>
+        </span>
+      );
+    }
+    const st = (user?.status || "active").toLowerCase();
+    if (st === "pending") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[11px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0">
+          Pending
+        </span>
+      );
+    }
+    if (st === "graduated" || st === "inactive") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[11px] bg-muted text-muted-foreground border border-border shrink-0 capitalize">
+          {st}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-extrabold text-[11px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.25)] shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Active</span>
+      </span>
+    );
   };
 
   const handleToggleUserStatus = async (target_type: "faculty" | "student", user_id: string, newStatus: string) => {
@@ -878,12 +1021,14 @@ function AdminUserManagerContent() {
                       <th className="p-4">Department</th>
                       <th className="p-4">Designation</th>
                       <th className="p-4">Roles</th>
+                      <th className="p-4">Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {filteredFaculty.map((fac) => {
                       const isHod = checkIsHod(fac);
+                      const isFrozen = isUserFrozen(fac);
                       return (
                         <tr key={fac.faculty_id} className="hover:bg-muted/30 transition-colors">
                           <td className="p-4">
@@ -908,13 +1053,37 @@ function AdminUserManagerContent() {
                               <Badge variant="primary">Faculty</Badge>
                             </div>
                           </td>
+                          <td className="p-4">
+                            {renderAccountStatusBadge(fac)}
+                          </td>
                           <td className="p-4 text-right">
-                            <button
-                              onClick={() => setEditFaculty(fac)}
-                              className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
-                            >
-                              Edit
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              {isFrozen ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnfreezeUser("faculty", fac)}
+                                  className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
+                                  title="Reactivate user account"
+                                >
+                                  <span>☀️</span> Unfreeze
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openFreezeModal("faculty", fac)}
+                                  className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
+                                  title="Freeze/Suspend user account"
+                                >
+                                  <span>❄️</span> Freeze
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setEditFaculty(fac)}
+                                className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all shrink-0"
+                              >
+                                Edit
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -927,10 +1096,11 @@ function AdminUserManagerContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredFaculty.map((fac) => {
                 const isHod = checkIsHod(fac);
+                const isFrozen = isUserFrozen(fac);
                 return (
                   <div key={fac.faculty_id} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <FacultyAvatar firstName={fac.first_name} lastName={fac.last_name} photoUrl={fac.photo_url} size="md" />
                           <div>
@@ -943,7 +1113,10 @@ function AdminUserManagerContent() {
                             <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">{fac.faculty_id}</span>
                           </div>
                         </div>
-                        {isHod && <Badge variant="teal">HOD</Badge>}
+                        <div className="flex flex-col items-end gap-1">
+                          {isHod && <Badge variant="teal">HOD</Badge>}
+                          {renderAccountStatusBadge(fac)}
+                        </div>
                       </div>
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p><strong className="text-foreground">Dept:</strong> {fac.department}</p>
@@ -952,7 +1125,26 @@ function AdminUserManagerContent() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-end">
+                    <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+                      {isFrozen ? (
+                        <button
+                          type="button"
+                          onClick={() => handleUnfreezeUser("faculty", fac)}
+                          className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
+                          title="Reactivate user account"
+                        >
+                          <span>☀️</span> Unfreeze
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openFreezeModal("faculty", fac)}
+                          className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
+                          title="Freeze/Suspend user account"
+                        >
+                          <span>❄️</span> Freeze
+                        </button>
+                      )}
                       <button
                         onClick={() => setEditFaculty(fac)}
                         className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
@@ -996,6 +1188,7 @@ function AdminUserManagerContent() {
                   <tbody className="divide-y divide-border">
                     {filteredStudents.map((stu) => {
                       const isCr = checkIsCr(stu);
+                      const isFrozen = isUserFrozen(stu);
                       return (
                         <tr key={stu.registration_no} className="hover:bg-muted/30 transition-colors">
                           <td className="p-4">
@@ -1020,17 +1213,36 @@ function AdminUserManagerContent() {
                           <td className="p-4 font-extrabold">{stu.department}</td>
                           <td className="p-4">Semester {stu.semester}</td>
                           <td className="p-4">
-                            <Badge variant={stu.status === "active" ? "success" : "muted"}>
-                              {stu.status || "active"}
-                            </Badge>
+                            {renderAccountStatusBadge(stu)}
                           </td>
                           <td className="p-4 text-right">
-                            <button
-                              onClick={() => setEditStudent(stu)}
-                              className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
-                            >
-                              Edit
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              {isFrozen ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnfreezeUser("student", stu)}
+                                  className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
+                                  title="Reactivate user account"
+                                >
+                                  <span>☀️</span> Unfreeze
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openFreezeModal("student", stu)}
+                                  className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
+                                  title="Freeze/Suspend user account"
+                                >
+                                  <span>❄️</span> Freeze
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setEditStudent(stu)}
+                                className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all shrink-0"
+                              >
+                                Edit
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1043,10 +1255,11 @@ function AdminUserManagerContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredStudents.map((stu) => {
                 const isCr = checkIsCr(stu);
+                const isFrozen = isUserFrozen(stu);
                 return (
                   <div key={stu.registration_no} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <UserAvatar
                             firstName={stu.first_name}
@@ -1064,9 +1277,7 @@ function AdminUserManagerContent() {
                             <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">{stu.registration_no}</span>
                           </div>
                         </div>
-                        <Badge variant={stu.status === "active" ? "success" : "muted"}>
-                          {stu.status || "active"}
-                        </Badge>
+                        {renderAccountStatusBadge(stu)}
                       </div>
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p><strong className="text-foreground">Dept:</strong> {stu.department}</p>
@@ -1075,7 +1286,26 @@ function AdminUserManagerContent() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-end">
+                    <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+                      {isFrozen ? (
+                        <button
+                          type="button"
+                          onClick={() => handleUnfreezeUser("student", stu)}
+                          className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
+                          title="Reactivate user account"
+                        >
+                          <span>☀️</span> Unfreeze
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openFreezeModal("student", stu)}
+                          className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
+                          title="Freeze/Suspend user account"
+                        >
+                          <span>❄️</span> Freeze
+                        </button>
+                      )}
                       <button
                         onClick={() => setEditStudent(stu)}
                         className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
@@ -1089,6 +1319,92 @@ function AdminUserManagerContent() {
             </div>
           )}
         </>
+      )}
+
+      {/* Freeze / Account Suspension Confirmation Modal */}
+      {freezeModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="solid-card rounded-2xl p-6 border border-border bg-card max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">❄️</span>
+                <h3 className="text-base font-extrabold text-foreground">
+                  Confirm Account Suspension (Freeze)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFreezeModalData(null)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-muted/50 border border-border space-y-1">
+                <p><strong className="text-foreground">Target User:</strong> {freezeModalData.name}</p>
+                <p><strong className="text-foreground">ID / Reg No:</strong> <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{freezeModalData.user_id}</span></p>
+                <p><strong className="text-foreground">Email:</strong> {freezeModalData.email}</p>
+                <p><strong className="text-foreground">Role:</strong> <span className="uppercase font-bold text-indigo-600 dark:text-indigo-400">{freezeModalData.target_type}</span></p>
+              </div>
+
+              {freezeCheckingCourses ? (
+                <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-bold animate-pulse flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+                  Checking active course assignments...
+                </div>
+              ) : freezeModalData.active_courses_count > 0 ? (
+                <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-medium space-y-1">
+                  <div className="flex items-center gap-2 font-extrabold text-amber-900 dark:text-amber-200">
+                    <span>⚠️ Warning: Active Course Assignments</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    This faculty member is currently assigned to <strong className="font-extrabold text-rose-600 dark:text-rose-400">{freezeModalData.active_courses_count} active course(s)</strong>. Freezing them will leave these courses without an active instructor. Proceed?
+                  </p>
+                </div>
+              ) : null}
+
+              {freezeModalData.is_hod && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 font-bold">
+                  🛡️ System Directive: You are suspending a Head of Department (HoD) account. Only System Administrators have privileges to freeze HoD profiles.
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-foreground">
+                  Reason for Suspension <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={freezeReason}
+                  onChange={(e) => setFreezeReason(e.target.value)}
+                  placeholder="Type the brief reason for suspending this account (e.g. Disciplinary review, Pending investigation, Administrative request)..."
+                  className="w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground outline-none focus:ring-2 focus:ring-rose-500/30"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setFreezeModalData(null)}
+                className="px-4 py-2 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:text-foreground transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={freezeSubmitting || !freezeReason.trim()}
+                onClick={handleConfirmFreeze}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <span>❄️</span>
+                <span>{freezeSubmitting ? "Freezing Account..." : "Confirm Account Freeze"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Admin Assign Subjects Modal */}

@@ -37,6 +37,13 @@ async def verify_cookie(request: Request, dept_user_token: str | None = Cookie(d
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
+    if str(user.get("status", "")).lower() in ["frozen", "suspended"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account Suspended. Contact System Administrator.",
+            headers={"Set-Cookie": "dept_user_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"}
+        )
+
     return {
         "message": "cookie varified",
         "token_role": token_role,

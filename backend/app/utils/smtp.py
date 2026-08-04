@@ -77,3 +77,42 @@ def send_email_with_link(emails_file: str, subject: str= SUBJECT1, Body: str= BO
         # print("Final time: ", time.time() - now1)
 
     # print("Email sent successfully to {}".format(to_email))
+
+
+def send_single_email(to_email: str, subject: str, body: str, html_body: str = None) -> bool:
+    """
+    Direct single email dispatcher using existing system SMTP credentials.
+    """
+    if not to_email or "@" not in to_email:
+        print(f"[SMTP] Invalid recipient email: '{to_email}'")
+        return False
+
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = USER or "noreply@aus.ac.in"
+        msg['To'] = to_email
+        msg.set_content(body)
+        if html_body:
+            msg.add_alternative(html_body, subtype='html')
+
+        port = int(SMTP_PORT or 587)
+        if SMTP_SERVER:
+            with smtplib.SMTP(SMTP_SERVER, port) as smtp:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
+                if USER and PASSWORD:
+                    smtp.login(USER, PASSWORD)
+                smtp.sendmail(USER or "noreply@aus.ac.in", to_email, msg.as_string())
+            print(f"[SMTP] Email successfully dispatched to {to_email}")
+            return True
+        else:
+            print(f"[SMTP Console Fallback] To: {to_email} | Subject: {subject}\nBody:\n{body}")
+            return True
+    except Exception as e:
+        print(f"[SMTP Exception] Failed to send email to {to_email}: {e}")
+        # Always output to console fallback so development/testing continues seamlessly
+        print(f"[SMTP Fallback Log] To: {to_email} | Subject: {subject}\nBody:\n{body}")
+        return False
+

@@ -293,9 +293,9 @@ export default function AdminAuditLogsPage() {
             />
           </div>
 
-          <div>
+          <div className="flex items-end justify-center">
             <CustomSelect
-              label="👤 Actor Role Filter"
+              label="👤 Role Filter"
               value={actorRoleFilter}
               onChange={(val) => setActorRoleFilter(val)}
               options={[

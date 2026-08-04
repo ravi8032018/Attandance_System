@@ -152,6 +152,8 @@ export default function TakeAttendancePage() {
   }
 
   function toggleStudentStatus(regNo: string) {
+    const st = students.find((s) => s.registration_no === regNo);
+    if (st && ((st.status || "").toLowerCase() === "frozen" || (st.status || "").toLowerCase() === "suspended")) return;
     setAttendanceMap((prev) => ({
       ...prev,
       [regNo]: prev[regNo] === "present" ? "absent" : "present",
@@ -165,12 +167,15 @@ export default function TakeAttendancePage() {
     setMsg("");
 
     try {
+      const activeEnrolled = students.filter(
+        (st) => (st.status || "").toLowerCase() !== "frozen" && (st.status || "").toLowerCase() !== "suspended"
+      );
       const payload = {
         subject_code: subjectCode,
         department,
         semester,
         class_date: new Date().toISOString(),
-        attendance_data: students.map((st) => ({
+        attendance_data: activeEnrolled.map((st) => ({
           registration_no: st.registration_no,
           status: attendanceMap[st.registration_no] || "present",
         })),
@@ -243,9 +248,14 @@ export default function TakeAttendancePage() {
     }
   }
 
-  const presentCount = Object.values(attendanceMap).filter((v) => v === "present").length;
-  const absentCount = students.length - presentCount;
-  const presentPct = students.length > 0 ? Math.round((presentCount / students.length) * 100) : 0;
+  const activeStudents = students.filter(
+    (st) => (st.status || "").toLowerCase() !== "frozen" && (st.status || "").toLowerCase() !== "suspended"
+  );
+  const presentCount = activeStudents.filter(
+    (st) => attendanceMap[st.registration_no] === "present"
+  ).length;
+  const absentCount = activeStudents.length - presentCount;
+  const presentPct = activeStudents.length > 0 ? Math.round((presentCount / activeStudents.length) * 100) : 0;
 
   return (
     <main className="p-4 sm:p-6 pb-6 space-y-6 max-w-7xl mx-auto min-h-screen flex flex-col justify-between gap-12">
@@ -364,33 +374,49 @@ export default function TakeAttendancePage() {
                     </tr>
                   ) : (
                     students.map((st) => {
+                      const isSuspended = (st.status || "").toLowerCase() === "frozen" || (st.status || "").toLowerCase() === "suspended";
                       const isPresent = attendanceMap[st.registration_no] === "present";
                       return (
                         <tr
                           key={st.registration_no}
-                          onClick={() => toggleStudentStatus(st.registration_no)}
-                          className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 text-center"
+                          onClick={() => !isSuspended && toggleStudentStatus(st.registration_no)}
+                          className={`transition-colors duration-150 text-center ${
+                            isSuspended
+                              ? "opacity-50 bg-slate-100/60 dark:bg-slate-900/30 cursor-not-allowed select-none"
+                              : "cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/40 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500"
+                          }`}
                         >
                           <td className="py-3.5 px-4 text-center">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleStudentStatus(st.registration_no);
-                              }}
-                              className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 mx-auto ${isPresent
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                                }`}
-                            >
-                              <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
-                            </button>
+                            {isSuspended ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 mx-auto">
+                                <span>❄️</span> Suspended
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleStudentStatus(st.registration_no);
+                                }}
+                                className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-150 mx-auto ${isPresent
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                  : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                                  }`}
+                              >
+                                <span>{isPresent ? "✓ Present" : "✕ Absent"}</span>
+                              </button>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-mono font-black text-sm sm:text-base text-indigo-600 dark:text-indigo-400 text-center">
                             {st.registration_no}
                           </td>
-                          <td className="py-3.5 px-4 font-semibold text-foreground">
-                            {st.first_name} {st.last_name}
+                          <td className="py-3.5 px-4 font-semibold text-foreground flex items-center justify-center gap-2">
+                            <span>{st.first_name} {st.last_name}</span>
+                            {isSuspended && (
+                              <span className="text-[10px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800">
+                                [Suspended]
+                              </span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground">
                             {st.roll_number || st.registration_no || "—"}

@@ -2,18 +2,157 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Query, status, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.params import Depends
+from pydantic import BaseModel, EmailStr
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from backend.app.schemas.auth_schema import _gen_otp, _send_reset_email, ForgotPasswordRequest, ForgotPasswordRequestVerify, SetPasswordRequest
 from backend.app.utils.hash import varify_hash, hash_password
 from backend.app.utils.jwt import create_access_token
-from backend.app.utils.set_cookies import set_auth_cookie
+from backend.app.utils.set_cookies import set_auth_cookie, clear_auth_cookie
+from backend.app.utils.smtp import send_single_email
+from backend.app.utils.notifications import save_notification
 from backend.app.db import db
-from datetime import datetime, timedelta, timezone
-
 from backend.app.utils.verify_cookie import verify_cookie
 from backend.my_logger import log_event
 
 router = APIRouter(tags=["reset-password"])
+
+class RequestResetLinkPayload(BaseModel):
+    email: EmailStr
+
+class ConfirmResetWithTokenPayload(BaseModel):
+    token: str
+    new_password: str
+    confirm_password: str
+
+@router.post("/forgot-password/request-link", status_code=status.HTTP_200_OK)
+async def request_password_reset_link(payload: RequestResetLinkPayload):
+    email = str(payload.email).strip().lower()
+    
+    user = await db.Students.find_one({"email": email})
+    coll = "Students"
+    if not user:
+        user = await db.Faculty.find_one({"email": email})
+        coll = "Faculty"
+    if not user:
+        user = await db.Admins.find_one({"email": email})
+        coll = "Admins"
+
+    if user:
+        if str(user.get("status", "")).lower() in ["frozen", "suspended"]:
+            raise HTTPException(status_code=403, detail="Account is suspended. Contact system administrator.")
+
+        reset_token = secrets.token_urlsafe(32)
+        now = datetime.now(timezone.utc)
+        expiry = now + timedelta(minutes=30)
+
+        await db.PasswordResetDB.delete_many({"email": email, "type": "reset_link"})
+        await db.PasswordResetDB.insert_one({
+            "email": email,
+            "user_id": str(user["_id"]),
+            "user_type": coll,
+            "type": "reset_link",
+            "token": reset_token,
+            "created_at": now,
+            "expires_at": expiry,
+            "is_used": False
+        })
+
+        reset_url = f"http://localhost:3000/reset-password?token={reset_token}"
+        fn = user.get("first_name", "") or user.get("name", "User")
+        
+        email_subject = "Reset Your Password - Assam University CS Department"
+        email_body = (
+            f"Dear {fn},\n\n"
+            f"We received a request to reset the password for your account ({email}) at Assam University Department of Computer Science.\n\n"
+            f"Click the link below to set a new password:\n{reset_url}\n\n"
+            f"This password reset link will expire in 30 minutes.\n"
+            f"If you did not request a password reset, please ignore this email or contact system administration.\n\n"
+            f"Best regards,\nAssam University CS Department"
+        )
+
+        send_single_email(to_email=email, subject=email_subject, body=email_body)
+        log_event("password reset link requested", user_email=email)
+
+    return {"message": "If the email is registered in our system, a password reset link has been sent to your email address."}
+
+@router.get("/forgot-password/verify-link", status_code=status.HTTP_200_OK)
+async def verify_reset_link(token: str = Query(...)):
+    token = token.strip()
+    now = datetime.now(timezone.utc)
+    
+    token_doc = await db.PasswordResetDB.find_one({
+        "token": token,
+        "type": "reset_link",
+        "is_used": False,
+        "expires_at": {"$gt": now}
+    })
+
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="This password reset link is invalid or has expired. Please request a new one.")
+
+    return {"valid": True, "email": token_doc.get("email")}
+
+@router.post("/forgot-password/confirm-reset", status_code=status.HTTP_200_OK)
+async def confirm_reset_with_token(payload: ConfirmResetWithTokenPayload):
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match.")
+
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long.")
+
+    token = payload.token.strip()
+    now = datetime.now(timezone.utc)
+
+    token_doc = await db.PasswordResetDB.find_one({
+        "token": token,
+        "type": "reset_link",
+        "is_used": False,
+        "expires_at": {"$gt": now}
+    })
+
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="This password reset link is invalid or has expired. Please request a new one.")
+
+    coll_name = token_doc["user_type"]
+    email = token_doc["email"]
+    user_id = token_doc["user_id"]
+
+    hashed_pw = await hash_password(payload.new_password)
+
+    await db[coll_name].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"password": hashed_pw, "password_changed_at": now}}
+    )
+
+    await db.PasswordResetDB.update_one(
+        {"_id": token_doc["_id"]},
+        {"$set": {"is_used": True}}
+    )
+
+    try:
+        await save_notification(
+            user_id=user_id,
+            type="security_alert",
+            title="Password Changed 🔒",
+            body="Your account password was successfully reset via self-service email link.",
+            send_ws=True
+        )
+    except Exception as e:
+        print(f"[Notif Error] {e}")
+
+    try:
+        send_single_email(
+            to_email=email,
+            subject="Password Changed Successfully - Assam University CS",
+            body=f"Dear User,\n\nYour password for account ({email}) has been successfully reset. If you did not perform this change, contact system administration immediately."
+        )
+    except Exception as e:
+        print(f"[Email Error] {e}")
+
+    log_event("self-service password reset successful", user_email=email)
+    return {"message": "Your password has been successfully reset. You may now log in with your new password."}
 
 @router.post("/reset-password")
 async def reset_student_password(req:  SetPasswordRequest, token: str =Query(...)):
