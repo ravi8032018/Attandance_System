@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
 import { apiFetch } from "@/lib/api";
 import { formatFacultyName, formatDesignation } from "@/lib/utils";
@@ -126,6 +127,60 @@ function FacultyLookupContent() {
 
   const formattedFacultyName = formatFacultyName(details?.faculty.name);
 
+  type RecentSession = FacultyFullDetails["recent_sessions"][number];
+
+  const sessionColumns: Column<RecentSession>[] = [
+    {
+      header: "Class Date & Time",
+      accessor: (sess) => (
+        <span className="font-bold text-foreground">
+          {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      ),
+    },
+    {
+      header: "Subject Name / Code",
+      accessor: (sess) => (
+        <div>
+          <span className="font-bold text-foreground block">{sess.subject_name}</span>
+          <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
+            {sess.subject_code}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: "Conducted By",
+      accessor: (sess) => (
+        <span className="font-semibold text-foreground">
+          {sess.submitted_by}
+        </span>
+      ),
+    },
+    {
+      header: "Present / Class Size",
+      accessor: (sess) => (
+        <span className="font-mono font-bold">
+          {sess.present_count} / {sess.class_size} Present
+        </span>
+      ),
+    },
+    {
+      header: "Approval Status",
+      accessor: (sess) => (
+        <Badge
+          variant={
+            sess.status === "approved" || sess.status === "marked_by_faculty"
+              ? "success"
+              : "warning"
+          }
+        >
+          {sess.status}
+        </Badge>
+      ),
+    },
+  ];
+
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
@@ -172,16 +227,18 @@ function FacultyLookupContent() {
       ) : details ? (
         <div className="space-y-6">
           {/* Header Profile Title Bar */}
-          <div className="solid-card rounded-2xl p-6 border border-border bg-card space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-              <div className="flex items-center gap-4">
-                <FacultyAvatar
-                  firstName={details.faculty.name}
-                  photoUrl={details.faculty.photo_url}
-                  size="2xl"
-                />
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
+          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border bg-card space-y-6">
+            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 pb-6 border-b border-border text-center md:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <div className="shrink-0">
+                  <FacultyAvatar
+                    firstName={details.faculty.name}
+                    photoUrl={details.faculty.photo_url}
+                    size="2xl"
+                  />
+                </div>
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
                     <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-0.5 rounded-lg">
                       {details.faculty.faculty_id.toUpperCase()}
                     </span>
@@ -201,7 +258,7 @@ function FacultyLookupContent() {
 
               <Link
                 href={`/faculty/hod/faculty/assign-subject?faculty_id=${encodeURIComponent(details.faculty.faculty_id)}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95 self-start sm:self-auto"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95 shrink-0"
               >
                 <span>+ Assign / Manage Subjects</span>
               </Link>
@@ -354,57 +411,14 @@ function FacultyLookupContent() {
               Recent Attendance Sessions Log ({details.recent_sessions.length})
             </h3>
 
-            {details.recent_sessions.length === 0 ? (
-              <p className="text-xs text-muted-foreground p-6 text-center border border-dashed border-border rounded-xl">
-                No class attendance sessions recorded by this faculty member yet.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-center text-xs">
-                  <thead>
-                    <tr className="border-b border-border text-[11px] font-extrabold uppercase text-muted-foreground">
-                      <th className="py-2.5 px-3 text-center">Class Date & Time</th>
-                      <th className="py-2.5 px-3 text-center">Subject Name / Code</th>
-                      <th className="py-2.5 px-3 text-center">Conducted By</th>
-                      <th className="py-2.5 px-3 text-center">Present / Class Size</th>
-                      <th className="py-2.5 px-3 text-center">Approval Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {details.recent_sessions.map((sess) => (
-                      <tr key={sess.session_id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3 px-3 font-bold text-foreground text-center">
-                          {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="font-bold text-foreground block">{sess.subject_name}</span>
-                          <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
-                            {sess.subject_code}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-foreground text-center">
-                          {sess.submitted_by}
-                        </td>
-                        <td className="py-3 px-3 font-mono font-bold text-center">
-                          {sess.present_count} / {sess.class_size} Present
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <Badge
-                            variant={
-                              sess.status === "approved" || sess.status === "marked_by_faculty"
-                                ? "success"
-                                : "warning"
-                            }
-                          >
-                            {sess.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <DataTable
+              columns={sessionColumns}
+              data={details.recent_sessions}
+              keyExtractor={(sess) => sess.session_id}
+              maxHeight="max-h-[420px]"
+              textsize="text-xs"
+              emptyMessage="No class attendance sessions recorded by this faculty member yet."
+            />
           </div>
         </div>
       ) : null}

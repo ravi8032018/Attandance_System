@@ -1012,7 +1012,7 @@ function AdminUserManagerContent() {
             </div>
           ) : viewMode === "table" ? (
             <div className="solid-card rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="w-full overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/50 border-b border-border font-bold text-muted-foreground">
                     <tr>
@@ -1173,7 +1173,7 @@ function AdminUserManagerContent() {
             </div>
           ) : viewMode === "table" ? (
             <div className="solid-card rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="w-full overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/50 border-b border-border font-bold text-muted-foreground">
                     <tr>

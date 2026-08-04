@@ -207,7 +207,7 @@ export default function StudentReportsPage() {
                 <Badge variant="muted" className="font-mono">Last {Math.min(10, report.session_history.length)} Sessions Logged</Badge>
               </h3>
 
-              <div className="overflow-x-auto max-h-[350px]">
+              <div className="w-full overflow-x-auto max-h-[350px] custom-scrollbar">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-muted-foreground uppercase text-[10px] font-extrabold tracking-wider">

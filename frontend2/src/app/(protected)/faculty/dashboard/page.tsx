@@ -80,8 +80,8 @@ export default function FacultyDashboardPage() {
           }
         }
 
-        // 4. Fetch pending session approval count
-        const appRes = await apiFetch("/attendance/approvals?status=pending");
+        // 4. Fetch pending session approval count across all periods
+        const appRes = await apiFetch("/attendance/approvals?status=pending&period=all");
         if (appRes.ok) {
           const appData = await appRes.json().catch(() => ({}));
           setPendingApprovalsCount(appData?.total ?? appData?.items?.length ?? 0);
@@ -158,20 +158,12 @@ export default function FacultyDashboardPage() {
       />
 
       {/* Header Greeting */}
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 mb-1">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               Welcome back, {faculty ? `${faculty.first_name} ${faculty.last_name}` : "Faculty"}
             </h1>
-            {isHod && (
-              <Link href="/faculty/hod/dashboard">
-                <Badge variant="primary" className="ml-1 hover:underline cursor-pointer">
-                  HOD Workspace Access →
-                </Badge>
-              </Link>
-            )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Personal teaching metrics, attendance rosters, and class session activity.
@@ -179,16 +171,16 @@ export default function FacultyDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
           <Link
             href="/faculty/attendance/take"
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shadow-xs shrink-0"
           >
             + Take Attendance
           </Link>
           <Link
             href="/faculty/attendance/approve"
-            className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2.5 text-xs font-bold transition-colors duration-150"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shrink-0"
           >
             Approve Sessions ({pendingApprovalsCount})
           </Link>
@@ -232,7 +224,7 @@ export default function FacultyDashboardPage() {
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Sessions Table */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-3 ">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <span>Recent Lecture Sessions</span>
@@ -243,6 +235,7 @@ export default function FacultyDashboardPage() {
             </Link>
           </div>
           <DataTable
+            className=""
             columns={columns}
             data={sessions}
             keyExtractor={(item) => item.id}

@@ -61,32 +61,29 @@ export function CustomSelect({
 
   return (
     <div
-      className={`relative ${
-        label && inlineLabel ? "flex flex-col sm:flex-row sm:items-center gap-2" : ""
-      } ${className}`}
+      className={`relative min-w-0 ${label && inlineLabel ? "flex flex-col sm:flex-row sm:items-center gap-2" : ""
+        } ${className}`}
       ref={containerRef}
     >
       {label && (
         <label
-          className={`text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0 ${
-            inlineLabel ? "sm:mb-0" : "block mb-1.5"
-          }`}
+          className={`text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0 ${inlineLabel ? "sm:mb-0" : "block mb-1.5"
+            }`}
         >
           {label}:
         </label>
       )}
 
-      <div className="relative flex-1 w-full">
+      <div className="w-full max-w-full relative flex-1 min-w-0 sm:flex-1">
         {/* Trigger Button */}
         <button
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full h-11 rounded-xl border border-border bg-background hover:border-indigo-500/60 flex items-center justify-between px-3.5 py-2 text-sm font-extrabold text-foreground transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group ${
-            isOpen ? "border-indigo-500/80 ring-2 ring-indigo-500/20" : ""
-          }`}
+          className={`w-full min-w-24 h-11 rounded-xl border border-border bg-background hover:border-indigo-500/60 flex items-center justify-between px-3.5 py-2 text-sm font-extrabold text-foreground transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed group ${isOpen ? "border-indigo-500/80 ring-2 ring-indigo-500/20" : ""
+            }`}
         >
-          <span className="truncate">
+          <span className="truncate flex-1 min-w-0 text-left">
             {selectedOption ? (
               <span className="flex items-center gap-2">
                 <span className="font-bold text-foreground truncate">{selectedOption.label}</span>
@@ -101,9 +98,8 @@ export function CustomSelect({
             )}
           </span>
           <span
-            className={`text-xs text-muted-foreground transition-transform duration-200 shrink-0 ml-2 ${
-              isOpen ? "rotate-180 text-indigo-500" : ""
-            }`}
+            className={`text-xs text-muted-foreground transition-transform duration-200 shrink-0 ml-2 ${isOpen ? "rotate-180 text-indigo-500" : ""
+              }`}
           >
             ▼
           </span>
@@ -111,7 +107,7 @@ export function CustomSelect({
 
         {/* Dropdown Menu Overlay */}
         {isOpen && (
-          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl border border-border bg-card shadow-2xl p-2 space-y-1.5 backdrop-blur-md animate-in zoom-in-95 duration-150 max-h-[280px] flex flex-col min-w-[200px]">
+          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl border border-border bg-card shadow-2xl p-2 space-y-1.5 backdrop-blur-md animate-in zoom-in-95 duration-150 max-h-[280px] flex flex-col min-w-[150px]">
             {searchable && (
               <div className="p-1">
                 <input
@@ -142,13 +138,12 @@ export function CustomSelect({
                         setIsOpen(false);
                         setSearch("");
                       }}
-                      className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition-all duration-150 ${
-                        opt.disabled
-                          ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                          : isSelected
+                      className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition-all duration-150 ${opt.disabled
+                        ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                        : isSelected
                           ? "bg-indigo-600/15 border border-indigo-500/40 text-indigo-600 dark:text-indigo-400 font-extrabold"
                           : "hover:bg-muted/60 text-foreground border border-transparent"
-                      }`}
+                        }`}
                     >
                       <div className="truncate">
                         <span className="text-xs font-bold block truncate">{opt.label}</span>

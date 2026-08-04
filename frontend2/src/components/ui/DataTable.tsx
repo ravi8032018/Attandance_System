@@ -13,6 +13,8 @@ interface DataTableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   className?: string;
+  maxHeight?: string;
+  textsize?: string;
   onRowClick?: (item: T) => void;
 }
 
@@ -23,18 +25,20 @@ export function DataTable<T>({
   loading = false,
   emptyMessage = "No data found.",
   className = "",
+  maxHeight = "max-h-[300px]",
+  textsize = "text-sm",
   onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className={`w-full overflow-hidden rounded-2xl solid-card border border-border ${className}`}>
-      <div className="overflow-x-auto">
-        <table className="w-full text-center text-sm border-collapse min-w-[650px]">
-          <thead>
-            <tr className="border-b border-border bg-muted/60">
+      <div className={`w-full overflow-auto custom-scrollbar ${maxHeight}`}>
+        <table className={`w-full text-center border-collapse min-w-[650px] relative ${textsize}`}>
+          <thead className="sticky top-0 z-10 bg-card border-b border-border">
+            <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`py-3.5 px-4 text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest text-center ${col.className || ""}`}
+                  className={`py-3.5 px-4 text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest text-center sticky top-0 bg-card shadow-xs ${col.className || ""}`}
                 >
                   {col.header}
                 </th>
@@ -56,7 +60,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-10 text-center text-sm font-semibold text-muted-foreground"
+                  className={`py-10 text-center font-semibold text-muted-foreground ${textsize}`}
                 >
                   {emptyMessage}
                 </td>

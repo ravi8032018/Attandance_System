@@ -5,6 +5,8 @@ import { useUserMe } from "@/hooks/useUserMe";
 import { apiFetch } from "@/lib/api";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { exportToCSV, exportToPDF, ReportColumn } from "@/lib/reportExporter";
 
 interface DefaulterStudent {
@@ -92,7 +94,7 @@ export default function FacultyReportsPage() {
     loadFacultyReports();
   }, [user, threshold, subjectCode]);
 
-  const defaulterColumns: ReportColumn[] = [
+  const exportColumns: ReportColumn[] = [
     { key: "registration_no", label: "Registration No" },
     { key: "student_name", label: "Student Name" },
     { key: "semester", label: "Semester" },
@@ -104,7 +106,7 @@ export default function FacultyReportsPage() {
   ];
 
   function handleExportCSV() {
-    exportToCSV(`Faculty_Defaulters_${facultyId}_(${threshold}pct).csv`, defaulterColumns, defaulters);
+    exportToCSV(`Faculty_Defaulters_${facultyId}_(${threshold}pct).csv`, exportColumns, defaulters);
   }
 
   function handleExportPDF() {
@@ -113,10 +115,60 @@ export default function FacultyReportsPage() {
       `${threshold}%`,
       department,
       `All Semesters`,
-      defaulterColumns,
+      exportColumns,
       defaulters
     );
   }
+
+  const defaulterColumns: Column<DefaulterStudent>[] = [
+    {
+      header: "Registration No",
+      accessor: (st) => (
+        <span className="font-mono font-black text-indigo-600 dark:text-indigo-400">
+          {st.registration_no}
+        </span>
+      ),
+    },
+    {
+      header: "Student Name",
+      accessor: (st) => (
+        <span className="font-bold text-foreground">
+          {st.student_name}
+        </span>
+      ),
+    },
+    {
+      header: "Semester",
+      accessor: (st) => <Badge variant="muted">Sem {st.semester}</Badge>,
+    },
+    {
+      header: "Attended Classes",
+      accessor: (st) => (
+        <span className="font-mono font-bold">
+          {st.attended_classes} / {st.total_classes}
+        </span>
+      ),
+    },
+    {
+      header: "Attendance Rate",
+      accessor: (st) => (
+        <span className={`text-sm font-mono font-bold ${st.attendance_pct < 40
+          ? "text-rose-600 dark:text-rose-400"
+          : st.attendance_pct < 75
+            ? "text-amber-600 dark:text-amber-400"
+            : "text-emerald-600 dark:text-emerald-400"
+          }`}>
+          {st.attendance_pct}%
+        </span>
+      ),
+    },
+    {
+      header: "Status Badge",
+      accessor: () => (
+        <Badge variant="warning">⚠️ Low Attendance (&lt;{threshold}%)</Badge>
+      ),
+    },
+  ];
 
   const assignedSubs = workload?.assigned_subjects || [];
 
@@ -124,7 +176,7 @@ export default function FacultyReportsPage() {
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+        <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
           <span>📈 Faculty Attendance & Teaching Analytics</span>
           <Badge variant="primary" className="text-xs font-mono">{workload?.faculty_id || facultyId}</Badge>
         </h1>
@@ -136,7 +188,7 @@ export default function FacultyReportsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <StatCard
-          title="Assigned Subjects"
+          title="Teaching Load"
           value={workload ? `${workload.assigned_subjects_count} Subjects` : "Loading..."}
           icon="📚"
         />
@@ -156,41 +208,39 @@ export default function FacultyReportsPage() {
       {/* Main Console */}
       <div className="solid-card rounded-2xl p-5 border border-border space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-          <div className="flex items-center gap-2 bg-muted p-1 rounded-xl border border-border">
+          <div className="flex flex-col flex-row items-stretch xs:items-center gap-2 bg-muted p-1 rounded-xl border border-border w-full sm:w-auto">
             <button
               onClick={() => setActiveTab("defaulters")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "defaulters"
-                  ? "bg-card text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${activeTab === "defaulters"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               Defaulter Warning Roster ({defaulters.length})
             </button>
             <button
               onClick={() => setActiveTab("workload")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "workload"
-                  ? "bg-card text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${activeTab === "workload"
+                ? "bg-card text-foreground shadow-xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               Assigned Subjects ({workload?.assigned_subjects.length || 0})
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
             >
               <span>📥 Export CSV</span>
             </button>
             <button
               type="button"
               onClick={handleExportPDF}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
             >
               <span>📄 Print / PDF</span>
             </button>
@@ -204,104 +254,52 @@ export default function FacultyReportsPage() {
         ) : activeTab === "defaulters" ? (
           <div className="space-y-4">
             {/* Defaulter Roster Enclosure Filters Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-extrabold text-foreground">Defaulter Warning Controls</span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Subject Filter Dropdown */}
-                <div className="flex items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
-                  <label className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider pl-1 whitespace-nowrap">
-                    Subject:
-                  </label>
-                  <select
-                    value={subjectCode}
-                    onChange={(e) => setSubjectCode(e.target.value)}
-                    className="h-8 max-w-[220px] truncate rounded-lg border border-border bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  >
-                    <option value="all">
-                      {assignedSubs.length <= 1 ? "All Assigned Subjects" : `All Assigned Subjects (${assignedSubs.length})`}
-                    </option>
-                    {assignedSubs.map((sub) => (
-                      <option key={sub.subject_code} value={sub.subject_code}>
-                        {sub.subject_code} - {sub.subject_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full sm:w-auto min-w-0">
+                <CustomSelect
+                  label="Subject"
+                  value={subjectCode}
+                  onChange={setSubjectCode}
+                  className="w-full sm:w-60"
+                  options={[
+                    {
+                      value: "all",
+                      label: assignedSubs.length <= 1 ? "All Assigned Subjects" : `All Assigned Subjects (${assignedSubs.length})`,
+                    },
+                    ...assignedSubs.map((sub) => ({
+                      value: sub.subject_code,
+                      label: `${sub.subject_code} - ${sub.subject_name}`,
+                    })),
+                  ]}
+                />
 
-                {/* Warning Cutoff Dropdown */}
-                <div className="flex items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
-                  <label className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider pl-1 whitespace-nowrap">
-                    Warning Cutoff:
-                  </label>
-                  <select
-                    value={threshold}
-                    onChange={(e) => setThreshold(Number(e.target.value))}
-                    className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  >
-                    <option value={75.0}>Below 75% (Mandatory)</option>
-                    <option value={60.0}>Below 60% (Moderate Risk)</option>
-                    <option value={50.0}>Below 50% (Severe Risk)</option>
-                  </select>
-                </div>
+                <CustomSelect
+                  label="Cutoff"
+                  value={String(threshold)}
+                  onChange={(val) => setThreshold(Number(val))}
+                  className="w-full sm:w-56"
+                  options={[
+                    { value: "75", label: "Below 75% (Mandatory)" },
+                    { value: "60", label: "Below 60% (Moderate Risk)" },
+                    { value: "50", label: "Below 50% (Severe Risk)" },
+                  ]}
+                />
               </div>
             </div>
-            {defaulters.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-border rounded-xl">
-                <div className="text-2xl">🎉</div>
-                <h4 className="text-sm font-bold text-foreground">No Defaulters Flagged</h4>
-                <p className="text-xs text-muted-foreground">
-                  All students in your classes are currently meeting the {threshold}% requirement.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border text-[11px] font-extrabold uppercase text-muted-foreground">
-                      <th className="py-3 px-3">Registration No</th>
-                      <th className="py-3 px-3">Student Name</th>
-                      <th className="py-3 px-3">Semester</th>
-                      <th className="py-3 px-3">Attended Classes</th>
-                      <th className="py-3 px-3">Attendance Rate</th>
-                      <th className="py-3 px-3">Status Badge</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {defaulters.map((st) => (
-                      <tr key={st.registration_no} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3 px-3 font-mono font-black text-indigo-600 dark:text-indigo-400">
-                          {st.registration_no}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-foreground">
-                          {st.student_name}
-                        </td>
-                        <td className="py-3 px-3">
-                          <Badge variant="muted">Sem {st.semester}</Badge>
-                        </td>
-                        <td className="py-3 px-3 font-mono font-bold">
-                          {st.attended_classes} / {st.total_classes}
-                        </td>
-                        <td className={`py-3 px-3 text-sm font-mono font-bold ${
-                          st.attendance_pct < 40
-                            ? "text-rose-600 dark:text-rose-400"
-                            : st.attendance_pct < 75
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-emerald-600 dark:text-emerald-400"
-                        }`}>
-                          {st.attendance_pct}%
-                        </td>
-                        <td className="py-3 px-3">
-                          <Badge variant="warning">⚠️ Low Attendance (&lt;{threshold}%)</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+
+            <DataTable
+              columns={defaulterColumns}
+              data={defaulters}
+              keyExtractor={(st) => st.registration_no}
+              loading={loading}
+              maxHeight="max-h-[420px]"
+              textsize="text-xs"
+              emptyMessage={`No defaulters flagged meeting the ${threshold}% requirement.`}
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

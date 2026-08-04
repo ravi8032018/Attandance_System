@@ -80,29 +80,29 @@ export default function HODDashboardPage() {
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+          <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 mb-1">
+            <h1 className="text-lg sm:text-2xl font-black tracking-tight text-foreground">
               HOD Department Overview
             </h1>
-            <Badge variant="primary">{deptName}</Badge>
+            <Badge variant="primary" className="!hidden md:!inline-flex shrink-0">{deptName}</Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Departmental faculty workload management and overall student attendance intelligence console.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
           <Link
             href="/faculty/hod/faculty"
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shadow-xs shrink-0"
           >
             Manage Faculty Workload
           </Link>
           <Link
             href="/faculty/hod/reports"
-            className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2.5 text-xs font-bold transition-colors duration-150"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shrink-0"
           >
             View Analytics Reports
           </Link>
@@ -146,14 +146,14 @@ export default function HODDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Real Faculty Workload Allocation Roster */}
         <div className="solid-card rounded-2xl p-6 border border-border space-y-4 bg-card">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
             <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
               <span>Faculty Workload Allocation</span>
-              <Badge variant="primary" className="text-xs font-mono">{workloadList.length}</Badge>
+              <Badge variant="primary" className="text-xs font-mono shrink-0">{workloadList.length}</Badge>
             </h2>
             <Link
               href="/faculty/hod/faculty"
-              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline shrink-0"
             >
               Assign Subjects →
             </Link>
@@ -174,15 +174,15 @@ export default function HODDashboardPage() {
                 <div
                   key={fac.faculty_id}
                   onClick={() => router.push(`/faculty/get-faculty-by-id?id=${encodeURIComponent(fac.faculty_id)}`)}
-                  className="flex items-center justify-between text-xs p-3 rounded-xl border border-border/70 hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between text-xs p-3 rounded-xl border border-border hover:bg-muted/50 cursor-pointer transition-colors gap-2"
                 >
-                  <div className="space-y-0.5">
-                    <span className="font-extrabold text-foreground block">
+                  <div className="space-y-0.5 min-w-0 flex-1">
+                    <span className="font-extrabold text-foreground block truncate">
                       {fac.faculty_name} <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400">({fac.faculty_id})</span>
                     </span>
-                    <span className="text-[10px] text-muted-foreground block">{fac.designation} • {fac.email}</span>
+                    <span className="text-[10px] text-muted-foreground block truncate">{fac.designation} • {fac.email}</span>
                   </div>
-                  <Badge variant={fac.assigned_subjects_count > 0 ? "success" : "warning"}>
+                  <Badge variant={fac.assigned_subjects_count > 0 ? "success" : "warning"} className="shrink-0 self-start sm:self-auto">
                     {fac.assigned_subjects_count} {fac.assigned_subjects_count === 1 ? "Subject" : "Subjects"} Assigned
                   </Badge>
                 </div>

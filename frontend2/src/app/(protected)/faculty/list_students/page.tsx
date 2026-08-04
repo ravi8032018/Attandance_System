@@ -212,7 +212,7 @@ export default function StudentListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-black tracking-tight text-foreground flex items-center gap-2">
             <AcademicCapIcon className="text-indigo-600 dark:text-indigo-400" />
             <span>Enrolled Student Directory</span>
           </h1>
@@ -225,22 +225,20 @@ export default function StudentListPage() {
         <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border self-start sm:self-auto">
           <button
             onClick={() => setViewMode("grid")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === "grid"
-                ? "bg-card text-foreground shadow-xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "grid"
+              ? "bg-card text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             <GridViewIcon />
             <span>Cards</span>
           </button>
           <button
             onClick={() => setViewMode("table")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === "table"
-                ? "bg-card text-foreground shadow-xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "table"
+              ? "bg-card text-foreground shadow-xs border border-border"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             <ListViewIcon />
             <span>Table</span>
@@ -249,18 +247,19 @@ export default function StudentListPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <div className="solid-card rounded-2xl p-4 border border-border bg-card space-y-3 lg:space-y-0 lg:flex lg:items-center lg:justify-between lg:gap-4 min-w-0">
+        {/* Left Dropdown Filters Group */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:flex lg:items-center lg:gap-4 lg:flex-1 min-w-0">
           <CustomSelect
             label="Semester"
             value={semester}
             onChange={setSemester}
             disabled={assignedSems.length === 0}
             placeholder={assignedSems.length === 0 ? "No Assigned Semesters" : "Select Semester..."}
-            className="w-full sm:w-44"
+            className="w-full lg:w-52"
             options={[
               ...(assignedSems.length > 1 ? [{ value: "all", label: "All Assigned Semesters" }] : []),
-              ...assignedSems.map((s) => ({ value: s, label: `Semester ${s}` })),
+              ...assignedSems.map((s) => ({ value: s, label: `${s}` })),
             ]}
           />
 
@@ -270,24 +269,33 @@ export default function StudentListPage() {
             onChange={(val) => handleDepartmentChange(val)}
             disabled={assignedDepts.length === 0}
             placeholder={assignedDepts.length === 0 ? "No Assigned Depts" : "Select Department..."}
-            className="w-full sm:w-44"
+            className="w-full lg:w-56"
             options={[
               ...(assignedDepts.length > 1 ? [{ value: "all", label: "All Assigned Depts" }] : []),
-              ...assignedDepts.map((d) => ({ value: d, label: `Department ${d}` })),
+              ...assignedDepts.map((d) => ({ value: d, label: `${d}` })),
             ]}
           />
         </div>
 
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-md">
+        {/* Right Search Bar */}
+        <div className="relative w-full lg:w-80 shrink-0">
           <SearchIcon className="absolute left-3.5 top-3 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search student name, registration no, email..."
-            className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-xs font-medium text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
+            className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-8 text-xs font-semibold text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
@@ -373,6 +381,9 @@ export default function StudentListPage() {
           data={filteredStudents}
           keyExtractor={(item) => item.registration_no}
           loading={loading}
+          className="text-xs "
+          maxHeight="max-h-[400px]"
+          textsize="text-xs"
           emptyMessage="No students found matching the selected filters."
           onRowClick={(item) => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(item.registration_no)}`)}
         />

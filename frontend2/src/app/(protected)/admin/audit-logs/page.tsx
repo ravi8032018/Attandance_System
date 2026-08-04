@@ -431,7 +431,7 @@ export default function AdminAuditLogsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="w-full overflow-x-auto custom-scrollbar">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/60 border-b border-border font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
                 <tr>

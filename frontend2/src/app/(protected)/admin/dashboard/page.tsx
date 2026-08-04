@@ -42,29 +42,29 @@ export default function AdminDashboardPage() {
   return (
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 mb-1">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               System Admin Console
             </h1>
-            <Badge variant="primary">Super Admin</Badge>
+            <Badge variant="primary" className="shrink-0">Super Admin</Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Academic system management, user directory provisioning, curriculum catalog, and system logs.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
           <Link
             href="/admin/users"
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shadow-xs shrink-0"
           >
             + Onboard New User
           </Link>
           <Link
             href="/admin/curriculum"
-            className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2.5 text-xs font-bold transition-colors duration-150"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shrink-0"
           >
             Manage Curriculum
           </Link>

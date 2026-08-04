@@ -158,13 +158,13 @@ export default function StudentDashboardPage() {
 
       {/* Header Greeting */}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1">
+          <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 mb-1">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               Welcome back, {data?.student_info?.student_name || user?.name || "Student"}
             </h1>
-            <Badge variant="primary" className="font-mono">
+            <Badge variant="primary" className="font-mono shrink-0">
               {data?.student_info?.registration_no || user?.registration_no}
             </Badge>
           </div>
@@ -174,10 +174,10 @@ export default function StudentDashboardPage() {
         </div>
 
         {/* Action Link */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
           <Link
             href="/student/reports"
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0"
           >
             📋 Official Statement →
           </Link>
@@ -274,8 +274,8 @@ export default function StudentDashboardPage() {
                 </p>
               </div>
 
-              {/* View Selector Toggle Buttons (Visible on Tablet/Desktop md+) */}
-              <div className="hidden md:flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border">
+              {/* View Selector Toggle Buttons */}
+              <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("graph")}

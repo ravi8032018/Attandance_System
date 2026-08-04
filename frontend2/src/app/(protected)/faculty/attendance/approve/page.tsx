@@ -67,7 +67,7 @@ export default function ApproveAttendancePage() {
   const fetchPendingSessions = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch("/attendance/approvals?status=pending");
+      const res = await apiFetch("/attendance/approvals?status=pending&period=all");
       if (res.ok) {
         const data = await res.json();
         setSessions(data.items || []);
@@ -173,13 +173,18 @@ export default function ApproveAttendancePage() {
   const handleRejectSubmit = async () => {
     if (!rejectModalId) return;
 
+    if (!rejectReason.trim()) {
+      setActionMsg({ type: "error", text: "A valid rejection reason is mandatory." });
+      return;
+    }
+
     setActionLoading(true);
     setActionMsg(null);
     try {
       const res = await apiFetch(`/attendance/approvals/${encodeURIComponent(rejectModalId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "rejected", reason: rejectReason }),
+        body: JSON.stringify({ status: "rejected", reason: rejectReason.trim() }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -190,7 +195,7 @@ export default function ApproveAttendancePage() {
           setActiveSessionId(null);
           setSessionDetails(null);
         }
-        setActionMsg({ type: "success", text: `Attendance session rejected.` });
+        setActionMsg({ type: "success", text: `Attendance session rejected with reason.` });
         setRejectModalId(null);
         setRejectReason("");
       } else {
@@ -207,7 +212,7 @@ export default function ApproveAttendancePage() {
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
             Approve Attendance Sessions
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
@@ -228,11 +233,10 @@ export default function ApproveAttendancePage() {
 
       {actionMsg && (
         <div
-          className={`p-4 rounded-2xl border text-xs font-bold ${
-            actionMsg.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
-              : "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300"
-          }`}
+          className={`p-4 rounded-2xl border text-xs font-bold ${actionMsg.type === "success"
+            ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+            : "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300"
+            }`}
         >
           {actionMsg.text}
         </div>
@@ -299,9 +303,9 @@ export default function ApproveAttendancePage() {
                     <button
                       type="button"
                       onClick={() => inspectSession(sess.session_id)}
-                      className="px-3.5 py-2 rounded-xl bg-card hover:bg-muted text-foreground border border-border text-xs font-bold transition-all"
+                      className="px-3 py-2 rounded-xl bg-card hover:bg-muted text-foreground border border-border text-[11px] font-bold transition-all"
                     >
-                      {isExpanded ? "Hide Details ▲" : "Show Details ▼"}
+                      {isExpanded ? "Details ▲" : "Details ▼"}
                     </button>
 
                     <button
@@ -354,40 +358,38 @@ export default function ApproveAttendancePage() {
                             return (
                               <div
                                 key={rec.registration_no}
-                                className="p-3 rounded-xl border border-border bg-card flex items-center justify-between gap-2 shadow-xs"
+                                className="p-3 rounded-xl border border-border bg-card flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 shadow-xs"
                               >
-                                <div className="flex items-center gap-2.5 truncate">
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                   <FacultyAvatar firstName={displayName} size="sm" />
-                                  <div className="truncate">
+                                  <div className="min-w-0 flex-1">
                                     <h4 className="text-xs font-extrabold text-foreground leading-tight truncate">
                                       {displayName}
                                     </h4>
-                                    <p className="text-sm font-mono font-black text-indigo-600 dark:text-indigo-400 truncate">
+                                    <p className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 truncate">
                                       {rec.registration_no}
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5 shrink-0 w-full xs:w-auto justify-end pt-2 xs:pt-0 border-t xs:border-none border-border/40">
                                   <button
                                     type="button"
                                     onClick={() => updateStudentStatus(sess.session_id, rec.registration_no, "present")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                      rec.status === "present"
-                                        ? "bg-emerald-600 text-white shadow-xs"
-                                        : "bg-muted text-muted-foreground hover:text-foreground"
-                                    }`}
+                                    className={`flex-1 xs:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${rec.status === "present"
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-muted text-muted-foreground hover:text-foreground"
+                                      }`}
                                   >
                                     Present
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => updateStudentStatus(sess.session_id, rec.registration_no, "absent")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                      rec.status === "absent"
-                                        ? "bg-rose-600 text-white shadow-xs"
-                                        : "bg-muted text-muted-foreground hover:text-foreground"
-                                    }`}
+                                    className={`flex-1 xs:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${rec.status === "absent"
+                                      ? "bg-rose-600 text-white shadow-xs"
+                                      : "bg-muted text-muted-foreground hover:text-foreground"
+                                      }`}
                                   >
                                     Absent
                                   </button>
@@ -411,15 +413,15 @@ export default function ApproveAttendancePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="solid-card rounded-2xl p-6 border border-border max-w-md w-full space-y-4 animate-in zoom-in-95 duration-150">
             <h3 className="text-base font-extrabold text-foreground">Reject Attendance Session</h3>
-            <p className="text-xs text-muted-foreground">
-              Please provide an optional reason for rejecting this attendance session.
+            <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+              ⚠️ A rejection reason is mandatory before rejecting this attendance session.
             </p>
 
             <textarea
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="e.g. Discrepancy in student list, incorrect class date..."
+              placeholder="Provide mandatory rejection reason (e.g. Roster discrepancy, wrong period)..."
               className="w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground outline-none focus:ring-2 focus:ring-rose-500/20"
             />
 
@@ -437,8 +439,8 @@ export default function ApproveAttendancePage() {
               <button
                 type="button"
                 onClick={handleRejectSubmit}
-                disabled={actionLoading}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold disabled:opacity-50"
+                disabled={actionLoading || !rejectReason.trim()}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold disabled:opacity-40"
               >
                 Confirm Rejection
               </button>

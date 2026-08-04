@@ -134,7 +134,7 @@ function FacultyProfileContent() {
   const isLoading = meLoading || loadingExtra;
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4">
       {msg && (
         <div className={`p-4 rounded-xl border text-xs font-bold ${msg.type === "success" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}>
           {msg.text}
@@ -144,7 +144,7 @@ function FacultyProfileContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             <span>👨‍🏫 Academic Profile & Teaching Overview</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
@@ -187,39 +187,42 @@ function FacultyProfileContent() {
       ) : (
         <div className="space-y-6">
           {/* Main Profile Header Card */}
-          <div className="solid-card rounded-2xl p-6 border border-border space-y-6 bg-card">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
-              <div className="flex items-center gap-4">
-                <FacultyAvatar
-                  firstName={faculty?.first_name}
-                  lastName={faculty?.last_name}
-                  photoUrl={faculty?.photo_url}
-                  size="3xl"
-                />
-                <div>
+          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border space-y-3 sm:space-y-4 bg-card">
+            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-5 pb-6 border-b border-border text-center md:text-left">
+              {/* Avatar & User Info */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-5 w-full md:w-auto">
+                <div className="shrink-0">
+                  <FacultyAvatar
+                    firstName={faculty?.first_name}
+                    lastName={faculty?.last_name}
+                    photoUrl={faculty?.photo_url}
+                    size="3xl"
+                  />
+                </div>
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
                   <h2 className="text-xl sm:text-2xl font-black text-foreground">
                     {faculty ? `${faculty.first_name} ${faculty.last_name}` : "Faculty Member"}
                   </h2>
                   <p className="text-xs font-semibold text-muted-foreground">{faculty?.email || "faculty@academic.edu"}</p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                     <Badge variant="primary">{faculty?.department || "Computer Science"}</Badge>
-                    {isHod && <Badge variant="warning">Head of Department (HOD)</Badge>}
-                    <Badge variant="success">Active Faculty</Badge>
+                    {isHod && <Badge variant="warning">HOD</Badge>}
+                    <Badge variant="success">Active</Badge>
                   </div>
                 </div>
               </div>
 
               {/* Quick Actions */}
-              <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
                 <Link
                   href="/faculty/attendance/take"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0"
                 >
                   <span>📝 Take Attendance</span>
                 </Link>
                 <Link
                   href="/faculty/reports"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0"
                 >
                   <span>📈 Analytics</span>
                 </Link>
@@ -228,14 +231,14 @@ function FacultyProfileContent() {
 
             {/* Missing Profile Fields Warning Callout */}
             {missingFields.length > 0 && (
-              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2.5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
                   <h4 className="text-xs font-black text-amber-600 dark:text-amber-300 uppercase tracking-wider flex items-center gap-2">
                     <span>⚠️ Faculty Profile Incomplete ({missingFields.length} {missingFields.length === 1 ? "field" : "fields"} remaining)</span>
                   </h4>
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="text-xs font-bold bg-amber-500 text-slate-950 px-3 py-1.5 rounded-lg hover:bg-amber-400 transition-colors shadow-xs"
+                    className="w-full sm:w-auto text-xs font-bold bg-amber-500 text-slate-950 px-3.5 py-1.5 rounded-lg hover:bg-amber-400 transition-colors shadow-xs shrink-0 text-center"
                   >
                     Complete Now
                   </button>
@@ -254,26 +257,25 @@ function FacultyProfileContent() {
             )}
 
             {/* Profile Info Details Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Faculty ID</label>
                 <p className="mt-1 font-mono text-sm font-black text-indigo-600 dark:text-indigo-400">{faculty?.faculty_id || "CSFAC09"}</p>
               </div>
 
-              <div>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Department</label>
                 <p className="mt-1 text-xs font-bold text-foreground">{faculty?.department || "Computer Science"}</p>
               </div>
 
-              <div>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Designation</label>
                 <p className="mt-1 text-xs font-bold text-foreground">{isHod ? "Head of Department (HOD) / Professor" : "Assistant Professor"}</p>
               </div>
 
-              <div>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Official Email</label>
-                <p className="mt-1 text-xs font-bold text-foreground truncate">{faculty?.email || "faculty@aus.ac.in"}</p>
+                <p className="mt-1 text-xs font-bold text-foreground truncate">{faculty?.email || "faculty@academic.edu"}</p>
               </div>
             </div>
           </div>

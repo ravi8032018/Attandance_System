@@ -161,16 +161,16 @@ export default function HODFacultyListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-lg sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             <UsersIcon className="text-indigo-600 dark:text-indigo-400" />
             <span>Faculty Registry & Workload</span>
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Academic faculty directory, subject assignments, and live attendance metrics. Click any card to open detailed faculty analytics.
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground md:max-w-sm lg:max-w-lg xl:max-w-7xl">
+            Academic subject assignments, and live attendance metrics. Click any card to open detailed faculty analytics.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-3 justify-center">
           {/* View Mode Switcher */}
           <div className="flex items-center gap-1.5 bg-muted p-1 rounded-xl border border-border">
             <button
@@ -197,7 +197,7 @@ export default function HODFacultyListPage() {
 
           <Link
             href="/faculty/hod/faculty/assign-subject"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95"
+            className="inline-flex items-center justify-center sm:w-auto w-full gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-1 py-2 text-[11px] font-bold text-white shadow-xs transition-all active:scale-100 md:px-3 md:py-2.5"
           >
             <span>+ Assign Subjects</span>
           </Link>
@@ -205,7 +205,7 @@ export default function HODFacultyListPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card">
+      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row justify-end gap-4 bg-card">
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3.5 top-3 text-muted-foreground" />
           <input
@@ -232,7 +232,7 @@ export default function HODFacultyListPage() {
           </p>
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filteredFaculty.map((f) => {
             const rawFullName = `${f.first_name || ""} ${f.last_name || ""}`.trim();
             const formattedName = formatFacultyName(rawFullName);

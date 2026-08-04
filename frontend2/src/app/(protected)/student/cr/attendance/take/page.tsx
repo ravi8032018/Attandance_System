@@ -286,7 +286,7 @@ function CRAttendanceContent() {
 
           {/* Live Countdown Clock Widget */}
           <div
-            className={`flex items-center gap-1 px-1- pr-6 pl-1 py-3 rounded-2xl border ${isTimeExpired
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border shrink-0 ${isTimeExpired
               ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400"
               : secondsLeft <= 120
                 ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 animate-pulse"

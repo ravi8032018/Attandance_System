@@ -769,12 +769,17 @@ async def approve_attendance_session(
                 "updated_at": datetime.utcnow()
         }
     else:  # rejected
-        setDoc= {
-                "status": target,
-                "rejection_reason": body.reason if body.reason else "",
-                "rejected_by": current_user["id"],
-                "rejected_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+        if not body.reason or not body.reason.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A valid rejection reason is required when rejecting an attendance session."
+            )
+        setDoc = {
+            "status": target,
+            "rejection_reason": body.reason.strip(),
+            "rejected_by": current_user["id"],
+            "rejected_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
     update_doc = {
         "$set": setDoc,
@@ -913,9 +918,10 @@ async def list_approvals(
         filters["status"] = status
     if subject_code:
         filters["subject_code"] = subject_code
-    if period:
+    if period and period != "all":
         start_utc, end_utc = compute_period_range(period, tz="Asia/Kolkata")
-        filters["date"] = {"$gte": start_utc, "$lt": end_utc}
+        if start_utc and end_utc:
+            filters["date"] = {"$gte": start_utc, "$lt": end_utc}
 
     # print("--> filters:", filters)
     sort_field = sort.lstrip("-")
