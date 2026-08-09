@@ -74,7 +74,7 @@ export function DataTable<T>({
                     }`}
                 >
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={`py-3.5 px-4 text-foreground font-semibold text-center ${col.className || ""}`}>
+                    <td key={cIdx} className={`py-2.5 sm:py-3.5 px-2 sm:px-4 text-foreground font-semibold text-center ${col.className || ""}`}>
                       {col.accessor(item)}
                     </td>
                   ))}

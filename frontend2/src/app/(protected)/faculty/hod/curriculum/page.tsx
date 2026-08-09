@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { FacultyAvatar } from "@/components/ui/FacultyAvatar";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { apiFetch } from "@/lib/api";
 import { useUserMe } from "@/hooks/useUserMe";
 
@@ -155,11 +156,11 @@ export default function HODCurriculumPage() {
   ];
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
             <BookIcon className="text-indigo-600 dark:text-indigo-400" />
             <span>Curriculum Catalog</span>
           </h1>
@@ -194,22 +195,23 @@ export default function HODCurriculumPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="w-full md:w-auto">
-          <div>
-            <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block mb-1">
-              Semester
-            </label>
-            <select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              className="h-10 w-full sm:w-40 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              {["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => (
-                <option key={s} value={s}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
+      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className="w-full sm:w-56">
+          <CustomSelect
+            label="Semester"
+            value={semester}
+            onChange={(val) => setSemester(val)}
+            options={[
+              { value: "1", label: "Semester 1" },
+              { value: "2", label: "Semester 2" },
+              { value: "3", label: "Semester 3" },
+              { value: "4", label: "Semester 4" },
+              { value: "5", label: "Semester 5" },
+              { value: "6", label: "Semester 6" },
+              { value: "7", label: "Semester 7" },
+              { value: "8", label: "Semester 8" },
+            ]}
+          />
         </div>
 
         {/* Search Input */}
@@ -239,14 +241,14 @@ export default function HODCurriculumPage() {
           </p>
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredSubjects.map((subject) => (
             <div
               key={subject.subject_code}
               onClick={() => router.push(`/faculty/hod/curriculum/${encodeURIComponent(subject.subject_code)}`)}
-              className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden bg-card space-y-4"
+              className="solid-card rounded-2xl border border-border p-5 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden bg-card space-y-3"
             >
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Header Badges */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
@@ -308,6 +310,8 @@ export default function HODCurriculumPage() {
           keyExtractor={(item) => item.subject_code}
           loading={loading}
           emptyMessage="No subjects found."
+          maxHeight="max-h-[400px]"
+          textsize="text-xs"
           onRowClick={(item) => router.push(`/faculty/hod/curriculum/${encodeURIComponent(item.subject_code)}`)}
         />
       )}

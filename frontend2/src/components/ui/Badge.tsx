@@ -50,7 +50,7 @@ export function Badge({ children, variant = "primary", pulse = false, showDot = 
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide transition-colors duration-150 ${style.bg} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black sm:font-extrabold tracking-wide transition-colors duration-150 ${style.bg} ${className}`}
     >
       {showDot && <span className={`h-1.5 w-1.5 rounded-full ${style.dot} ${pulse ? "animate-pulse" : ""}`} />}
       {children}

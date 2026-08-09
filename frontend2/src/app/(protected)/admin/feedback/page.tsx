@@ -243,7 +243,7 @@ function FeedbackPageContent() {
       {/* Header - Task 4 Button Reorder: Refresh First, CSV Second, Print/PDF Third */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             <span>💡 Feedback &amp; Bug Reports</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">

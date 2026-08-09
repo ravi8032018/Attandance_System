@@ -145,7 +145,7 @@ export default function StudentCourseDetailPage({
             <span>/</span>
             <span className="text-foreground font-mono font-bold">{subjectCode}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
             <span>{subjectName}</span>
           </h1>
         </div>

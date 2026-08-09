@@ -273,7 +273,7 @@ export default function HODReportsPage() {
       {/* Top Header & Global Command Modules */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
             <span>📊 Reports & Analytics Console</span>
             <Badge variant="primary" className="text-xs uppercase">{department} Dept</Badge>
           </h1>

@@ -274,7 +274,7 @@ export default function TakeAttendancePage() {
         {/* Header with Title and Ping CR Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
               Take Class Attendance
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted-foreground">

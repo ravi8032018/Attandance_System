@@ -176,9 +176,9 @@ export default function FacultyReportsPage() {
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <span>📈 Faculty Attendance & Teaching Analytics</span>
-          <Badge variant="primary" className="text-xs font-mono">{workload?.faculty_id || facultyId}</Badge>
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <span>📈 Attendance & Teaching Analytics</span>
+          {/* <Badge variant="primary" className="text-xs font-mono">{workload?.faculty_id || facultyId}</Badge> */}
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
           Personal teaching metrics, course attendance breakdown, and low attendance warning rosters.

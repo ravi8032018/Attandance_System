@@ -66,7 +66,7 @@ export default function CRConsolePage() {
               </Badge>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
             Class Representative Attendance Hub
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">

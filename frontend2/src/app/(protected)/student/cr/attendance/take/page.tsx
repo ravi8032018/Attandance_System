@@ -221,8 +221,8 @@ function CRAttendanceContent() {
           <div className="flex items-center gap-3">
             <div className="text-3xl">🔑</div>
             <div>
-              <h1 className="text-xl font-extrabold text-foreground">CR Attendance Marking Console</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">CR Attendance Marking Console</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 {msg ? msg.text : "Enter your active attendance session token provided by your faculty."}
               </p>
             </div>
@@ -278,7 +278,7 @@ function CRAttendanceContent() {
             <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
               Mark Attendance ({tokenDetails.department})
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               Class Date: {new Date(tokenDetails.date).toLocaleDateString()} at{" "}
               {new Date(tokenDetails.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </p>

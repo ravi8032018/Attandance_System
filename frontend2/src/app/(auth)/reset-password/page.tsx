@@ -115,10 +115,10 @@ function ResetPasswordFormContent() {
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-3xl text-white mb-3 shadow-sm">
             🔒
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
             Reset Password
           </h1>
-          <p className="mt-1 text-xs font-medium text-muted-foreground">
+          <p className="mt-1 text-xs sm:text-sm font-medium text-muted-foreground">
             Department of Computer Science - Assam University
           </p>
         </div>

@@ -154,7 +154,7 @@ function StudentProfileContent() {
       {/* Top Navigation & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
             Student Profile & Credentials
           </h1>
           <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground">

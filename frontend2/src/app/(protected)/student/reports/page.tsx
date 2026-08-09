@@ -89,7 +89,7 @@ export default function StudentReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
             <span>📋 My Academic Attendance Statement</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">

@@ -72,3 +72,5 @@ export function UserAvatar({
     </div>
   );
 }
+
+export const StudentAvatar = UserAvatar;

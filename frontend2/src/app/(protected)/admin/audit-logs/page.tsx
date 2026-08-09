@@ -242,7 +242,7 @@ export default function AdminAuditLogsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
               <span>🛡️ System Security & Audit Matrix</span>
             </h1>
             <Badge variant="primary">High-Fidelity Telemetry</Badge>

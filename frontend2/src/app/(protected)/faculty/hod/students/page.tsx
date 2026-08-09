@@ -157,9 +157,9 @@ export default function HODStudentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             <AcademicCapIcon className="text-indigo-600 dark:text-indigo-400" />
-            <span>HOD Department Student Registry</span>
+            <span>Department Students Registry</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Complete registry of department students. Click any student card to open detailed profile & attendance analytics.
@@ -198,7 +198,7 @@ export default function HODStudentsPage() {
             label="Semester"
             value={semester}
             onChange={setSemester}
-            className="w-full sm:w-44"
+            className="w-full"
             options={[
               { value: "all", label: "All Semesters" },
               ...["1", "2", "3", "4", "5", "6", "7", "8"].map((s) => ({
@@ -306,6 +306,8 @@ export default function HODStudentsPage() {
           data={filteredStudents}
           keyExtractor={(item) => item.registration_no}
           loading={loading}
+          maxHeight="max-h-[440px]"
+          textsize="text-xs"
           emptyMessage="No student records found."
           onRowClick={(item) => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(item.registration_no)}`)}
         />

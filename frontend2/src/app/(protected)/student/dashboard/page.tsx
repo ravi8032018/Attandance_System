@@ -161,7 +161,7 @@ export default function StudentDashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
               Welcome back, {data?.student_info?.student_name || user?.name || "Student"}
             </h1>
             <Badge variant="primary" className="font-mono shrink-0">

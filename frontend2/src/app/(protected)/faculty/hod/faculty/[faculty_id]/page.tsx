@@ -20,6 +20,8 @@ interface FacultyFullDetails {
     office_location?: string;
     contact_number?: string;
     photo_url?: string;
+    is_hod?: boolean;
+    role?: string | string[];
   };
   stats: {
     total_assigned_subjects: number;
@@ -193,8 +195,16 @@ export default function DedicatedFacultyDetailsPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 ">
-                <Badge variant="primary">{details.faculty.department || "CS"}</Badge>
-                <Badge variant="secondary">{formatDesignation(details.faculty.designation)}</Badge>
+                <Badge variant="primary">{details.faculty.department || "-NA-"}</Badge>
+                {Boolean(details.faculty.is_hod) ||
+                (Array.isArray(details.faculty.role)
+                  ? details.faculty.role.includes("hod")
+                  : String(details.faculty.role || "").toLowerCase().includes("hod")) ||
+                String(details.faculty.designation || "").toLowerCase().includes("hod") ? (
+                  <Badge variant="warning">HOD</Badge>
+                ) : (
+                  <Badge variant="secondary">{formatDesignation(details.faculty.designation)}</Badge>
+                )}
                 <Badge variant={details.faculty.status === "inactive" ? "error" : "success"}>
                   {(details.faculty.status || "Active").toUpperCase()}
                 </Badge>
@@ -346,7 +356,7 @@ export default function DedicatedFacultyDetailsPage() {
               columns={sessionColumns}
               data={details.recent_sessions}
               keyExtractor={(sess) => sess.session_id}
-              maxHeight="max-h-[420px]"
+              maxHeight="max-h-[400px]"
               textsize="text-xs"
               emptyMessage="No class attendance sessions recorded by this faculty member yet."
             />

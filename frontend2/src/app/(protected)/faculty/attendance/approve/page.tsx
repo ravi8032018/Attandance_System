@@ -212,7 +212,7 @@ export default function ApproveAttendancePage() {
     <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
             Approve Attendance Sessions
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">

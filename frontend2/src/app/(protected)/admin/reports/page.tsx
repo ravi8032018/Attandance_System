@@ -332,7 +332,7 @@ export default function AdminReportsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
               <span>🏛️ Administrative Intelligence & Audit Suite</span>
             </h1>
             <Badge variant="primary">Institute Executive Telemetry</Badge>

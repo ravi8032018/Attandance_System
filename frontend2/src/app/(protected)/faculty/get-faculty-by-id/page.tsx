@@ -20,6 +20,8 @@ interface FacultyFullDetails {
     office_location?: string;
     contact_number?: string;
     photo_url?: string;
+    is_hod?: boolean;
+    role?: string | string[];
   };
   stats: {
     total_assigned_subjects: number;
@@ -182,9 +184,9 @@ function FacultyLookupContent() {
   ];
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-24 sm:pb-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
           Faculty Profile & Workload Record
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
@@ -193,7 +195,7 @@ function FacultyLookupContent() {
       </div>
 
       {/* Search Input Bar */}
-      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col sm:flex-row items-center gap-3">
+      <div className="solid-card rounded-2xl p-3.5 sm:p-4 border border-border flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 bg-card shadow-xs">
         <input
           type="text"
           value={searchQuery}
@@ -202,13 +204,13 @@ function FacultyLookupContent() {
             if (e.key === "Enter") handleSearch(searchQuery);
           }}
           placeholder="Enter Faculty ID (e.g. CSFAC01, CSFAC09) or email"
-          className="h-11 flex-1 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-mono uppercase"
+          className="h-10 sm:h-11 flex-1 w-full rounded-xl border border-border bg-background px-3.5 sm:px-4 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-mono uppercase"
         />
         <button
           type="button"
           onClick={() => handleSearch(searchQuery)}
           disabled={loading || !searchQuery}
-          className="h-11 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-6 py-2 text-xs font-bold transition-colors duration-150 disabled:opacity-50"
+          className="h-10 sm:h-11 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-5 sm:px-6 text-xs font-bold transition-all shadow-xs active:scale-95 disabled:opacity-50 shrink-0"
         >
           {loading ? "Searching..." : "Lookup Faculty"}
         </button>
@@ -225,11 +227,11 @@ function FacultyLookupContent() {
           Loading faculty workload, assigned courses, and teaching attendance metrics...
         </div>
       ) : details ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header Profile Title Bar */}
-          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border bg-card space-y-6">
-            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 pb-6 border-b border-border text-center md:text-left">
-              <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border bg-card space-y-4 sm:space-y-6 shadow-xs">
+            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-border text-center md:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-3.5 sm:gap-4 w-full md:w-auto">
                 <div className="shrink-0">
                   <FacultyAvatar
                     firstName={details.faculty.name}
@@ -237,17 +239,26 @@ function FacultyLookupContent() {
                     size="2xl"
                   />
                 </div>
-                <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                    <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-0.5 rounded-lg">
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mb-0.5">
+                    <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-lg">
                       {details.faculty.faculty_id.toUpperCase()}
                     </span>
                     <Badge variant="primary">{details.faculty.department || "CS"}</Badge>
+                    {Boolean(details.faculty.is_hod) ||
+                    (Array.isArray(details.faculty.role)
+                      ? details.faculty.role.includes("hod")
+                      : String(details.faculty.role || "").toLowerCase().includes("hod")) ||
+                    String(details.faculty.designation || "").toLowerCase().includes("hod") ? (
+                      <Badge variant="warning">HOD</Badge>
+                    ) : (
+                      <Badge variant="secondary">{formatDesignation(details.faculty.designation)}</Badge>
+                    )}
                     <Badge variant={details.faculty.status === "inactive" ? "error" : "success"}>
                       {details.faculty.status || "Active"}
                     </Badge>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-foreground">
+                  <h2 className="text-lg sm:text-2xl font-black text-foreground">
                     {formattedFacultyName}
                   </h2>
                   <p className="text-xs sm:text-sm text-muted-foreground">
@@ -265,32 +276,32 @@ function FacultyLookupContent() {
             </div>
 
             {/* Credential Details Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Department</span>
-                <span className="text-sm font-semibold text-foreground">{details.faculty.department || "Computer Science"}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Department</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">{details.faculty.department || "Computer Science"}</span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Designation</span>
-                <span className="text-sm font-semibold text-foreground">{formatDesignation(details.faculty.designation)}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Designation</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">{formatDesignation(details.faculty.designation)}</span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Email Address</span>
-                <span className="text-sm font-semibold text-foreground">{details.faculty.email || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Email Address</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block" title={details.faculty.email || "—"}>{details.faculty.email || "—"}</span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Account Status</span>
-                <span className="text-sm font-semibold text-foreground capitalize">{details.faculty.status || "Active"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Account Status</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground capitalize truncate block">{details.faculty.status || "Active"}</span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Assigned Workload</span>
-                <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Assigned Workload</span>
+                <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 truncate block">
                   {details.stats.total_assigned_subjects} Subject{details.stats.total_assigned_subjects === 1 ? "" : "s"}
                 </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Overall Class Attendance</span>
-                <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Overall Class Attendance</span>
+                <span className="text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 truncate block">
                   {details.stats.avg_attendance_pct}% Avg
                 </span>
               </div>

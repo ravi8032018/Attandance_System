@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
+import { StudentAvatar } from "@/components/ui/UserAvatar";
 import { apiFetch } from "@/lib/api";
 
 import { useUserMe } from "@/hooks/useUserMe";
@@ -33,6 +34,7 @@ function StudentLookupContent() {
   const [activeCrsList, setActiveCrsList] = useState<any[]>([]);
   const [loadingActiveCrs, setLoadingActiveCrs] = useState(false);
   const [modalActionMsg, setModalActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [breakdownViewMode, setBreakdownViewMode] = useState<"auto" | "cards" | "table">("auto");
 
   // 5-Second Auto-Dismiss for Messages System-Wide
   useEffect(() => {
@@ -201,9 +203,9 @@ function StudentLookupContent() {
     totalClasses > 0 ? ((totalPresent / totalClasses) * 100).toFixed(1) : null;
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-24 sm:pb-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
           Student Profile & Attendance Record
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
@@ -212,19 +214,22 @@ function StudentLookupContent() {
       </div>
 
       {/* Search Input */}
-      <div className="solid-card rounded-2xl p-4 border border-border flex flex-col sm:flex-row items-center gap-3">
+      <div className="solid-card rounded-2xl p-3.5 sm:p-4 border border-border flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 bg-card shadow-xs">
         <input
           type="text"
           value={regNo}
           onChange={(e) => setRegNo(e.target.value)}
-          placeholder="Enter Registration No (e.g. REG2024001)"
-          className="h-11 flex-1 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-mono"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch(regNo);
+          }}
+          placeholder="Enter Registration No (e.g. CSBSC2024001)"
+          className="h-10 sm:h-12 flex-1 w-full rounded-xl border border-border bg-background px-3.5 sm:px-4 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-indigo-600 dark:focus:border-indigo-500 transition-colors duration-150 font-mono"
         />
         <button
           type="button"
           onClick={() => handleSearch(regNo)}
           disabled={loading || !regNo}
-          className="h-11 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-6 py-2 text-xs font-bold transition-colors duration-150 disabled:opacity-50"
+          className="h-8 sm:h-10 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 sm:px-6 text-xs font-bold transition-all shadow-xs active:scale-95 disabled:opacity-50 shrink-0"
         >
           {loading ? "Searching..." : "Lookup Student"}
         </button>
@@ -237,79 +242,87 @@ function StudentLookupContent() {
       )}
 
       {student && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Main Profile Card */}
-          <div className="solid-card rounded-2xl p-6 border border-border space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-              <div className="flex items-center gap-4">
-                {student.photo_url ? (
-                  <img
-                    src={student.photo_url}
-                    alt={student.first_name || "Student"}
-                    className="h-16 w-16 rounded-full object-cover border border-border"
-                  />
-                ) : (
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center text-white font-extrabold text-lg">
-                    {(student.first_name?.[0] || "S").toUpperCase()}
-                    {(student.last_name?.[0] || "").toUpperCase()}
+          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border space-y-4 sm:space-y-5 bg-card shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 pb-4 sm:pb-5 border-b border-border text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-3.5 sm:gap-4 w-full sm:w-auto">
+                <StudentAvatar
+                  firstName={student.first_name}
+                  lastName={student.last_name}
+                  photoUrl={student.photo_url}
+                  size="2xl"
+                />
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <h2 className="text-lg sm:text-xl font-extrabold text-foreground">
+                      {student.first_name ? `${student.first_name} ${student.last_name || ""}` : "Student Record"}
+                    </h2>
                   </div>
-                )}
-                <div>
-                  <h2 className="text-xl font-extrabold text-foreground">
-                    {student.first_name ? `${student.first_name} ${student.last_name || ""}` : "Student Record"}
-                  </h2>
-                  <p className="text-sm sm:text-base font-mono font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wide">
-                    {student.registration_no}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-0.5">
+                    <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-lg">
+                      {student.registration_no}
+                    </span>
+                    {student.department && <Badge variant="primary">{student.department}</Badge>}
+                    {student.course && <Badge variant="secondary">{student.course}</Badge>}
+                    {student.semester && <Badge variant="secondary">Sem {student.semester}</Badge>}
+                    {(Boolean(student.is_cr) || (Array.isArray(student.role) ? student.role.includes("cr") : String(student.role || "").includes("cr"))) && (
+                      <Badge variant="warning">CR</Badge>
+                    )}
+                    <Badge variant={student.status === "active" ? "success" : "warning"}>
+                      {(student.status || "active").toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {student.department && <Badge variant="primary">{student.department}</Badge>}
-                {student.course && <Badge variant="secondary">{student.course}</Badge>}
-                {student.semester && <Badge variant="secondary">Semester {student.semester}</Badge>}
-                {(Boolean(student.is_cr) || (Array.isArray(student.role) ? student.role.includes("cr") : String(student.role || "").includes("cr"))) && (
-                  <Badge variant="warning">Class Representative (CR)</Badge>
-                )}
-                <Badge variant={student.status === "active" ? "success" : "warning"}>
-                  {(student.status || "active").toUpperCase()}
-                </Badge>
               </div>
             </div>
 
             {/* Information Grid based on backend fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
-              <div className="overflow-hidden">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block ">Email Address</span>
-                <span className="text-sm font-semibold text-foreground">{student.email || "—"}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Email Address</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block" title={student.email || "—"}>
+                  {student.email || "—"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Contact Number</span>
-                <span className="text-sm font-semibold text-foreground">{student.contact_number || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Contact Number</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">
+                  {student.contact_number || "—"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Gender</span>
-                <span className="text-sm font-semibold capitalize text-foreground">{student.gender || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Gender</span>
+                <span className="text-xs sm:text-sm font-semibold capitalize text-foreground truncate block">
+                  {student.gender || "—"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Date of Birth</span>
-                <span className="text-sm font-semibold text-foreground">{student.dob || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Date of Birth</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">
+                  {student.dob || "—"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Guardian Email</span>
-                <span className="text-sm font-semibold text-foreground">{student.guardian_email || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Guardian Email</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block" title={student.guardian_email || "—"}>
+                  {student.guardian_email || "—"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Batch Name</span>
-                <span className="text-sm font-semibold text-foreground">{student.batch_name || "—"}</span>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">Batch Name</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate block">
+                  {student.batch_name || "—"}
+                </span>
               </div>
             </div>
 
             {/* CR Management Actions (for Admin & HOD ONLY - hidden from regular faculty) */}
             {(isAdmin || isHod) && (
-              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="pt-3.5 border-t border-border/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Class Representative (CR) Status Management</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                     Designate or revoke CR privileges for this student (Max 2 CRs per semester/department rule applies).
                   </p>
                 </div>
@@ -320,7 +333,7 @@ function StudentLookupContent() {
                       type="button"
                       disabled={crSubmitting}
                       onClick={openCrManagementModal}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5 ${isCurrentCr
+                      className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 flex items-center justify-center gap-1.5 ${isCurrentCr
                         ? "bg-rose-600 hover:bg-rose-700 text-white"
                         : "bg-indigo-600 hover:bg-indigo-700 text-white"
                         }`}
@@ -349,10 +362,12 @@ function StudentLookupContent() {
 
           {/* Attendance Stats section from real backend aggregates */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-foreground">Attendance Overview</h3>
+            <h3 className="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
+              <span>📊 Attendance Overview</span>
+            </h3>
             {totalClasses > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   <StatCard
                     title="Classes Attended"
                     value={`${totalPresent} / ${totalClasses}`}
@@ -382,10 +397,108 @@ function StudentLookupContent() {
                   />
                 </div>
 
-                {/* Subject wise breakdown table */}
-                <div className="solid-card rounded-2xl p-6 border border-border space-y-4">
-                  <h4 className="text-sm font-bold text-foreground">Subject Breakdown</h4>
-                  <div className="overflow-x-auto">
+                {/* Subject wise breakdown table & cards with View Switcher */}
+                <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border space-y-4 bg-card shadow-xs">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pb-1">
+                    <h4 className="text-sm font-extrabold text-foreground tracking-wider">
+                      Subject Attendance Breakdown
+                    </h4>
+
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/80">
+                      <button
+                        type="button"
+                        onClick={() => setBreakdownViewMode("cards")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${breakdownViewMode === "cards"
+                          ? "bg-background text-foreground shadow-xs border border-border/50"
+                          : breakdownViewMode === "table"
+                            ? "text-muted-foreground hover:text-foreground"
+                            : "bg-background text-foreground shadow-xs border border-border/50 sm:bg-transparent sm:text-muted-foreground sm:shadow-none sm:border-transparent"
+                          }`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        <span>Cards View</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBreakdownViewMode("table")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${breakdownViewMode === "table"
+                          ? "bg-background text-foreground shadow-xs border border-border/50"
+                          : breakdownViewMode === "cards"
+                            ? "text-muted-foreground hover:text-foreground"
+                            : "text-muted-foreground hover:text-foreground sm:bg-background sm:text-foreground sm:shadow-xs sm:border sm:border-border/50"
+                          }`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        <span>Table View</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Cards View (Default on Mobile < 640px via CSS, or when explicitly chosen) */}
+                  <div
+                    className={
+                      breakdownViewMode === "cards"
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                        : breakdownViewMode === "table"
+                          ? "hidden"
+                          : "grid grid-cols-1 gap-3 sm:hidden"
+                    }
+                  >
+                    {reports.map((report) => {
+                      const subjName =
+                        report.subject_name ||
+                        curriculumMap[report.subject_code] ||
+                        student?.subjects?.[report.subject_code] ||
+                        "Subject " + report.subject_code;
+                      const isEligible = report.attendance_percentage >= 75;
+                      return (
+                        <div key={report.subject_code} className="p-3.5 rounded-xl border border-border bg-muted/40 space-y-2 hover:border-indigo-500/30 transition-all">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                              {report.subject_code}
+                            </span>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${isEligible ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
+                              {report.attendance_percentage}%
+                            </span>
+                          </div>
+
+                          <div className="text-[13px] font-bold text-foreground line-clamp-2" title={subjName}>
+                            {subjName}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/50 text-center text-[11px]">
+                            <div>
+                              <span className="text-[10px] text-muted-foreground block font-bold">Total</span>
+                              <span className="font-extrabold text-foreground">{report.total_classes}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground block font-bold">Present</span>
+                              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{report.present_count}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground block font-bold">Absent</span>
+                              <span className="font-extrabold text-rose-600 dark:text-rose-400">{report.absent_count}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Table View (Default on Desktop >= 640px via CSS, or when explicitly chosen) */}
+                  <div
+                    className={
+                      breakdownViewMode === "table"
+                        ? "block overflow-x-auto"
+                        : breakdownViewMode === "cards"
+                          ? "hidden"
+                          : "hidden sm:block overflow-x-auto"
+                    }
+                  >
                     <table className="w-full text-center text-xs">
                       <thead>
                         <tr className="border-b border-border text-muted-foreground font-bold uppercase tracking-wider text-center">
@@ -405,7 +518,7 @@ function StudentLookupContent() {
                             student?.subjects?.[report.subject_code] ||
                             "Subject " + report.subject_code;
                           return (
-                            <tr key={report.subject_code}>
+                            <tr key={report.subject_code} className="hover:bg-muted/30 transition-colors">
                               <td className="py-3 px-2 font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                 {report.subject_code}
                               </td>
@@ -419,7 +532,7 @@ function StudentLookupContent() {
                               <td className="py-3 px-2 text-center font-bold text-rose-600 dark:text-rose-400">
                                 {report.absent_count}
                               </td>
-                              <td className="py-3 px-2 text-right font-extrabold">
+                              <td className="py-3 px-2 text-center font-extrabold">
                                 <span className={report.attendance_percentage >= 75 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
                                   {report.attendance_percentage}%
                                 </span>

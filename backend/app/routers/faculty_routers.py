@@ -627,7 +627,9 @@ async def get_faculty_details(
             "status": fac.get("status", "active"),
             "office_location": fac.get("office_location", ""),
             "contact_number": fac.get("contact_number", ""),
-            "photo_url": fac.get("photo_url", "")
+            "photo_url": fac.get("photo_url", ""),
+            "is_hod": bool(fac.get("is_hod", False)) or "hod" in str(fac.get("role", "")).lower() or "hod" in str(fac.get("designation", "")).lower(),
+            "role": fac.get("role", "faculty")
         },
         "stats": {
             "total_assigned_subjects": len(assigned_subjects),
