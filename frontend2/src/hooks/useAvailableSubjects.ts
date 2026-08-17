@@ -18,7 +18,7 @@ export function useAvailableSubjects({ semester, department }: UseAvailableSubje
     let cancelled = false;
 
     async function loadAvailablePool() {
-      if (!semester || !department) {
+      if (!department) {
         setAvailableSubjects([]);
         return;
       }
@@ -27,12 +27,18 @@ export function useAvailableSubjects({ semester, department }: UseAvailableSubje
       setAvailableError(null);
 
       try {
-        const query = `?department=${encodeURIComponent(department)}&semester=${encodeURIComponent(semester)}`;
+        const isSemAll = !semester || semester === "all";
+        const queryParams = new URLSearchParams({ department });
+        if (!isSemAll) {
+          queryParams.append("semester", semester);
+        }
+        const query = `?${queryParams.toString()}`;
+
         const res = await apiFetch(`/curriculum/subjects${query}`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          // Fallback to /curriculum?department=...&semester=...
+          // Fallback to /curriculum?department=...
           const fallbackRes = await apiFetch(`/curriculum${query}`);
           const fallbackData = await fallbackRes.json().catch(() => ({}));
           if (fallbackRes.ok && !cancelled) {

@@ -267,19 +267,19 @@ export default function SubjectDetailsPage() {
           <span>Back to Curriculum Catalog</span>
         </Link>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2.5 mb-1">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
               {details?.subject_name || subjectCode}
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center sm:justify-end gap-2.5 mb-1">
-            <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-lg">
+          <div className="flex flex-wrap items-center sm:justify-end gap-2.5">
+            <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-0.5 rounded-full">
               {subjectCode}
             </span>
             <Badge variant="secondary">Sem {details?.semester || ""}</Badge>
-            <Badge variant="primary">Dept {details?.department || ""}</Badge>
+            <Badge variant="muted">Dept {details?.department || ""}</Badge>
           </div>
         </div>
       </div>
@@ -298,9 +298,9 @@ export default function SubjectDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Instructor & Core Metrics Header Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Instructor Card */}
               <div className="solid-card rounded-2xl border border-border p-5 bg-card flex flex-col justify-between shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block mb-2">
@@ -368,7 +368,7 @@ export default function SubjectDetailsPage() {
             </div>
 
             {/* REAL INTERACTIVE DATA GRAPHS SECTION */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Graph 1: Class Session Attendance Trend Chart (Bar & Line Chart) */}
               <div className="lg:col-span-2 solid-card rounded-2xl p-5 sm:p-6 border border-border bg-card space-y-4 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -664,7 +664,7 @@ export default function SubjectDetailsPage() {
             </div>
 
             {/* Analytical Trends: Weekly & Monthly Performance */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">
@@ -713,7 +713,7 @@ export default function SubjectDetailsPage() {
             </div>
 
             {/* Enrolled Student Attendance Roster Table */}
-            <div className="solid-card rounded-2xl border border-border overflow-hidden bg-card space-y-4 p-5">
+            <div className="solid-card rounded-2xl border border-border overflow-hidden bg-card space-y-3 p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                 <div>
                   <h3 className="text-base font-extrabold text-foreground">
@@ -809,7 +809,7 @@ export default function SubjectDetailsPage() {
                       <div
                         key={st.registration_no}
                         onClick={() => router.push(`/faculty/get-student-by-id?reg=${encodeURIComponent(st.registration_no)}`)}
-                        className="solid-card rounded-2xl border border-border p-4 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between bg-background/50 space-y-3 group"
+                        className="rounded-2xl border border-border p-4 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between bg-card space-y-3 group"
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
@@ -846,7 +846,7 @@ export default function SubjectDetailsPage() {
 
                     {/* Show All / Show Less Button for Cards View */}
                     {filteredRoster.length > 5 && (
-                      <div className="col-span-full text-center pt-2">
+                      <div className="col-span-full text-center pt-0">
                         <button
                           type="button"
                           onClick={() => setShowAllRosterCards(!showAllRosterCards)}
@@ -889,13 +889,13 @@ export default function SubjectDetailsPage() {
             </div>
 
             {/* Recent Attendance Sessions Log */}
-            <div className="solid-card rounded-2xl border border-border p-5 bg-card space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1 border-b border-border">
+            <div className="rounded-2xl border border-border p-5 bg-card space-y-4">
+              <div className="flex justify-between items-center gap-2.5 pb-2 border-b border-border">
                 <h3 className="text-base font-extrabold text-foreground">
-                  Recent Attendance Sessions Log
+                  Recent Attendance Logs
                 </h3>
-                <Badge variant="primary" className="font-mono text-xs self-start sm:self-auto">
-                  Total {details.stats.total_classes || details.sessions.length} Sessions Logged
+                <Badge variant="primary" className="font-mono text-xs self-start sm:self-auto" showDot={false}>
+                  {details.stats.total_classes || details.sessions.length}
                 </Badge>
               </div>
 
@@ -908,7 +908,7 @@ export default function SubjectDetailsPage() {
                   {/* Mobile Cards View for Recent Sessions Log */}
                   <div className="grid grid-cols-1 gap-3 sm:hidden">
                     {(showAllSessions ? details.sessions : details.sessions.slice(0, 5)).map((sess) => (
-                      <div key={sess.session_id} className="p-3.5 rounded-xl border border-border bg-muted/40 space-y-2">
+                      <div key={sess.session_id} className="p-3.5 rounded-xl border border-border  space-y-2">
                         <div className="flex items-center justify-between gap-2 ">
                           <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 overflow-ellipsis truncate">
                             {sess.session_id}
@@ -925,7 +925,7 @@ export default function SubjectDetailsPage() {
                         </div>
 
                         <div className="flex items-center justify-between text-xs pt-1">
-                          <span className="text-muted-foreground font-medium">Class Date & Time:</span>
+                          {/* <span className="text-muted-foreground font-medium">Class Date & Time:</span> */}
                           <span className="font-bold text-foreground">
                             {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>

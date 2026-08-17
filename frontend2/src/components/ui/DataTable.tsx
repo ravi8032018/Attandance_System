@@ -16,6 +16,8 @@ interface DataTableProps<T> {
   maxHeight?: string;
   textsize?: string;
   onRowClick?: (item: T) => void;
+  isRowExpanded?: (item: T) => boolean;
+  renderExpandedRow?: (item: T) => React.ReactNode;
 }
 
 export function DataTable<T>({
@@ -28,6 +30,8 @@ export function DataTable<T>({
   maxHeight = "max-h-[300px]",
   textsize = "text-sm",
   onRowClick,
+  isRowExpanded,
+  renderExpandedRow,
 }: DataTableProps<T>) {
   return (
     <div className={`w-full overflow-hidden rounded-2xl solid-card border border-border ${className}`}>
@@ -66,20 +70,32 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
-                <tr
-                  key={keyExtractor(item)}
-                  onClick={() => onRowClick && onRowClick(item)}
-                  className={`hover:bg-muted/50 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 ${onRowClick ? "cursor-pointer" : ""
-                    }`}
-                >
-                  {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={`py-2.5 sm:py-3.5 px-2 sm:px-4 text-foreground font-semibold text-center ${col.className || ""}`}>
-                      {col.accessor(item)}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              data.map((item) => {
+                const key = keyExtractor(item);
+                const expanded = isRowExpanded ? isRowExpanded(item) : false;
+                return (
+                  <React.Fragment key={key}>
+                    <tr
+                      onClick={() => onRowClick && onRowClick(item)}
+                      className={`hover:bg-muted/50 hover:border-l-2 hover:border-l-indigo-600 dark:hover:border-l-indigo-500 transition-colors duration-150 ${onRowClick ? "cursor-pointer" : ""
+                        } ${expanded ? "bg-muted/30" : ""}`}
+                    >
+                      {columns.map((col, cIdx) => (
+                        <td key={cIdx} className={`py-2.5 sm:py-3.5 px-2 sm:px-4 text-foreground font-semibold text-center ${col.className || ""}`}>
+                          {col.accessor(item)}
+                        </td>
+                      ))}
+                    </tr>
+                    {expanded && renderExpandedRow && (
+                      <tr key={`${key}-expanded`} className="bg-muted/20 border-b border-border">
+                        <td colSpan={columns.length} className="p-4 text-left">
+                          {renderExpandedRow(item)}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </tbody>
         </table>
