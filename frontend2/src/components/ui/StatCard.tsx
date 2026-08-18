@@ -40,20 +40,20 @@ export function StatCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl solid-card solid-card-hover p-5 border border-border ${className}`}
+      className={`relative overflow-hidden rounded-2xl solid-card solid-card-hover p-3.5 sm:p-5 border border-border ${className}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-start justify-between gap-2 sm:gap-3 min-w-0">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground truncate" title={title}>
             {title}
           </p>
-          <h3 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          <h3 className="mt-1 text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground truncate" title={String(value)}>
             {value}
           </h3>
         </div>
         {icon && (
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-lg font-bold shadow-xs transition-colors duration-150 ${iconStyle}`}
+            className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl border text-base sm:text-lg font-bold shadow-xs transition-colors duration-150 ${iconStyle}`}
           >
             {icon}
           </div>
@@ -61,10 +61,10 @@ export function StatCard({
       </div>
 
       {(subText || trend) && (
-        <div className="mt-4 flex items-center gap-2 text-xs">
+        <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2 text-xs min-w-0">
           {trend && (
             <span
-              className={`inline-flex items-center font-extrabold px-2.5 py-0.5 rounded-full text-[11px] border ${trend.positive
+              className={`inline-flex items-center font-extrabold px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] border shrink-0 ${trend.positive
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/80"
                 : "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/80"
                 }`}
@@ -73,10 +73,11 @@ export function StatCard({
             </span>
           )}
           {subText && (
-            <span className="text-muted-foreground font-semibold">{subText}</span>
+            <span className="text-muted-foreground font-semibold text-[10px] sm:text-xs truncate" title={subText}>{subText}</span>
           )}
         </div>
       )}
     </div>
   );
 }
+

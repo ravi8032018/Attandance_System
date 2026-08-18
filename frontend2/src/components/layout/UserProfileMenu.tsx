@@ -262,7 +262,7 @@ export function UserProfileMenu() {
               </button>
 
               <a
-                href="https://github.com"
+                href="https://github.com/ravi8032018/Attandance_System"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setOpen(false)}

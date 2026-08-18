@@ -102,8 +102,22 @@ export function getFacultyInitials(name?: string, fallback = "F"): string {
 
 export function getMissingProfileFields(user: any): string[] {
   if (!user) return [];
-  const required = ["first_name", "last_name", "email", "phone_number", "contact_number"];
-  return required.filter((field: string) => !user[field] || String(user[field]).trim() === "");
+  const missing: string[] = [];
+  if (!user.first_name || String(user.first_name).trim() === "") missing.push("First Name");
+  if (!user.last_name || String(user.last_name).trim() === "") missing.push("Last Name");
+  if (!user.email || String(user.email).trim() === "") missing.push("Email");
+
+  const hasPhone = Boolean(
+    (user.contact_number && String(user.contact_number).trim() !== "") ||
+    (user.phone_number && String(user.phone_number).trim() !== "") ||
+    (user.phone && String(user.phone).trim() !== "")
+  );
+
+  if (!hasPhone) {
+    missing.push("Contact Number");
+  }
+
+  return missing;
 }
 
 export function formatDateTimeIST(dateInput: string | Date | undefined | null): string {

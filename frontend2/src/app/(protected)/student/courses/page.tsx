@@ -32,6 +32,55 @@ interface StudentSummaryData {
   subject_breakdown: SubjectBreakdown[];
 }
 
+function getPaletteForAttendance(pct: number) {
+  if (pct >= 75) {
+    return {
+      gradient: "from-emerald-600 via-teal-500 to-green-400",
+      badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+      barBg: "bg-emerald-500",
+    };
+  }
+  if (pct >= 60) {
+    return {
+      gradient: "from-indigo-600 via-violet-500 to-blue-400",
+      badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+      textColor: "text-indigo-600 dark:text-indigo-400",
+      barBg: "bg-indigo-500",
+    };
+  }
+  if (pct >= 40) {
+    return {
+      gradient: "from-amber-600 via-orange-500 to-yellow-400",
+      badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      textColor: "text-amber-600 dark:text-amber-400",
+      barBg: "bg-amber-500",
+    };
+  }
+  return {
+    gradient: "from-rose-600 via-pink-500 to-red-400",
+    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    textColor: "text-rose-600 dark:text-rose-400",
+    barBg: "bg-rose-500",
+  };
+}
+
+function getClassesNeededFor75(attended: number, total: number) {
+  if (total === 0) return 0;
+  const currentPct = (attended / total) * 100;
+  if (currentPct >= 75.0) return 0;
+  const needed = Math.ceil((0.75 * total - attended) / 0.25);
+  return Math.max(0, needed);
+}
+
+function getSafeClassesToMiss(attended: number, total: number) {
+  if (total === 0) return 0;
+  const currentPct = (attended / total) * 100;
+  if (currentPct < 75.0) return 0;
+  const allowed = Math.floor((attended - 0.75 * total) / 0.75);
+  return Math.max(0, allowed);
+}
+
 export default function StudentCoursesPage() {
   const { user } = useUserMe();
   const [loading, setLoading] = useState(true);
@@ -63,7 +112,7 @@ export default function StudentCoursesPage() {
     const matchesSearch =
       sub.subject_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.subject_name.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
     if (filterStatus === "eligible") return sub.is_eligible;
@@ -75,9 +124,9 @@ export default function StudentCoursesPage() {
   const atRiskCount = subjects.filter((s) => !s.is_eligible).length;
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
@@ -85,17 +134,7 @@ export default function StudentCoursesPage() {
             </span>
             <span>My Enrolled Courses</span>
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Explore your active curriculum courses, monitor real-time class attendance stats, and track academic standing.
-          </p>
         </div>
-
-        <Link
-          href="/student/dashboard"
-          className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-xs font-bold transition-all shadow-xs self-start sm:self-auto flex items-center gap-1.5"
-        >
-          <span>←</span> Back to Dashboard
-        </Link>
       </div>
 
       {/* Overview Stat Cards */}
@@ -131,7 +170,7 @@ export default function StudentCoursesPage() {
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="solid-card rounded-2xl p-4 sm:p-5 border border-border bg-card space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
+      <div className="solid-card rounded-2xl p-4 border border-border bg-card space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <svg
@@ -152,46 +191,65 @@ export default function StudentCoursesPage() {
           />
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => setFilterStatus("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
-              filterStatus === "all"
-                ? "bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500 shadow-xs"
-                : "bg-background text-muted-foreground border-border hover:bg-muted"
-            }`}
-          >
-            All Courses ({subjects.length})
-          </button>
-          <button
-            onClick={() => setFilterStatus("eligible")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
-              filterStatus === "eligible"
-                ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs"
-                : "bg-background text-muted-foreground border-border hover:bg-muted"
-            }`}
-          >
-            ✓ Good Standing ({eligibleCount})
-          </button>
-          <button
-            onClick={() => setFilterStatus("at_risk")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
-              filterStatus === "at_risk"
-                ? "bg-rose-600 dark:bg-rose-500 text-white border-rose-600 dark:border-rose-500 shadow-xs"
-                : "bg-background text-muted-foreground border-border hover:bg-muted"
-            }`}
-          >
-            ⚠️ At Risk ({atRiskCount})
-          </button>
+        {/* Filter Segmented Bar (Equal 3-Col Grid on Mobile, Flex on Desktop - No Horizontal Scroll!) */}
+        <div className="w-full sm:w-auto">
+          <div className="py-1 px-0 rounded-xl bg-muted/60 border border-border grid grid-cols-3 sm:flex sm:items-center gap-1 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setFilterStatus("all")}
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all duration-150 flex items-center justify-center gap-1 sm:gap-1.5 ${filterStatus === "all"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <span>All</span>
+              <span className="hidden sm:inline">Courses</span>
+              <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${filterStatus === "all" ? "bg-white/20 text-white" : "bg-muted text-muted-foreground border border-border"
+                }`}>
+                {subjects.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterStatus("eligible")}
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all duration-150 flex items-center justify-center gap-1 sm:gap-1.5 ${filterStatus === "eligible"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400"
+                }`}
+            >
+              <span className="hidden sm:inline">✓</span>
+              <span>Eligible</span>
+              <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${filterStatus === "eligible" ? "bg-white/20 text-white" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                }`}>
+                {eligibleCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterStatus("at_risk")}
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all duration-150 flex items-center justify-center gap-1 sm:gap-1.5 ${filterStatus === "at_risk"
+                ? "bg-rose-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400"
+                }`}
+            >
+              <span className="hidden sm:inline">⚠️</span>
+              <span>At Risk</span>
+              <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${filterStatus === "at_risk" ? "bg-white/20 text-white" : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                }`}>
+                {atRiskCount}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Courses Cards Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((idx) => (
-            <div key={idx} className="solid-card rounded-2xl p-6 border border-border bg-card animate-pulse space-y-4">
+            <div key={idx} className="solid-card rounded-2xl p-5 border border-border bg-card animate-pulse space-y-4">
               <div className="flex items-center justify-between">
                 <div className="h-4 w-20 bg-muted rounded-md" />
                 <div className="h-6 w-16 bg-muted rounded-full" />
@@ -213,84 +271,86 @@ export default function StudentCoursesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSubjects.map((subject) => {
             const isEligible = subject.is_eligible;
             const pct = subject.attendance_pct;
+            const palette = getPaletteForAttendance(pct);
+            const needed = getClassesNeededFor75(subject.attended_classes, subject.total_classes);
+            const safeMiss = getSafeClassesToMiss(subject.attended_classes, subject.total_classes);
 
             return (
               <div
                 key={subject.subject_code}
-                className="group solid-card rounded-2xl p-6 border border-border bg-card hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between space-y-5 relative overflow-hidden"
+                className="group solid-card rounded-2xl p-5 border border-border bg-card hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden"
               >
                 {/* Accent Top Bar */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${
-                    isEligible ? "bg-emerald-500 dark:bg-emerald-400" : "bg-rose-500 dark:bg-rose-400"
-                  }`}
+                  className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${palette.gradient}`}
                 />
 
-                <div className="space-y-4 pt-1">
-                  {/* Top Meta */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                      {subject.subject_code}
-                    </span>
-                    <Badge variant={isEligible ? "success" : "error"} className="text-[11px]">
-                      {isEligible ? "✓ Eligible" : "⚠️ Warning (<75%)"}
+                <div className="space-y-1">
+                  {/* Course Title */}
+                  <div className="flex flex-row gap-2 items-center justify-between pb-1">
+                    <h3 className="text-sm font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug line-clamp-2 truncate">
+                      {subject.subject_name}
+                    </h3>
+                    <Badge variant={isEligible ? "success" : "error"} showDot={false} className="text-[11px] font-extrabold flex-shrink-0">
+                      {isEligible ? "Eligible" : "Warning (<75%)"}
                     </Badge>
                   </div>
 
-                  {/* Course Title */}
-                  <div>
-                    <h3 className="text-base font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
-                      {subject.subject_name}
-                    </h3>
-                    <p className="text-[11px] font-semibold text-muted-foreground mt-1">
-                      Department of {summary?.student_info?.department || user?.department || "CS"} • Sem {summary?.student_info?.semester || user?.semester || "N/A"}
-                    </p>
-                  </div>
-
                   {/* Attendance Bar & Metrics */}
-                  <div className="space-y-2 pt-2 border-t border-border/60">
+                  <div className="space-y-2 pt-1 border-t border-border/60">
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="text-muted-foreground">Attendance Score</span>
-                      <span className={`font-mono text-sm font-black ${isEligible ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                      <span className={`font-mono text-sm font-black ${palette.textColor}`}>
                         {pct}%
                       </span>
                     </div>
 
                     {/* Progress Bar Container */}
-                    <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden relative">
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden relative">
                       {/* Cutoff Threshold Line at 75% */}
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10"
+                        className="absolute top-0 bottom-0 w-1.5 bg-amber-500 z-10"
                         style={{ left: "75%" }}
                         title="75% Cutoff Threshold"
                       />
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isEligible ? "bg-emerald-500 dark:bg-emerald-400" : "bg-rose-500 dark:bg-rose-400"
-                        }`}
+                        className={`h-full rounded-full bg-gradient-to-r ${palette.gradient} transition-all duration-500`}
                         style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                       />
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold pt-0.5">
                       <span>{subject.attended_classes} Attended</span>
-                      <span>{subject.total_classes} Total Held</span>
+                      <span>{subject.total_classes} Total Classes</span>
                     </div>
+                  </div>
+
+                  {/* Hint */}
+                  <div className="flex items-center justify-between pt-1.5 border-t border-border/60 text-[11px] font-bold">
+                    {subject.total_classes === 0 ? (
+                      <span className="text-indigo-500">ℹ️ No classes held yet.</span>
+                    ) : isEligible ? (
+                      <span className="text-emerald-600 dark:text-emerald-400">You Can miss up to {safeMiss} {safeMiss === 1 ? "class" : "classes"}.</span>
+                    ) : (
+                      <span className="text-rose-600 dark:text-rose-400">⚠️ Attend next {needed}  {needed === 1 ? "class" : "classes"}</span>
+                    )}
+
+                    {/* Footer Action Button */}
+                    <Link
+                      href={`/student/courses/${encodeURIComponent(subject.subject_code)}`}
+                      className="w-fit px-2 py-0.5 rounded-xl border border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 text-indigo-600 dark:text-indigo-300 text-xs transition-all shadow-xs flex items-center justify-center gap-2 group-hover:shadow-md mt-2"
+                    >
+                      <span>Details</span>
+                      <span className="transition-transform group-hover:translate-x-1">→</span>
+                    </Link>
                   </div>
                 </div>
 
-                {/* Footer Action Button */}
-                <Link
-                  href={`/student/courses/${encodeURIComponent(subject.subject_code)}`}
-                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 text-indigo-600 dark:text-indigo-300 font-extrabold text-xs transition-all shadow-xs flex items-center justify-center gap-2 group-hover:shadow-md"
-                >
-                  <span>View Detailed Performance</span>
-                  <span className="transition-transform group-hover:translate-x-1">→</span>
-                </Link>
+
               </div>
             );
           })}
@@ -299,3 +359,4 @@ export default function StudentCoursesPage() {
     </main>
   );
 }
+

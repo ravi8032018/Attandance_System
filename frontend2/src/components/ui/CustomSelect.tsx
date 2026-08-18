@@ -148,7 +148,7 @@ export function CustomSelect({
                       <div className="truncate">
                         <span className="text-xs font-bold block truncate">{opt.label}</span>
                         {opt.sublabel && (
-                          <span className="text-[10px] text-muted-foreground block truncate">
+                          <span className="hidden sm:inline text-[10px] text-muted-foreground block truncate">
                             {opt.sublabel}
                           </span>
                         )}

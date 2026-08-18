@@ -36,6 +36,55 @@ interface StudentSummaryData {
   }>;
 }
 
+function getPaletteForAttendance(pct: number) {
+  if (pct >= 75) {
+    return {
+      gradient: "from-emerald-600 via-teal-500 to-green-400",
+      badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+      barBg: "bg-emerald-500",
+    };
+  }
+  if (pct >= 60) {
+    return {
+      gradient: "from-indigo-600 via-violet-500 to-blue-400",
+      badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+      textColor: "text-indigo-600 dark:text-indigo-400",
+      barBg: "bg-indigo-500",
+    };
+  }
+  if (pct >= 40) {
+    return {
+      gradient: "from-amber-600 via-orange-500 to-yellow-400",
+      badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      textColor: "text-amber-600 dark:text-amber-400",
+      barBg: "bg-amber-500",
+    };
+  }
+  return {
+    gradient: "from-rose-600 via-pink-500 to-red-400",
+    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    textColor: "text-rose-600 dark:text-rose-400",
+    barBg: "bg-rose-500",
+  };
+}
+
+function getClassesNeededFor75(attended: number, total: number) {
+  if (total === 0) return 0;
+  const currentPct = (attended / total) * 100;
+  if (currentPct >= 75.0) return 0;
+  const needed = Math.ceil((0.75 * total - attended) / 0.25);
+  return Math.max(0, needed);
+}
+
+function getSafeClassesToMiss(attended: number, total: number) {
+  if (total === 0) return 0;
+  const currentPct = (attended / total) * 100;
+  if (currentPct < 75.0) return 0;
+  const allowed = Math.floor((attended - 0.75 * total) / 0.75);
+  return Math.max(0, allowed);
+}
+
 function StudentProfileContent() {
 
   const { user, isCr } = useUserMe();
@@ -152,20 +201,22 @@ function StudentProfileContent() {
       )}
 
       {/* Top Navigation & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+        {/* header */}
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
             Student Profile & Credentials
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Official academic registration credentials, attendance performance, and course enrollment.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        {/* 50/50 Half Screen Split Action Buttons on Mobile, Flex on Desktop */}
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center">
           <button
             onClick={() => setShowEditModal(true)}
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+            className="w-full sm:w-auto justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
           >
             <span>✏️</span>
             <span>Edit Profile</span>
@@ -173,13 +224,12 @@ function StudentProfileContent() {
 
           <Link
             href="/student/dashboard"
-            className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+            className="w-full sm:w-auto justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
           >
-            <span>← Back to Dashboard</span>
+            <span>← Dashboard</span>
           </Link>
         </div>
       </div>
-
 
       {loading ? (
         <div className="p-16 text-center text-xs font-bold text-muted-foreground animate-pulse flex flex-col items-center gap-2">
@@ -189,72 +239,70 @@ function StudentProfileContent() {
       ) : (
         <div className="space-y-6">
           {/* Main Hero / Profile Card */}
-          <div className="solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-6 bg-card shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6 border-b border-border/80">
-              {/* Dynamic User Avatar (Image with auto-initials fallback) */}
-              <UserAvatar
-                name={name}
-                firstName={user?.first_name}
-                lastName={user?.last_name}
-                photoUrl={photoUrl}
-                size="3xl"
-              />
+          <div className="solid-card rounded-2xl p-5 sm:p-7 border border-border space-y-3 bg-card shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4 pb-3 sm:pb-5 border-b border-border text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-4.5 w-full sm:w-auto">
+                <UserAvatar
+                  name={name}
+                  firstName={user?.first_name}
+                  lastName={user?.last_name}
+                  photoUrl={photoUrl}
+                  size="3xl"
+                  className="ring-1 sm:ring-2 ring-indigo-500/20 shadow-md shrink-0"
+                />
 
-              <div className="space-y-2 flex-1">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">{name}</h2>
-                  {summary && (
-                    <Badge variant={summary.overall_total_classes === 0 || summary.is_eligible ? "success" : "error"}>
-                      {summary.overall_total_classes === 0 ? "✓ Good Standing (No Classes Yet)" : summary.is_eligible ? "✓ Good Standing (≥75%)" : "⚠️ Low Attendance (<75%)"}
-                    </Badge>
-                  )}
-                </div>
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                    <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight truncate">{name}</h2>
+                  </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-mono font-bold text-foreground bg-muted px-2.5 py-1 rounded-md">
-                    Reg: {regNo}
-                  </span>
-                  {
-                    isCr ? <Badge variant="teal">CR</Badge> : null
-                  }
-                  <Badge variant="success">Active</Badge>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-0.5">
+                    <Badge variant="muted" showDot={false} className="text-xs font-extrabold">{regNo}</Badge>
+                    <Badge variant="muted" showDot={false} className="text-xs font-extrabold">{dept}</Badge>
+                    <Badge variant="muted" showDot={false} className="text-xs font-extrabold">Sem {sem}</Badge>
+                    {isCr ? <Badge variant="teal" showDot={false} className="text-xs font-extrabold">CR</Badge> : null}
+                    {summary && (
+                      <Badge variant={summary.overall_total_classes === 0 || summary.is_eligible ? "success" : "error"} showDot={false} className="inline-flex sm:hidden text-xs font-extrabold">
+                        {summary.overall_total_classes === 0 ? "✓ Good Standing" : summary.is_eligible ? "✓ Eligible (≥75%)" : "⚠️ Warning (<75%)"}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Academic Standing Stat Cards */}
             {summary && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <StatCard
                   title="Overall Attendance"
                   value={`${summary.overall_attendance_pct}%`}
-                  subtitle={`${summary.overall_attended} / ${summary.overall_total_classes} Total Classes Attended`}
+                  subtitle={`${summary.overall_attended} / ${summary.overall_total_classes} Classes Attended`}
                   variant={summary.overall_total_classes === 0 || summary.overall_attendance_pct >= 75 ? "emerald" : "rose"}
                   icon={
-                    <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   }
                 />
                 <StatCard
-                  title="Term Examination Eligibility"
+                  title="Exam Eligibility"
                   value={summary.overall_total_classes === 0 ? "Good Standing" : summary.is_eligible ? "Eligible" : "Flagged"}
-                  subtitle={summary.overall_total_classes === 0 ? "No sessions conducted for batch yet" : summary.is_eligible ? "Satisfies 75% Cutoff Rule" : "Requires Minimum 75% Attendance"}
+                  subtitle={summary.overall_total_classes === 0 ? "No sessions held yet" : summary.is_eligible ? "Satisfies 75% Rule" : "Below 75% Cutoff"}
                   variant={summary.overall_total_classes === 0 || summary.is_eligible ? "indigo" : "rose"}
                   icon={
-                    <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   }
                 />
-
                 <StatCard
-                  title="Enrolled Subjects"
+                  title="Enrolled Courses"
                   value={summary.subject_breakdown.length.toString()}
-                  subtitle="Curriculum Courses Enrolled"
+                  subtitle="Active Curriculum Subjects"
                   variant="purple"
                   icon={
-                    <svg className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   }
@@ -262,144 +310,215 @@ function StudentProfileContent() {
               </div>
             )}
 
-            {/* Official Credentials Grid */}
+            {/* Official Credentials Key-Value Card Grid */}
             <div className="space-y-3 pt-2">
               {missingFields.length > 0 && (
-                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2 mb-4">
+                <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2 mb-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black text-amber-500 dark:text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                    <h4 className="text-xs font-extrabold text-amber-600 dark:text-amber-300 uppercase tracking-wider flex items-center gap-2">
                       <span>⚠️ Profile Incomplete ({missingFields.length} {missingFields.length === 1 ? "field" : "fields"} remaining)</span>
                     </h4>
                     <button
                       onClick={() => setShowEditModal(true)}
-                      className="text-xs font-bold bg-amber-500 text-slate-950 px-3 py-1.5 rounded-lg hover:bg-amber-400 transition-colors shadow-xs"
+                      className="text-xs font-extrabold bg-amber-500 text-slate-950 px-3 py-1.5 rounded-lg hover:bg-amber-400 transition-colors shadow-xs"
                     >
-                      Complete Now
+                      Complete Profile
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Please provide the following required details to finalize your account profile:
-                  </p>
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-0.5">
                     {missingFields.map((field) => (
-                      <span key={field} className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
+                      <span key={field} className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
                         • {field}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
+            </div>
+          </div>
 
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
-                📌 Official Academic & Registration Credentials
-              </h3>
+          <div className="solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-6 bg-card shadow-xs">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground flex items-center gap-2">
+              <span>📌 Academic Credentials</span>
+            </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl border border-border/80 bg-background/60">
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Registration Number</span>
-                  <span className="text-xs font-mono font-bold text-foreground">{regNo}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Academic Email</span>
-                  <span className="text-xs font-semibold text-foreground truncate block">{email}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Department & Track</span>
-                  <span className="text-xs font-semibold text-foreground">{dept} ({course})</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Semester & Year</span>
-                  <span className="text-xs font-semibold text-foreground">Sem {sem} • {regYear}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Contact Number</span>
-                  <span className="text-xs font-mono text-foreground">{contactNo}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Gender Identification</span>
-                  <span className="text-xs font-medium text-foreground capitalize">{gender}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Account Status</span>
-                  <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">Verified Active</span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">Class Designation</span>
-                  <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">{isCr ? "Class Representative (CR)" : "Regular Student"}</span>
-                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="hidden sm:inline text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Registration Number</span>
+                <span className="inline sm:hidden text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Reg No</span>
+                <span className="text-xs font-mono font-black text-foreground truncate block" title={regNo}>{regNo}</span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Email</span>
+                <a
+                  href={`mailto:${email}`}
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                  title={`Send email to ${email}`}
+                >
+                  {email}
+                </a>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="hidden sm:inline text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Department & Course</span>
+                <span className="inline sm:hidden text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Dept & Course</span>
+                <span className="text-xs font-extrabold text-foreground  truncate block" title={`${dept} (${course})`}>{dept} ({course})</span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="hidden sm:inline text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Semester & Batch</span>
+                <span className="inline sm:hidden text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Sem & Batch</span>
+                <span className="text-xs font-extrabold text-foreground truncate block">Sem {sem} • {regYear}</span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Contact</span>
+                <span className="text-xs font-mono font-bold text-foreground truncate block">{contactNo}</span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Gender</span>
+                <span className="text-xs font-extrabold text-foreground capitalize truncate block">{genderVal}</span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Status</span>
+                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 truncate">
+                  <span>✓</span> Active
+                </span>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-xl border border-border/80 bg-background/80 flex flex-col justify-between space-y-1 shadow-2xs hover:border-indigo-500/30 transition-all min-w-0">
+                <span className="text-[10px] font-extrabold text-muted-foreground  tracking-wider block truncate">Class Role</span>
+                <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 truncate block">
+                  {isCr ? "CR" : "Student"}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Enrolled Curriculum Roster Section */}
+          {/* Enrolled Courses Cards Grid Section */}
           {summary && summary.subject_breakdown.length > 0 && (
-            <div className="solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-4 bg-card shadow-xs">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="space-y-0.5">
+            <div className="space-y-3">
+              <div className="space-y-1 border-b border-border pb-2">
+                <div className="flex items-center justify-between mb-0">
                   <h3 className="text-base font-extrabold text-foreground">
-                    Enrolled Subject Performance Breakdown
+                    Course Performance
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Individual subject attendance tracking for Semester {sem}. Click any subject to view detailed session logs.
-                  </p>
+                  <Badge variant="secondary" showDot={false} className="font-mono font-bold">{summary.subject_breakdown.length} Courses</Badge>
                 </div>
-                <Badge variant="muted" className="font-mono font-bold">{summary.subject_breakdown.length} Courses</Badge>
+                <p className="text-xs text-muted-foreground">
+                  Coursewise performance. Click any card to view detailed session logs.
+                </p>
               </div>
 
-              <div className="space-y-3 pt-1">
-                {summary.subject_breakdown.map((sub) => (
-                  <Link
-                    key={sub.subject_code}
-                    href={`/student/courses/${encodeURIComponent(sub.subject_code)}`}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-background hover:border-indigo-500/50 hover:bg-muted/30 transition-all group"
-                  >
-                    <div className="space-y-0.5">
-                      <h4 className="text-xs sm:text-sm font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {sub.subject_name}
-                      </h4>
-                      <span className="font-mono text-xs font-extrabold text-indigo-600 dark:text-indigo-400 block">
-                        {sub.subject_code}
-                      </span>
-                    </div>
+              {/* Formatted Course Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {summary.subject_breakdown.map((sub) => {
+                  const pct = sub.attendance_pct;
+                  const palette = getPaletteForAttendance(pct);
+                  const isEligible = sub.is_eligible;
+                  const needed = getClassesNeededFor75(sub.attended_classes, sub.total_classes);
+                  const safeMiss = getSafeClassesToMiss(sub.attended_classes, sub.total_classes);
 
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      <span className="text-xs font-mono text-muted-foreground font-semibold">
-                        {sub.attended_classes} / {sub.total_classes} Attended
-                      </span>
-                      <Badge variant={sub.is_eligible ? "success" : "error"}>
-                        {sub.attendance_pct}%
-                      </Badge>
-                      <span className="text-muted-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-transform group-hover:translate-x-1 font-bold text-xs">
-                        →
-                      </span>
+                  return (
+                    <div
+                      key={sub.subject_code}
+                      className="group solid-card rounded-2xl p-5 border border-border bg-card hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden"
+                    >
+                      {/* Accent Top Bar */}
+                      <div
+                        className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${palette.gradient}`}
+                      />
+
+                      <div className="space-y-1">
+                        {/* Course Title */}
+                        <div className="flex flex-row gap-2 items-center justify-between pb-1">
+                          <h3 className="text-sm font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug line-clamp-2 truncate">
+                            {sub.subject_name}
+                          </h3>
+                          <Badge variant={isEligible ? "success" : "error"} showDot={false} className="text-[11px] font-extrabold flex-shrink-0">
+                            {isEligible ? "Eligible" : "Warning (<75%)"}
+                          </Badge>
+                        </div>
+
+                        {/* Attendance Bar & Metrics */}
+                        <div className="space-y-2 pt-1 border-t border-border/60">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-muted-foreground">Attendance Score</span>
+                            <span className={`font-mono text-sm font-black ${palette.textColor}`}>
+                              {pct}%
+                            </span>
+                          </div>
+
+                          {/* Progress Bar Container */}
+                          <div className="w-full h-2 bg-muted rounded-full overflow-hidden relative">
+                            {/* Cutoff Threshold Line at 75% */}
+                            <div
+                              className="absolute top-0 bottom-0 w-1.5 bg-amber-500 z-10"
+                              style={{ left: "75%" }}
+                              title="75% Cutoff Threshold"
+                            />
+                            <div
+                              className={`h-full rounded-full bg-gradient-to-r ${palette.gradient} transition-all duration-500`}
+                              style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold pt-0.5">
+                            <span>{sub.attended_classes} Attended</span>
+                            <span>{sub.total_classes} Total Classes</span>
+                          </div>
+                        </div>
+
+                        {/* Hint & Details Action */}
+                        <div className="flex items-center justify-between pt-1.5 border-t border-border/60 text-[11px] font-bold">
+                          {sub.total_classes === 0 ? (
+                            <span className="text-indigo-500">ℹ️ No classes held yet.</span>
+                          ) : isEligible ? (
+                            <span className="text-emerald-600 dark:text-emerald-400">You Can miss up to {safeMiss} {safeMiss === 1 ? "class" : "classes"}.</span>
+                          ) : (
+                            <span className="text-rose-600 dark:text-rose-400">⚠️ Attend next {needed} {needed === 1 ? "class" : "classes"}</span>
+                          )}
+
+                          <Link
+                            href={`/student/courses/${encodeURIComponent(sub.subject_code)}`}
+                            className="w-fit px-2 py-0.5 rounded-xl border border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 text-indigo-600 dark:text-indigo-300 text-xs transition-all shadow-xs flex items-center justify-center gap-2 group-hover:shadow-md mt-2 flex-shrink-0"
+                          >
+                            <span>Details</span>
+                            <span className="transition-transform group-hover:translate-x-1">→</span>
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Direct Navigation Footer */}
-          <div className="solid-card rounded-2xl p-6 border border-border bg-card shadow-xs space-y-3">
+          <div className="solid-card rounded-2xl p-5 border border-border bg-card shadow-xs space-y-3">
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">🔗 Quick Navigation Actions</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Link
                 href="/student/reports"
-                className="p-3 rounded-xl border border-border/80 hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
+                className="p-3 rounded-xl border border-border hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
               >
                 <span>📊</span>
                 <span>Attendance Summary</span>
               </Link>
               <Link
                 href="/student/courses"
-                className="p-3 rounded-xl border border-border/80 hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
+                className="p-3 rounded-xl border border-border hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
               >
                 <span>📚</span>
                 <span>My Courses</span>
               </Link>
               <Link
                 href="/student/notifications"
-                className="p-3 rounded-xl border border-border/80 hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
+                className="p-3 rounded-xl border border-border hover:bg-muted/40 text-center transition-all text-xs font-bold text-foreground flex flex-col items-center gap-1.5"
               >
                 <span>🔔</span>
                 <span>Notifications</span>
@@ -407,7 +526,7 @@ function StudentProfileContent() {
               {isCr && (
                 <Link
                   href="/student/cr"
-                  className="p-3 rounded-xl border border-border/80 hover:bg-muted/40 text-center transition-all text-xs font-bold text-amber-600 dark:text-amber-400 flex flex-col items-center gap-1.5"
+                  className="p-3 rounded-xl border border-border hover:bg-muted/40 text-center transition-all text-xs font-bold text-amber-600 dark:text-amber-400 flex flex-col items-center gap-1.5"
                 >
                   <span>⚡</span>
                   <span>CR Console Hub</span>
