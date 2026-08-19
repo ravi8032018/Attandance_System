@@ -48,6 +48,18 @@ export default function CRConsolePage() {
     router.push(`/student/cr/attendance/take?token=${encodeURIComponent(cleanToken)}`);
   }
 
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyToken = (e: React.MouseEvent, tokenVal?: string, notifId?: string) => {
+    e.stopPropagation();
+    if (!tokenVal) return;
+    navigator.clipboard.writeText(tokenVal);
+    if (notifId) {
+      setCopiedId(notifId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
   function launchDirectToken(token: string) {
     router.push(`/student/cr/attendance/take?token=${encodeURIComponent(token)}`);
   }
@@ -55,19 +67,10 @@ export default function CRConsolePage() {
   return (
     <main className="p-4 sm:p-6 lg:p-8 mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <Badge variant="primary">CR Console</Badge>
-            <Badge variant="secondary">Class Representative</Badge>
-            {user?.department && user?.semester && (
-              <Badge variant="outline" className="font-mono">
-                {user.department} • Sem {user.semester}
-              </Badge>
-            )}
-          </div>
           <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            Class Representative Attendance Hub
+            CR Attendance Hub
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Conduct live classroom attendance sessions assigned by your course faculty in real-time.
@@ -121,7 +124,7 @@ export default function CRConsolePage() {
 
       {/* Real-time Active Faculty Attendance Pings */}
       {activeSessionNotifs.length > 0 && (
-        <div className="rounded-2xl p-5 border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-3">
+        <div className="rounded-2xl p-5 border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
@@ -129,10 +132,10 @@ export default function CRConsolePage() {
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
               </span>
               <h2 className="text-sm font-extrabold text-foreground">
-                ⚡ Active Faculty Attendance Session Initiated!
+                Attendance Session Initiated!
               </h2>
             </div>
-            <Badge variant="warning">{activeSessionNotifs.length} Active</Badge>
+            <Badge variant="warning" showDot={false}>{activeSessionNotifs.length} Active</Badge>
           </div>
 
           <div className="grid grid-cols-1 gap-3 pt-1">
@@ -141,16 +144,34 @@ export default function CRConsolePage() {
                 key={notif.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-amber-500/20 bg-background/80 gap-3"
               >
-                <div>
-                  <h4 className="font-bold text-xs text-foreground">{notif.title}</h4>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{notif.body}</p>
-                  <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 mt-1 inline-block">
-                    Token: {notif.data?.token?.slice(0, 12)}...
-                  </span>
+                <div className="space-y-1">
+                  <h4 className="font-extrabold text-xs text-foreground">{notif.title}</h4>
+                  <p className="text-[11px] text-muted-foreground font-medium">{notif.body}</p>
+
+                  {/* Token display with side copy icon button */}
+                  <div className="flex items-center justify-between gap-1.5 pt-1">
+                    <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400  px-2 py-0.5 rounded border border-amber-500/20 truncate ">
+                      Token: {notif.data?.token}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyToken(e, notif.data?.token, notif.id)}
+                      className="p-1 rounded-lg text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all active:scale-95 shrink-0 flex items-center justify-center"
+                      title="Copy token to clipboard"
+                    >
+                      {copiedId === notif.id ? (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold px-0.5">✓</span>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => launchDirectToken(notif.data?.token)}
-                  className="px-4 h-9 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
+                  className="px-4 h-9 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
                 >
                   <span>Launch Live Roster Now</span>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,8 +187,8 @@ export default function CRConsolePage() {
       {/* Main Token Entry Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Token Input Form (2 Cols) */}
-        <div className="lg:col-span-2 solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-6 bg-card shadow-xs">
-          <div className="space-y-1.5 border-b border-border/60 pb-4">
+        <div className="lg:col-span-2 solid-card rounded-2xl p-6 sm:p-8 border border-border space-y-3 bg-card shadow-xs">
+          <div className="space-y-1.5 border-b border-border/60 pb-3">
             <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
               <span>🔑 Enter Session Token or Link</span>
             </h2>
@@ -176,7 +197,7 @@ export default function CRConsolePage() {
             </p>
           </div>
 
-          <form onSubmit={handleStartSession} className="space-y-4">
+          <form onSubmit={handleStartSession} className="space-y-3">
             <div>
               <label className="text-xs font-bold text-foreground block mb-1.5">
                 Attendance Session Token / Passcode
@@ -217,7 +238,7 @@ export default function CRConsolePage() {
           </form>
 
           {/* Quick Navigation Shortcuts */}
-          <div className="pt-4 border-t border-border/60">
+          <div className="hidden sm:inline pt-3 border-t border-border/60">
             <h4 className="text-xs font-bold text-foreground mb-3">🔗 Quick Student Shortcuts:</h4>
             <div className="grid grid-cols-3 gap-2">
               <Link

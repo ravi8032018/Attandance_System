@@ -7,6 +7,19 @@ import { Badge } from "@/components/ui/Badge";
 import { useNotifications } from "@/hooks/useNotifications";
 import { apiFetch } from "@/lib/api";
 
+function formatNotifTime(dateStr?: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (isToday) {
+    return `Today, ${timeStr}`;
+  }
+  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}, ${timeStr}`;
+}
+
 export function NotificationsView({ title = "Notifications & Alerts" }: { title?: string }) {
   const router = useRouter();
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -77,42 +90,49 @@ export function NotificationsView({ title = "Notifications & Alerts" }: { title?
     }
   };
 
+  const hasUnread = notifications.some((n) => n.status === "unread");
+
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
-            {title}
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+              🔔
+            </span>
+            <span>{title}</span>
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground font-medium">
             Real-time attendance requests, approval alerts, academic warnings, and department notices.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {notifications.some((n) => n.status === "unread") && (
+        {/* Action Header Buttons */}
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center">
+          {hasUnread && (
             <button
               type="button"
               onClick={markAllAsRead}
-              className="flex-1 sm:flex-none rounded-xl bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-sm transition-all text-center"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-3.5 py-2 text-xs font-extrabold shadow-xs transition-all active:scale-[0.98]"
             >
-              Mark All Read
+              <span>✓ Mark All Read</span>
             </button>
           )}
           {notifications.length > 0 && (
             <button
               type="button"
               onClick={clearAllNotifications}
-              className="flex-1 sm:flex-none rounded-xl bg-rose-600/10 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 px-4 py-2 text-xs font-bold transition-all text-center"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 px-3.5 py-2 text-xs font-extrabold transition-all active:scale-[0.98]"
             >
-              Clear All Notifications
+              <span>🗑️ Clear All</span>
             </button>
           )}
         </div>
       </div>
 
       {actionMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 text-center">
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 text-center animate-in fade-in duration-200">
           {actionMsg}
         </div>
       )}
@@ -122,72 +142,75 @@ export function NotificationsView({ title = "Notifications & Alerts" }: { title?
           Loading notification feed...
         </div>
       ) : notifications.length === 0 ? (
-        <div className="solid-card rounded-2xl p-12 text-center space-y-2 border border-border">
-          <div className="text-3xl">🔔</div>
-          <h2 className="text-base font-bold text-foreground">No Notifications</h2>
-          <p className="text-xs text-muted-foreground">You currently have no active notifications.</p>
+        <div className="solid-card rounded-2xl p-12 text-center space-y-3 border border-border bg-card">
+          <div className="text-4xl">🔔</div>
+          <h2 className="text-base font-extrabold text-foreground">No Notifications</h2>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto font-medium">
+            You are all caught up! You have no unread notifications or active session requests right now.
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {notifications.map((n) => {
             const isCRSession = n.type === "cr_attendance_session_started" || n.data?.token;
             const isFacultyApproval = n.title?.includes("Attendance Marked by CR") || n.title?.includes("Attendance marked by CR") || n.type?.includes("Attendance marked by CR") || n.data?.session_id;
             const isUnread = n.status === "unread";
+            const formattedTime = formatNotifTime(n.timestamp);
 
             return (
               <div
                 key={n.id}
-                className={`solid-card rounded-2xl p-4 sm:p-5 border transition-all ${isUnread
-                  ? "border-indigo-500/40 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-xs"
-                  : "border-border opacity-90"
+                className={`solid-card rounded-2xl p-4 sm:p-5 border transition-all relative overflow-hidden bg-card ${isUnread
+                  ? "border-l-4 border-l-amber-500 border-indigo-500/30 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.04] shadow-xs"
+                  : "border-border opacity-95"
                   }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  {/* Main Content Area */}
-                  <div className="space-y-2 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5 leading-snug">
-                          {isCRSession && <span>⏱️</span>}
-                          {isFacultyApproval && <span>📋</span>}
-                          {n.title}
-                        </h2>
-                        {isUnread ? (
-                          <Badge variant="primary">New</Badge>
-                        ) : (
-                          <Badge variant="secondary">Read</Badge>
-                        )}
+                <div className="space-y-3">
+                  {/* Top Header Row: Icon + Title + Status Badges */}
+                  <div className="flex items-start justify-between gap-2.5 border-b border-border/50 pb-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
+
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-sm font-extrabold text-foreground leading-snug">
+                            {n.title}
+                          </h2>
+                        </div>
+                        <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                          <span>📅 {formattedTime}</span>
+                        </p>
                       </div>
-
-                      {/* Timestamp on Mobile */}
-                      <span className="text-[11px] font-medium text-muted-foreground sm:hidden">
-                        {new Date(n.timestamp).toLocaleDateString()} {new Date(n.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
                     </div>
+                  </div>
 
-                    <p className="text-xs text-muted-foreground leading-relaxed">{n.body}</p>
+                  {/* Body Content */}
+                  <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                    {n.body}
+                  </p>
 
-                    {/* Action 1: CR Attendance Session Link */}
+                  {/* Bottom Footer Actions Toolbar */}
+                  <div className="pt-2 border-t border-border/40 flex items-center justify-end gap-3 sm:6 text-xs">
+                    {/* Action 1: CR Attendance Session Link (Highlighted Callout Button) */}
                     {isCRSession && n.data?.token && (
-                      <div className="pt-2">
+                      <div className="pt-1">
                         <Link
                           href={`/student/cr/attendance/take?token=${encodeURIComponent(n.data.token)}`}
                           onClick={() => deleteNotification(n.id)}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2 shadow-sm transition-all active:scale-95 w-full sm:w-auto text-center"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs px-4 py-2.5 shadow-sm active:scale-[0.98] transition-all w-full text-center"
                         >
-                          <span>Take Attendance Now (15m Window)</span>
-                          <span>→</span>
+                          <span>Take Attendance</span>
+                          <span className="hidden sm:block text-sm">→</span>
                         </Link>
                       </div>
                     )}
 
                     {/* Action 2: Faculty Session Quick Approval / Rejection */}
                     {isFacultyApproval && (
-                      <div className="pt-2 flex flex-wrap items-center gap-2">
+                      <div className="pt-1 flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={(e) => handleQuickApprove(e, n.id, n.data?.session_id)}
-                          className="flex-1 sm:flex-none rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 shadow-sm transition-all active:scale-95 text-center"
+                          className="flex-1 sm:flex-none rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 shadow-xs transition-all active:scale-[0.98] text-center"
                         >
                           Approve
                         </button>
@@ -204,7 +227,7 @@ export function NotificationsView({ title = "Notifications & Alerts" }: { title?
                               router.push("/faculty/attendance/approve");
                             }
                           }}
-                          className="flex-1 sm:flex-none rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-4 py-2 shadow-sm transition-all active:scale-95 text-center"
+                          className="flex-1 sm:flex-none rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-4 py-2 shadow-xs transition-all active:scale-[0.98] text-center"
                         >
                           Reject
                         </button>
@@ -218,31 +241,25 @@ export function NotificationsView({ title = "Notifications & Alerts" }: { title?
                         </Link>
                       </div>
                     )}
-                  </div>
 
-                  {/* Controls Area (Desktop on right, Mobile bottom toolbar) */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-none border-border/40 min-w-0">
-                    <span className="text-[11px] font-medium text-muted-foreground hidden sm:block">
-                      {new Date(n.timestamp).toLocaleDateString()} {new Date(n.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <div className="flex items-center gap-3 text-xs w-full sm:w-auto justify-end">
-                      {isUnread && (
-                        <button
-                          type="button"
-                          onClick={() => deleteNotification(n.id)}
-                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                          Mark Read
-                        </button>
-                      )}
+                    {isUnread && (
                       <button
                         type="button"
-                        onClick={(e) => deleteNotification(n.id, e)}
-                        className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                        onClick={() => markAsRead(n.id)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                       >
-                        Dismiss
+                        <span>✓</span>
+                        <span>Mark Read</span>
                       </button>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => deleteNotification(n.id, e)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors"
+                    >
+                      <span>🗑️</span>
+                      <span className="hidden sm:block">Delete</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -294,3 +311,4 @@ export function NotificationsView({ title = "Notifications & Alerts" }: { title?
     </main>
   );
 }
+
