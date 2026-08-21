@@ -17,7 +17,7 @@ function AdminProfileContent() {
   const rolesList = Array.isArray(user?.role) ? user.role : user?.role ? [user.role] : ["admin"];
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
@@ -29,16 +29,16 @@ function AdminProfileContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
           <Link
             href="/admin/users"
-            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs gap-1.5 shrink-0"
           >
             <span>👥 User Manager</span>
           </Link>
           <Link
             href="/admin/dashboard"
-            className="rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted text-foreground px-4 py-2.5 text-xs font-bold transition-all shadow-xs gap-1.5 shrink-0"
           >
             <span>← Console</span>
           </Link>
@@ -61,22 +61,25 @@ function AdminProfileContent() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Main Profile Card */}
-          <div className="solid-card rounded-2xl p-6 border border-border space-y-6 bg-card">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
-              <div className="flex items-center gap-4">
-                <FacultyAvatar
-                  firstName={firstName}
-                  lastName={lastName}
-                  photoUrl={user?.photo_url}
-                  size="3xl"
-                />
-                <div>
+          {/* Main Profile Header Card (Oriented identically to HOD/Faculty Profile) */}
+          <div className="solid-card rounded-2xl p-4 sm:p-6 border border-border space-y-4 bg-card">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-5 pb-6 border-b border-border text-center md:text-left">
+              {/* Avatar & User Info */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5 w-full md:w-auto">
+                <div className="shrink-0">
+                  <FacultyAvatar
+                    firstName={firstName}
+                    lastName={lastName}
+                    photoUrl={user?.photo_url}
+                    size="3xl"
+                  />
+                </div>
+                <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
                   <h2 className="text-xl sm:text-2xl font-black text-foreground">
                     {fullName}
                   </h2>
                   {email && <p className="text-xs font-semibold text-muted-foreground">{email}</p>}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                     <Badge variant="success" className="px-2.5 py-1 text-xs font-bold">
                       System Administrator
                     </Badge>
@@ -90,25 +93,25 @@ function AdminProfileContent() {
               </div>
 
               {/* Quick Admin Actions */}
-              <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
                 <Link
                   href="/admin/audit-logs"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0"
                 >
                   <span>📜 Audit Logs</span>
                 </Link>
                 <Link
                   href="/admin/curriculum"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-xs active:scale-95 shrink-0"
                 >
                   <span>📚 Curriculum Control</span>
                 </Link>
               </div>
             </div>
 
-            {/* Profile Info Details Grid (strictly real data) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              <div>
+            {/* Profile Info Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">
                   Account Name
                 </label>
@@ -116,7 +119,7 @@ function AdminProfileContent() {
               </div>
 
               {email && (
-                <div>
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                   <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">
                     Account Email
                   </label>
@@ -125,7 +128,7 @@ function AdminProfileContent() {
               )}
 
               {department && (
-                <div>
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                   <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">
                     Department
                   </label>
@@ -133,7 +136,7 @@ function AdminProfileContent() {
                 </div>
               )}
 
-              <div>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 md:bg-transparent md:border-none md:p-0">
                 <label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider block">
                   Assigned Roles
                 </label>
@@ -214,3 +217,4 @@ export default function AdminProfilePage() {
     </Suspense>
   );
 }
+

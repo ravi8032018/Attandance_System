@@ -7,6 +7,18 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { AcademicTermSwitcher } from "@/components/ui/AcademicTermSwitcher";
 import { TermMode, getSavedTermMode, getSemesterSelectOptions, getActiveSemesters } from "@/lib/academicTerm";
 
+const DEPARTMENTS = [
+  { code: "CS", name: "Computer Science", icon: "💻" },
+  { code: "CSE", name: "CS & Engineering", icon: "⚙️" },
+  { code: "ECE", name: "Electronics & Comm", icon: "📡" },
+  { code: "EEE", name: "Electrical & Electronics", icon: "⚡" },
+  { code: "ME", name: "Mechanical Eng", icon: "🔧" },
+  { code: "CE", name: "Civil Eng", icon: "🏗️" },
+  { code: "MATH", name: "Mathematics", icon: "📐" },
+  { code: "PHYS", name: "Physics", icon: "🔬" },
+  { code: "AGRI", name: "Agriculture", icon: "🌾" },
+];
+
 function parseApiError(data: any): string {
   if (!data) return "An unexpected error occurred.";
   if (typeof data.detail === "string") return data.detail;
@@ -29,7 +41,8 @@ export default function AdminCurriculumPage() {
   const [department, setDepartment] = useState("CS");
   const [termMode, setTermMode] = useState<TermMode>("odd");
   const [semester, setSemester] = useState("1");
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [viewMode, setViewMode] = useState<"table" | "card">("card");
+  const [selectedSubjectDetail, setSelectedSubjectDetail] = useState<any | null>(null);
 
   useEffect(() => {
     const initialMode = getSavedTermMode();
@@ -37,6 +50,9 @@ export default function AdminCurriculumPage() {
     const active = getActiveSemesters(initialMode);
     if (active.length > 0 && !active.includes(semester)) {
       setSemester(active[0]);
+    }
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setViewMode("card");
     }
   }, []);
 
@@ -184,7 +200,6 @@ export default function AdminCurriculumPage() {
     }
   };
 
-
   const handleUpdateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editSubject) return;
@@ -254,43 +269,51 @@ export default function AdminCurriculumPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
               Curriculum Catalog Manager
             </h1>
-            <Badge variant="primary">Admin Workspace</Badge>
+            <span className="hidden sm:inline-flex"><Badge variant="primary">Admin Workspace</Badge></span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Manage subject offerings, course codes, credits, and faculty assignments per department & semester.
+            Manage subject offerings, course codes, credits, and faculty assignments per department &amp; semester.
           </p>
         </div>
 
         <button
           onClick={handleOpenAddModal}
-          className="rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold transition-colors duration-150 shadow-sm flex items-center gap-1.5"
+          className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-1.5 w-full sm:w-auto text-center"
         >
-          <span>+ Add New Course</span>
+          <span>✨</span>
+          <span>+ Add New Course<span className="hidden sm:inline"> Definition</span></span>
         </button>
-
       </div>
 
-      {/* Filters & View Toggle */}
-      <div className="solid-card rounded-2xl p-4 border border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-          <div>
-            <label className="font-bold text-xs text-foreground block mb-1">Department</label>
+      {/* Filters & Controls Bar */}
+      <div className="solid-card rounded-2xl p-4 sm:p-5 border border-border bg-card space-y-4">
+        <div className="grid grid-cols-2 gap-1 w-full">
+          {/* Department Selector */}
+          <div className="space-y-1.5 min-w-0">
+            <label className="font-extrabold text-xs text-foreground block truncate">
+              🏛️ <span className="hidden sm:inline">Academic </span>Department
+            </label>
             <CustomSelect
               value={department}
               onChange={(val) => setDepartment(val)}
-              options={[
-                { value: "CS", label: "Computer Science (CS)" },
-              ]}
+              options={DEPARTMENTS.map((d) => ({
+                value: d.code,
+                label: `${d.icon} ${d.name} (${d.code})`,
+              }))}
             />
           </div>
-          <div>
-            <label className="font-bold text-xs text-foreground block mb-1">Active Semester</label>
+
+          {/* Semester Selector */}
+          <div className="space-y-1.5 min-w-0">
+            <label className="font-extrabold text-xs text-foreground block truncate">
+              🎓 <span className="hidden sm:inline">Active </span>Semester
+            </label>
             <CustomSelect
               value={semester}
               onChange={(val) => setSemester(val)}
@@ -299,23 +322,22 @@ export default function AdminCurriculumPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-          <AcademicTermSwitcher currentMode={termMode} onModeChange={handleTermModeChange} />
+        {/* Term Switcher & View Toggle */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between  gap-3 w-full pt-3 border-t border-border/70">
+          <AcademicTermSwitcher currentMode={termMode} onModeChange={handleTermModeChange} className="w-full sm:w-auto" />
 
-          <div className="flex items-center border border-border rounded-xl bg-card p-1">
+          <div className="hidden sm:flex items-center border border-border rounded-xl bg-card p-1">
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              📋 Table View
+              📋 Table
             </button>
             <button
               onClick={() => setViewMode("card")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === "card" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              🎴 Card View
+              🎴 Cards
             </button>
           </div>
         </div>
@@ -328,7 +350,7 @@ export default function AdminCurriculumPage() {
         </div>
       ) : curriculumItems.length === 0 ? (
         <div className="solid-card rounded-2xl p-8 border border-border text-center text-xs text-muted-foreground bg-card">
-          No subjects configured for {department} Semester {semester}. Click "+ Add New Subject" above to create one.
+          No subjects configured for {department} Semester {semester}. Click "+ Add New Course" above to create one.
         </div>
       ) : viewMode === "table" ? (
         <div className="solid-card rounded-2xl border border-border bg-card overflow-hidden">
@@ -346,7 +368,11 @@ export default function AdminCurriculumPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {curriculumItems.map((sub: any) => (
-                  <tr key={sub.subject_code} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={sub.subject_code}
+                    onClick={() => setSelectedSubjectDetail(sub)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
                     <td className="p-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{sub.subject_code}</td>
                     <td className="p-4 font-extrabold text-foreground">{sub.subject_name || sub.subject_code}</td>
                     <td className="p-4">
@@ -362,7 +388,7 @@ export default function AdminCurriculumPage() {
                         <span className="text-muted-foreground italic">Unassigned</span>
                       )}
                     </td>
-                    <td className="p-4 text-right space-x-1.5">
+                    <td className="p-4 text-right space-x-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() =>
                           setEditSubject({
@@ -395,7 +421,11 @@ export default function AdminCurriculumPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {curriculumItems.map((sub: any) => (
-            <div key={sub.subject_code} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
+            <div
+              key={sub.subject_code}
+              onClick={() => setSelectedSubjectDetail(sub)}
+              className="solid-card rounded-2xl p-5 border border-border bg-card hover:border-indigo-500/50 hover:shadow-md transition-all cursor-pointer space-y-3 flex flex-col justify-between group"
+            >
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <span className="font-mono text-sm font-black text-indigo-600 dark:text-indigo-400 block">
@@ -405,10 +435,12 @@ export default function AdminCurriculumPage() {
                     {sub.type || "Theory"}
                   </Badge>
                 </div>
-                <h3 className="text-sm font-extrabold text-foreground">{sub.subject_name || sub.subject_code}</h3>
+                <h3 className="text-sm font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {sub.subject_name || sub.subject_code}
+                </h3>
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p><strong className="text-foreground">Credits:</strong> {sub.credits !== undefined ? sub.credits : 3} Credits</p>
-                  <p>
+                  <p className="truncate">
                     <strong className="text-foreground">Faculty:</strong>{" "}
                     {sub.faculty_id ? (
                       <span className="font-bold text-foreground">{sub.faculty_name || sub.faculty_id}</span>
@@ -419,39 +451,120 @@ export default function AdminCurriculumPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
-                <button
-                  onClick={() =>
-                    setEditSubject({
-                      original_code: sub.subject_code,
-                      subject_code: sub.subject_code,
-                      subject_name: sub.subject_name || sub.subject_code,
-                      credits: sub.credits || 3,
-                      type: sub.type || "Theory",
-                      faculty_id: sub.faculty_id || "",
-                    })
-                  }
-                  className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteSubject(sub.subject_code)}
-                  className="px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-800/80 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  title="Delete Subject"
-                >
-                  🗑️ Delete
-                </button>
+              <div className="pt-3 border-t border-border flex items-center justify-between text-xs font-bold">
+                <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  Manage Course &rarr;
+                </span>
               </div>
             </div>
           ))}
         </div>
       )}
 
+      {/* Interactive Subject Details & Action Controls Pop-up Modal */}
+      {selectedSubjectDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-pointer"
+          onClick={() => setSelectedSubjectDetail(null)}
+        >
+          <div
+            className="solid-card rounded-2xl p-6 border border-border max-w-md w-full space-y-5 bg-card shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b border-border pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-base font-black text-indigo-600 dark:text-indigo-400">
+                    {selectedSubjectDetail.subject_code}
+                  </span>
+                  <Badge variant={getSubjectTypeBadgeVariant(selectedSubjectDetail.type)}>
+                    {selectedSubjectDetail.type || "Theory"}
+                  </Badge>
+                </div>
+                <h3 className="text-base font-black text-foreground capitalize">
+                  {selectedSubjectDetail.subject_name || selectedSubjectDetail.subject_code}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSubjectDetail(null)}
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Course Specs Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-4 rounded-xl border border-border/60">
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Department</span>
+                <span className="font-bold text-foreground">{department}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Sem / Course</span>
+                <span className="font-bold text-foreground">Sem {semester}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Credits</span>
+                <span className="font-bold text-foreground">{selectedSubjectDetail.credits !== undefined ? selectedSubjectDetail.credits : 3} Credits</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Faculty</span>
+                <span className="font-bold text-foreground">
+                  {selectedSubjectDetail.faculty_name || selectedSubjectDetail.faculty_id || "Unassigned"}
+                </span>
+              </div>
+            </div>
+
+            {/* Operations Grid */}
+            <div className="space-y-2 pt-1">
+              <h4 className="text-xs font-black uppercase tracking-wider text-foreground">⚡ Administrative Operations</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const sub = selectedSubjectDetail;
+                    setSelectedSubjectDetail(null);
+                    setEditSubject({
+                      original_code: sub.subject_code,
+                      subject_code: sub.subject_code,
+                      subject_name: sub.subject_name || sub.subject_code,
+                      credits: sub.credits !== undefined ? sub.credits : 3,
+                      type: sub.type || "Theory",
+                      faculty_id: sub.faculty_id || "",
+                    });
+                  }}
+                  className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>✏️ Edit Details</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const scode = selectedSubjectDetail.subject_code;
+                    setSelectedSubjectDetail(null);
+                    handleDeleteSubject(scode);
+                  }}
+                  className="p-3 rounded-xl border border-rose-500/30 bg-card hover:bg-rose-500/10 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>🗑️ Delete Course</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Subject / Course Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150 cursor-default max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="space-y-0.5">
@@ -459,23 +572,24 @@ export default function AdminCurriculumPage() {
                   <span>📚 Add New Course / Subject Definition</span>
                 </h2>
                 <p className="text-[11px] text-muted-foreground">
-                  Define new curriculum subject with department, semester, degree track & faculty assignment.
+                  Define new curriculum subject with department, semester, degree track &amp; faculty assignment.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1 rounded-lg hover:bg-muted transition-colors"
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleAddSubject} className="space-y-4 text-xs">
-              {/* 1. Academic Program Location (Department, Semester, Course Track) */}
+              {/* 1. Academic Program Location */}
               <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 space-y-2.5">
                 <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
-                  📌 Academic Program & Semester Context
+                  📌 Academic Program &amp; Semester Context
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div>
@@ -485,17 +599,10 @@ export default function AdminCurriculumPage() {
                     <CustomSelect
                       value={subForm.department}
                       onChange={handleModalDeptChange}
-                      options={[
-                        { value: "CS", label: "CS (Computer Science)" },
-                        { value: "CSE", label: "CSE (CS & Engineering)" },
-                        { value: "ECE", label: "ECE (Electronics & Comm)" },
-                        { value: "EEE", label: "EEE (Electrical & Electronics)" },
-                        { value: "ME", label: "ME (Mechanical Eng)" },
-                        { value: "CE", label: "CE (Civil Eng)" },
-                        { value: "MATH", label: "MATH (Mathematics)" },
-                        { value: "PHYS", label: "PHYS (Physics)" },
-                        { value: "AGRI", label: "AGRI (Agriculture)" },
-                      ]}
+                      options={DEPARTMENTS.map((d) => ({
+                        value: d.code,
+                        label: `${d.icon} ${d.name} (${d.code})`,
+                      }))}
                     />
                   </div>
 
@@ -536,7 +643,7 @@ export default function AdminCurriculumPage() {
                 </div>
               </div>
 
-              {/* 2. Course Identification (Course ID / Subject Code & Course Name) */}
+              {/* 2. Course Identification */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-foreground block mb-1">
@@ -566,7 +673,7 @@ export default function AdminCurriculumPage() {
                 </div>
               </div>
 
-              {/* 3. Academic Specifications (Instruction Type & Credit Hours) */}
+              {/* 3. Academic Specifications */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-foreground block mb-1">Instruction Type</label>
@@ -594,11 +701,11 @@ export default function AdminCurriculumPage() {
                 </div>
               </div>
 
-              {/* 4. Faculty Allocation (Instructor Name & Faculty ID Selection) */}
+              {/* 4. Faculty Allocation */}
               <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-foreground block">
-                    Assigned Faculty Instructor (Name & Faculty ID)
+                    Assigned Faculty Instructor
                   </label>
                   <span className="text-[10px] font-mono text-muted-foreground">
                     {facultyOptions.length > 1 ? `${facultyOptions.length - 1} Faculty Members` : "No Faculty Registered"}
@@ -609,27 +716,6 @@ export default function AdminCurriculumPage() {
                   onChange={(val) => setSubForm({ ...subForm, faculty_id: val })}
                   options={facultyOptions}
                 />
-
-                {subForm.faculty_id ? (
-                  <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-emerald-500 text-base">👨‍🏫</span>
-                      <div>
-                        <span className="font-extrabold text-foreground block">
-                          {facultyOptions.find((f) => f.value === subForm.faculty_id)?.label || subForm.faculty_id}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          Mapped Faculty ID: <strong>{subForm.faculty_id}</strong>
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="success">Assigned</Badge>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic mt-1">
-                    Note: Unassigned courses can be assigned later via HOD Subject Allocation Hub.
-                  </p>
-                )}
               </div>
 
               {/* Form Action Buttons */}
@@ -645,7 +731,7 @@ export default function AdminCurriculumPage() {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-md shadow-indigo-600/20 active:scale-95 transition-all"
                 >
-                  Create & Register Course
+                  ✨ Create<span className="hidden sm:inline"> &amp; Register Course</span>
                 </button>
               </div>
             </form>
@@ -653,12 +739,27 @@ export default function AdminCurriculumPage() {
         </div>
       )}
 
-
       {/* Edit Subject Modal */}
       {editSubject && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-foreground">Edit Subject ({editSubject.original_code})</h2>
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setEditSubject(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl cursor-default max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-lg font-bold text-foreground">Edit Subject ({editSubject.original_code})</h2>
+              <button
+                type="button"
+                onClick={() => setEditSubject(null)}
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
             <form onSubmit={handleUpdateSubject} className="space-y-3 text-xs">
               <div>
                 <label className="font-bold text-foreground block mb-1">Subject Code</label>

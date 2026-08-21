@@ -62,11 +62,15 @@ function AdminUserManagerContent() {
   const [activePersona, setActivePersona] = useState<"faculty" | "student">("faculty");
   const [termMode, setTermMode] = useState<TermMode>("odd");
   const [selectedSem, setSelectedSem] = useState("all");
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [viewMode, setViewMode] = useState<"table" | "card">("card");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUserDetail, setSelectedUserDetail] = useState<{ type: "faculty" | "student"; user: any } | null>(null);
 
   useEffect(() => {
     setTermMode(getSavedTermMode());
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setViewMode("card");
+    }
   }, []);
 
   useEffect(() => {
@@ -868,21 +872,22 @@ function AdminUserManagerContent() {
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
               User Manager Console
             </h1>
-            <Badge variant="primary">Admin Workspace</Badge>
+            <span className="hidden sm:inline-flex"><Badge variant="primary">Admin Workspace</Badge></span>
+
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Select department, choose persona (Faculty / Student), and perform account operations and role updates.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
           {activePersona === "student" && (
             <button
               onClick={() => {
                 setPromoteDept(selectedDept);
                 setShowPromoteModal(true);
               }}
-              className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2.5 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <span>🎓</span>
               <span>Promote Semester Cohort</span>
@@ -894,24 +899,24 @@ function AdminUserManagerContent() {
               setCreateCategory(activePersona);
               setShowCreateModal(true);
             }}
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center gap-1.5"
+            className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-1.5 w-full sm:w-auto text-center"
           >
             <span>✨</span>
-            <span>+ Onboard New {activePersona === "faculty" ? "Faculty" : "Student"} (Single / Batch)</span>
+            <span>Onboard New {activePersona === "faculty" ? "Faculty" : "Student"}<span className="hidden sm:inline"> (Single / Batch)</span></span>
           </button>
         </div>
 
       </div>
 
       {/* Filters & Control Bar */}
-      <div className="solid-card rounded-2xl p-5 border border-border bg-card space-y-4">
+      <div className="solid-card rounded-2xl p-4 sm:p-5 border border-border bg-card space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Department Dropdown Selector */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full md:w-auto">
             <label className="font-extrabold text-xs text-foreground shrink-0 flex items-center gap-1.5">
-              <span>🏛️ Academic Department:</span>
+              <span>🏛️ <span className="hidden sm:inline">Academic </span>Department:</span>
             </label>
-            <div className="w-56 sm:w-64">
+            <div className="flex-1 sm:w-64 min-w-[130px]">
               <CustomSelect
                 value={selectedDept}
                 onChange={(val) => setSelectedDept(val)}
@@ -924,7 +929,7 @@ function AdminUserManagerContent() {
           </div>
 
           {/* Search Utility Input */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <input
               type="text"
               placeholder={`🔍 Search ${activePersona === "faculty" ? "faculty by name, email, ID..." : "students by name, email, reg no..."}`}
@@ -944,33 +949,33 @@ function AdminUserManagerContent() {
         </div>
 
         {/* Persona Tabs, Semester Filter, and View Mode Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-border/70">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-3 border-t border-border/70">
+          <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
             <button
               onClick={() => setActivePersona("faculty")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${activePersona === "faculty"
+              className={`px-3 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all text-center truncate ${activePersona === "faculty"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "border border-border bg-card hover:bg-muted text-muted-foreground"
                 }`}
             >
-              👨‍🏫 Faculty Members ({filteredFaculty.length})
+              👨‍🏫 Faculty<span className="hidden sm:inline"> Members</span> ({filteredFaculty.length})
             </button>
             <button
               onClick={() => setActivePersona("student")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${activePersona === "student"
+              className={`px-3 sm:px-4 py-2 text-xs font-bold rounded-xl transition-all text-center truncate ${activePersona === "student"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "border border-border bg-card hover:bg-muted text-muted-foreground"
                 }`}
             >
-              🎓 Enrolled Students ({filteredStudents.length})
+              🎓 <span className="hidden sm:inline">Enrolled </span>Students ({filteredStudents.length})
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <AcademicTermSwitcher currentMode={termMode} onModeChange={(mode) => setTermMode(mode)} />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
+            <AcademicTermSwitcher currentMode={termMode} onModeChange={(mode) => setTermMode(mode)} className="w-full sm:w-auto" />
 
             {activePersona === "student" && (
-              <div className="w-40">
+              <div className="w-full sm:w-40">
                 <CustomSelect
                   value={selectedSem}
                   onChange={(val) => setSelectedSem(val)}
@@ -979,7 +984,7 @@ function AdminUserManagerContent() {
               </div>
             )}
 
-            <div className="flex items-center border border-border rounded-xl bg-card p-1">
+            <div className="hidden sm:flex items-center border border-border rounded-xl bg-card p-1">
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${viewMode === "table" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -1098,22 +1103,23 @@ function AdminUserManagerContent() {
                 const isHod = checkIsHod(fac);
                 const isFrozen = isUserFrozen(fac);
                 return (
-                  <div key={fac.faculty_id} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
+                  <div
+                    key={fac.faculty_id}
+                    onClick={() => setSelectedUserDetail({ type: "faculty", user: fac })}
+                    className="solid-card rounded-2xl p-5 border border-border bg-card hover:border-indigo-500/50 hover:shadow-md transition-all cursor-pointer space-y-3 flex flex-col justify-between group"
+                  >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <FacultyAvatar firstName={fac.first_name} lastName={fac.last_name} photoUrl={fac.photo_url} size="md" />
                           <div>
-                            <button
-                              onClick={() => setEditFaculty(fac)}
-                              className="font-extrabold text-foreground hover:underline text-left block text-sm"
-                            >
+                            <span className="font-extrabold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors block text-sm">
                               {fac.first_name} {fac.last_name}
-                            </button>
+                            </span>
                             <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 block">{fac.faculty_id}</span>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex flex-col items-end gap-1 shrink-0">
                           {isHod && <Badge variant="teal">HOD</Badge>}
                           {renderAccountStatusBadge(fac)}
                         </div>
@@ -1121,36 +1127,14 @@ function AdminUserManagerContent() {
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p><strong className="text-foreground">Dept:</strong> {fac.department}</p>
                         <p><strong className="text-foreground">Designation:</strong> {fac.designation}</p>
-                        <p><strong className="text-foreground">Email:</strong> {fac.email}</p>
+                        <p className="truncate"><strong className="text-foreground">Email:</strong> {fac.email}</p>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
-                      {isFrozen ? (
-                        <button
-                          type="button"
-                          onClick={() => handleUnfreezeUser("faculty", fac)}
-                          className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
-                          title="Reactivate user account"
-                        >
-                          <span>☀️</span> Unfreeze
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openFreezeModal("faculty", fac)}
-                          className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
-                          title="Freeze/Suspend user account"
-                        >
-                          <span>❄️</span> Freeze
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setEditFaculty(fac)}
-                        className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
-                      >
-                        Edit
-                      </button>
+                    <div className="pt-3 border-t border-border flex items-center justify-between text-xs font-bold">
+                      <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                        Manage Profile &rarr;
+                      </span>
                     </div>
                   </div>
                 );
@@ -1257,7 +1241,11 @@ function AdminUserManagerContent() {
                 const isCr = checkIsCr(stu);
                 const isFrozen = isUserFrozen(stu);
                 return (
-                  <div key={stu.registration_no} className="solid-card rounded-2xl p-5 border border-border bg-card space-y-3 flex flex-col justify-between">
+                  <div
+                    key={stu.registration_no}
+                    onClick={() => setSelectedUserDetail({ type: "student", user: stu })}
+                    className="solid-card rounded-2xl p-5 border border-border bg-card hover:border-indigo-500/50 hover:shadow-md transition-all cursor-pointer space-y-3 flex flex-col justify-between group"
+                  >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
@@ -1269,7 +1257,7 @@ function AdminUserManagerContent() {
                           />
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <h3 className="font-extrabold text-foreground text-sm capitalize">
+                              <h3 className="font-extrabold text-foreground text-sm capitalize group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                 {stu.first_name} {stu.last_name}
                               </h3>
                               {isCr && <Badge variant="teal" className="text-[10px]">CR</Badge>}
@@ -1282,36 +1270,14 @@ function AdminUserManagerContent() {
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p><strong className="text-foreground">Dept:</strong> {stu.department}</p>
                         <p><strong className="text-foreground">Semester:</strong> Semester {stu.semester}</p>
-                        <p><strong className="text-foreground">Email:</strong> {stu.email}</p>
+                        <p className="truncate"><strong className="text-foreground">Email:</strong> {stu.email}</p>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
-                      {isFrozen ? (
-                        <button
-                          type="button"
-                          onClick={() => handleUnfreezeUser("student", stu)}
-                          className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all flex items-center gap-1 shrink-0"
-                          title="Reactivate user account"
-                        >
-                          <span>☀️</span> Unfreeze
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openFreezeModal("student", stu)}
-                          className="px-2.5 py-1 rounded-lg border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1 shrink-0"
-                          title="Freeze/Suspend user account"
-                        >
-                          <span>❄️</span> Freeze
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setEditStudent(stu)}
-                        className="px-3 py-1 rounded-lg border border-border text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
-                      >
-                        Edit
-                      </button>
+                    <div className="pt-3 border-t border-border flex items-center justify-between text-xs font-bold">
+                      <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                        Manage Profile &rarr;
+                      </span>
                     </div>
                   </div>
                 );
@@ -1323,8 +1289,14 @@ function AdminUserManagerContent() {
 
       {/* Freeze / Account Suspension Confirmation Modal */}
       {freezeModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="solid-card rounded-2xl p-6 border border-border bg-card max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-pointer"
+          onClick={() => setFreezeModalData(null)}
+        >
+          <div
+            className="solid-card rounded-2xl p-6 border border-border bg-card max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <span className="text-xl">❄️</span>
@@ -1335,7 +1307,8 @@ function AdminUserManagerContent() {
               <button
                 type="button"
                 onClick={() => setFreezeModalData(null)}
-                className="text-muted-foreground hover:text-foreground text-sm font-bold"
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
               >
                 ✕
               </button>
@@ -1409,8 +1382,14 @@ function AdminUserManagerContent() {
 
       {/* Admin Assign Subjects Modal */}
       {assignFacultyModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setAssignFacultyModal(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-2xl w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -1526,8 +1505,14 @@ function AdminUserManagerContent() {
 
       {/* Edit Faculty Modal */}
       {editFaculty && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setEditFaculty(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-bold text-foreground">Edit Faculty Profile ({editFaculty.faculty_id})</h2>
             <form onSubmit={handleUpdateFaculty} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
@@ -1653,11 +1638,10 @@ function AdminUserManagerContent() {
                       handleToggleHod(fac.faculty_id);
                       setEditFaculty(null);
                     }}
-                    className={`px-3 py-1.5 rounded-xl border font-bold transition-colors ${
-                      checkIsHod(editFaculty)
-                        ? "border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100"
-                        : "border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100"
-                    }`}
+                    className={`px-3 py-1.5 rounded-xl border font-bold transition-colors ${checkIsHod(editFaculty)
+                      ? "border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100"
+                      : "border-teal-200 dark:border-teal-800/80 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100"
+                      }`}
                   >
                     {checkIsHod(editFaculty) ? "Demote from HOD" : "👑 Promote to HOD"}
                   </button>
@@ -1697,8 +1681,14 @@ function AdminUserManagerContent() {
 
       {/* Add Student Modal */}
       {showAddStudentModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setShowAddStudentModal(false)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-bold text-foreground">Onboard New Student</h2>
             <form onSubmit={handleCreateStudent} className="space-y-3 text-xs">
               <div>
@@ -1802,8 +1792,14 @@ function AdminUserManagerContent() {
 
       {/* Edit Student Modal */}
       {editStudent && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setEditStudent(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-bold text-foreground">Edit Student ({editStudent.registration_no})</h2>
             <form onSubmit={handleUpdateStudent} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
@@ -1962,8 +1958,14 @@ function AdminUserManagerContent() {
 
       {/* Unified User Creation & Onboarding Modal (Single & Batch) */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <div>
@@ -1975,8 +1977,10 @@ function AdminUserManagerContent() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
               >
                 ✕
               </button>
@@ -1987,22 +1991,22 @@ function AdminUserManagerContent() {
               <button
                 type="button"
                 onClick={() => setCreateCategory("faculty")}
-                className={`py-2 text-xs font-bold rounded-lg transition-all ${createCategory === "faculty"
+                className={`py-2 text-xs font-bold rounded-lg transition-all text-center truncate ${createCategory === "faculty"
                   ? "bg-indigo-600 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
                   }`}
               >
-                👨‍🏫 Faculty Member
+                👨‍🏫 Faculty<span className="hidden sm:inline"> Member</span>
               </button>
               <button
                 type="button"
                 onClick={() => setCreateCategory("student")}
-                className={`py-2 text-xs font-bold rounded-lg transition-all ${createCategory === "student"
+                className={`py-2 text-xs font-bold rounded-lg transition-all text-center truncate ${createCategory === "student"
                   ? "bg-indigo-600 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
                   }`}
               >
-                🎓 Enrolled Student
+                🎓 <span className="hidden sm:inline">Enrolled </span>Student
               </button>
             </div>
 
@@ -2011,22 +2015,22 @@ function AdminUserManagerContent() {
               <button
                 type="button"
                 onClick={() => setCreateMode("single")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${createMode === "single"
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all text-center truncate ${createMode === "single"
                   ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold"
                   : "border-border text-muted-foreground hover:bg-muted/30"
                   }`}
               >
-                👤 Single User
+                👤 Single<span className="hidden sm:inline"> User</span>
               </button>
               <button
                 type="button"
                 onClick={() => setCreateMode("batch")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${createMode === "batch"
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all text-center truncate ${createMode === "batch"
                   ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 font-bold"
                   : "border-border text-muted-foreground hover:bg-muted/30"
                   }`}
               >
-                👥 Batch / Multiple Users
+                👥 Batch<span className="hidden sm:inline"> / Multiple Users</span>
               </button>
             </div>
 
@@ -2293,10 +2297,10 @@ function AdminUserManagerContent() {
                   {creatingUser ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Creating & Emailing...</span>
+                      <span>Creating...</span>
                     </>
                   ) : (
-                    <span>✨ Create & Send Activation Emails</span>
+                    <span>✨ Create<span className="hidden sm:inline"> &amp; Send Activation Emails</span></span>
                   )}
                 </button>
               </div>
@@ -2307,16 +2311,24 @@ function AdminUserManagerContent() {
 
       {/* Admin Direct Reset Password Modal */}
       {resetPassTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="solid-card rounded-2xl p-6 border border-border max-w-md w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setResetPassTarget(null)}
+        >
+          <div
+            className="solid-card rounded-2xl p-6 border border-border max-w-md w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <span>🔑</span>
                 <span>Reset User Password</span>
               </h2>
               <button
+                type="button"
                 onClick={() => setResetPassTarget(null)}
-                className="text-muted-foreground hover:text-foreground font-bold text-sm"
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
               >
                 ✕
               </button>
@@ -2369,16 +2381,24 @@ function AdminUserManagerContent() {
 
       {/* Admin Promote Semester Cohort Modal */}
       {showPromoteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="solid-card rounded-2xl p-6 border border-border max-w-lg w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setShowPromoteModal(false)}
+        >
+          <div
+            className="solid-card rounded-2xl p-6 border border-border max-w-lg w-full bg-card space-y-4 shadow-2xl animate-in zoom-in-95 duration-150 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <span>🎓</span>
                 <span>Promote Semester Cohort</span>
               </h2>
               <button
+                type="button"
                 onClick={() => setShowPromoteModal(false)}
-                className="text-muted-foreground hover:text-foreground font-bold text-sm"
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
               >
                 ✕
               </button>
@@ -2456,6 +2476,200 @@ function AdminUserManagerContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* User Details & Action Controls Modal Pop-up */}
+      {selectedUserDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-pointer"
+          onClick={() => setSelectedUserDetail(null)}
+        >
+          <div
+            className="solid-card rounded-2xl p-6 border border-border max-w-lg w-full space-y-5 bg-card shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                {selectedUserDetail.type === "faculty" ? (
+                  <FacultyAvatar
+                    firstName={selectedUserDetail.user.first_name}
+                    lastName={selectedUserDetail.user.last_name}
+                    photoUrl={selectedUserDetail.user.photo_url}
+                    size="xl"
+                  />
+                ) : (
+                  <UserAvatar
+                    firstName={selectedUserDetail.user.first_name}
+                    lastName={selectedUserDetail.user.last_name}
+                    photoUrl={selectedUserDetail.user.photo_url || selectedUserDetail.user.profile_image}
+                    size="xl"
+                  />
+                )}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-foreground capitalize">
+                      {selectedUserDetail.user.first_name} {selectedUserDetail.user.last_name}
+                    </h3>
+                    {selectedUserDetail.type === "faculty" && checkIsHod(selectedUserDetail.user) && <Badge variant="teal">HOD</Badge>}
+                    {selectedUserDetail.type === "student" && checkIsCr(selectedUserDetail.user) && <Badge variant="teal">CR</Badge>}
+                  </div>
+                  <p className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                    {selectedUserDetail.user.faculty_id || selectedUserDetail.user.registration_no}
+                  </p>
+                  <p
+                    className="text-xs text-muted-foreground truncate max-w-[150px] xs:max-w-[200px] sm:max-w-xs"
+                    title={selectedUserDetail.user.email}
+                  >
+                    {selectedUserDetail.user.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedUserDetail(null)}
+                className="w-7 h-7 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-extrabold flex items-center justify-center border border-border/80 shadow-xs transition-colors shrink-0"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Profile Info Details Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-4 rounded-xl border border-border/60">
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Department</span>
+                <span className="font-bold text-foreground">{selectedUserDetail.user.department || selectedDept}</span>
+              </div>
+              {selectedUserDetail.type === "faculty" ? (
+                <div>
+                  <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Designation</span>
+                  <span className="font-bold text-foreground">{selectedUserDetail.user.designation || "Faculty"}</span>
+                </div>
+              ) : (
+                <div>
+                  <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Sem / Course</span>
+                  <span className="font-bold text-foreground">Sem {selectedUserDetail.user.semester || "1"} • {selectedUserDetail.user.course || "BSC"}</span>
+                </div>
+              )}
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Account Status</span>
+                <span className="mt-0.5 inline-block">{renderAccountStatusBadge(selectedUserDetail.user)}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase block">Contact</span>
+                <span className="font-bold text-foreground">{selectedUserDetail.user.phone_number || selectedUserDetail.user.contact_number || "Not provided"}</span>
+              </div>
+            </div>
+
+            {/* Admin Controls & Tweaks Action Grid */}
+            <div className="space-y-2 pt-1">
+              <h4 className="text-xs font-black uppercase tracking-wider text-foreground">⚡ Administrative Operations</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const u = selectedUserDetail.user;
+                    setSelectedUserDetail(null);
+                    if (selectedUserDetail.type === "faculty") setEditFaculty(u);
+                    else setEditStudent(u);
+                  }}
+                  className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>✏️ Edit Profile</span>
+                </button>
+
+                {selectedUserDetail.type === "faculty" && (
+                  <button
+                    onClick={() => {
+                      const u = selectedUserDetail.user;
+                      setSelectedUserDetail(null);
+                      openAssignSubjectModal(u);
+                    }}
+                    className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>📖 Assign Subjects</span>
+                  </button>
+                )}
+
+                {selectedUserDetail.type === "faculty" ? (
+                  <button
+                    onClick={() => {
+                      const u = selectedUserDetail.user;
+                      setSelectedUserDetail(null);
+                      handleToggleHod(u.faculty_id);
+                    }}
+                    className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>👑 {checkIsHod(selectedUserDetail.user) ? "Demote HOD" : "Promote HOD"}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const u = selectedUserDetail.user;
+                      setSelectedUserDetail(null);
+                      handleToggleCr(u.registration_no);
+                    }}
+                    className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>⭐ {checkIsCr(selectedUserDetail.user) ? "Remove CR Role" : "Promote CR"}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    const u = selectedUserDetail.user;
+                    setSelectedUserDetail(null);
+                    setResetPassTarget({
+                      type: selectedUserDetail.type,
+                      id: u.faculty_id || u.registration_no,
+                      name: `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+                      email: u.email,
+                    });
+                  }}
+                  className="p-3 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>🔑 Reset Password</span>
+                </button>
+
+                {isUserFrozen(selectedUserDetail.user) ? (
+                  <button
+                    onClick={() => {
+                      const u = selectedUserDetail.user;
+                      const t = selectedUserDetail.type;
+                      setSelectedUserDetail(null);
+                      handleUnfreezeUser(t, u);
+                    }}
+                    className="p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>☀️ Reactivate Account</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const u = selectedUserDetail.user;
+                      const t = selectedUserDetail.type;
+                      setSelectedUserDetail(null);
+                      openFreezeModal(t, u);
+                    }}
+                    className="p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>❄️ Freeze Account</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    const u = selectedUserDetail.user;
+                    setSelectedUserDetail(null);
+                    if (selectedUserDetail.type === "faculty") handleDeleteFaculty(u.faculty_id);
+                    else handleDeleteStudent(u.registration_no);
+                  }}
+                  className="p-3 rounded-xl border border-rose-500/30 bg-card hover:bg-rose-500/10 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>🗑️ Delete User</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

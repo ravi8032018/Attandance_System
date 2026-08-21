@@ -33,45 +33,45 @@ export function AcademicTermSwitcher({
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/80 text-xs font-bold ${className}`}>
-      <span className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground hidden sm:inline">
+    <div className={`flex sm:inline-flex items-center justify-between sm:justify-start gap-1 w-full sm:w-auto bg-muted/60 p-1 rounded-xl border border-border/80 text-[11px] sm:text-xs font-bold ${className}`}>
+      <span className="px-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground hidden sm:inline">
         🎓 Term:
       </span>
       <button
         type="button"
         onClick={() => handleSelect("odd")}
-        className={`px-2.5 py-1 rounded-lg transition-all ${
+        className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg transition-all text-center ${
           termMode === "odd"
             ? "bg-indigo-600 text-white shadow-xs"
             : "text-muted-foreground hover:text-foreground"
         }`}
         title="Odd Semesters"
       >
-        🍂 Odd sem
+        <span className="hidden sm:inline">🍂 </span>Odd<span className="hidden sm:inline"> sem</span>
       </button>
       <button
         type="button"
         onClick={() => handleSelect("even")}
-        className={`px-2.5 py-1 rounded-lg transition-all ${
+        className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg transition-all text-center ${
           termMode === "even"
             ? "bg-indigo-600 text-white shadow-xs"
             : "text-muted-foreground hover:text-foreground"
         }`}
         title="Even Semesters"
       >
-        🌸 Even sem
+        <span className="hidden sm:inline">🌸 </span>Even<span className="hidden sm:inline"> sem</span>
       </button>
       <button
         type="button"
         onClick={() => handleSelect("all")}
-        className={`px-2.5 py-1 rounded-lg transition-all ${
+        className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg transition-all text-center ${
           termMode === "all"
             ? "bg-indigo-600 text-white shadow-xs"
             : "text-muted-foreground hover:text-foreground"
         }`}
         title="All Semesters"
       >
-        🌐 All
+        <span className="hidden sm:inline">🌐 </span>All
       </button>
     </div>
   );
